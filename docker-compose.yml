@@ -1,11 +1,31 @@
 version: '3.8'
 
 services:
+  # Наше приложение (скрыто внутри, наружу не торчит)
   neko-app:
     build: .
     container_name: neko_finance
-    restart: always # Если сервер перезагрузится, кот запустится сам
-    ports:
-      - "80:3000" # На сервере открываем 80 порт (стандартный для сайтов) и переводим на 3000
+    restart: always
+    expose:
+      - "3000" # Открываем порт ТОЛЬКО для Caddy, не для интернета
     volumes:
-      - ./server/database.db:/app/server/database.db # Чтобы база данных не исчезла при обновлении
+      - ./server/database.db:/app/server/database.db
+
+  # Умный швейцар Caddy (торчит наружу и дает HTTPS)
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"   # Обычный вход
+      - "443:443" # Защищенный вход (HTTPS)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile # Файл настройки
+      - caddy_data:/data # Здесь он будет хранить сертификаты
+      - caddy_config:/config
+    depends_on:
+      - neko-app
+
+volumes:
+  caddy_data:
+  caddy_config:

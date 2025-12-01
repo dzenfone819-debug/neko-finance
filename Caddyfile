@@ -1,0 +1,3 @@
+purrfin.ru {
+    reverse_proxy neko-app:3000
+}
