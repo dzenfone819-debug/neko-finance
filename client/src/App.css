@@ -1,0 +1,102 @@
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0; /* Убрали паддинг контейнера */
+  box-sizing: border-box;
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #FEC8D8;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* На всю высоту экрана */
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+  background: white;
+  position: relative;
+}
+
+/* Верхняя часть с Котом (фиксированная высота) */
+.header-section {
+  flex: 1; /* Занимает всё свободное место сверху */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #FEC8D8;
+  border-bottom-left-radius: 32px;
+  border-bottom-right-radius: 32px;
+  padding-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  z-index: 10;
+}
+
+.neko-avatar {
+  font-size: 100px;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+}
+
+/* Экран ввода суммы */
+.amount-display {
+  font-size: 56px;
+  font-weight: 800;
+  color: #6B4C75;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.currency {
+  font-size: 24px;
+  color: #D291BC;
+  font-weight: 600;
+}
+
+/* Нижняя часть с клавиатурой */
+.input-section {
+  padding: 20px;
+  background: white;
+}
+
+.numpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 колонки */
+  gap: 12px;
+}
+
+.numpad-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  font-weight: 600;
+  color: #2D3436;
+  padding: 20px 0;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.delete-btn {
+  color: #E74C3C;
+}
+
+.numpad-confirm {
+  grid-column: span 3; /* Кнопка на всю ширину */
+  background-color: #D291BC;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  padding: 18px;
+  border-radius: 20px;
+  margin-top: 10px;
+  box-shadow: 0 10px 20px rgba(210, 145, 188, 0.4);
+}
