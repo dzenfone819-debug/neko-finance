@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  neko-app:
+    build: .
+    container_name: neko_finance
+    restart: always # Если сервер перезагрузится, кот запустится сам
+    ports:
+      - "80:3000" # На сервере открываем 80 порт (стандартный для сайтов) и переводим на 3000
+    volumes:
+      - ./server/database.db:/app/server/database.db # Чтобы база данных не исчезла при обновлении
