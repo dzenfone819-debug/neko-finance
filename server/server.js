@@ -95,6 +95,42 @@ fastify.get('/stats', (request, reply) => {
     }
   })
 })
+// --- ИСТОРИЯ И УДАЛЕНИЕ ---
+
+// 1. Получить последние 20 транзакций
+fastify.get('/transactions', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  const sql = `
+    SELECT id, amount, category, date 
+    FROM transactions 
+    WHERE user_id = ? 
+    ORDER BY id DESC 
+    LIMIT 20
+  `
+  
+  db.all(sql, [userId], (err, rows) => {
+    if (err) reply.code(500).send({ error: err.message })
+    else reply.send(rows)
+  })
+})
+
+// 2. Удалить транзакцию (Обязательно проверяем user_id, чтобы не удалили чужое!)
+fastify.delete('/transactions/:id', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const { id } = request.params
+
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  const sql = `DELETE FROM transactions WHERE id = ? AND user_id = ?`
+  
+  db.run(sql, [id, userId], function(err) {
+    if (err) reply.code(500).send({ error: err.message })
+    else if (this.changes === 0) reply.code(404).send({ error: 'Record not found or access denied' })
+    else reply.send({ status: 'deleted', id })
+  })
+})
 // Обработка любых других путей (для React)
 fastify.setNotFoundHandler((req, res) => {
   res.sendFile('index.html')

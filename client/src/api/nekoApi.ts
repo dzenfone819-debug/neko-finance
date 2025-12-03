@@ -28,3 +28,21 @@ export const addExpense = async (userId: number, amount: number, category: strin
   if (!response.ok) throw new Error('Failed to add expense');
   return await response.json();
 };
+// Получить список
+export const fetchTransactions = async (userId: number) => {
+  const response = await fetch(`${API_URL}/transactions`, { 
+    headers: { 'x-user-id': userId.toString() } 
+  });
+  return await response.json();
+};
+
+// Удалить запись
+export const deleteTransaction = async (userId: number, transactionId: number) => {
+  const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  
+  if (!response.ok) throw new Error('Failed to delete');
+  return true;
+};

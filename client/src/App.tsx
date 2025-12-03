@@ -4,9 +4,9 @@ import WebApp from '@twa-dev/sdk'
 import { LayoutGrid, Plus } from 'lucide-react'
 import './App.css'
 
-// Импортируем наши новые модули
 import { NumPad } from './components/NumPad'
 import { StatsView } from './components/StatsView'
+import { TransactionList } from './components/TransactionList' // NEW
 import { CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -16,6 +16,7 @@ function App() {
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
+  const [transactions, setTransactions] = useState<any[]>([]) // NEW
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
@@ -33,13 +34,15 @@ function App() {
     loadData(currentUserId);
   }, [])
 
-  // Единая функция загрузки данных
   const loadData = async (uid: number) => {
     try {
       const balance = await api.fetchBalance(uid);
       const stats = await api.fetchStats(uid);
+      const history = await api.fetchTransactions(uid); // NEW
+
       setTotalSpent(balance);
       setStatsData(stats);
+      setTransactions(history); // NEW
     } catch (e) { console.error(e) }
   }
 
@@ -50,14 +53,22 @@ function App() {
     }
 
     try {
-      // Используем функцию из api/nekoApi.ts
       await api.addExpense(userId, value, selectedCategory);
-
       WebApp.HapticFeedback.notificationOccurred('success');
       setIsHappy(true);
       setAmount('');
-      loadData(userId); // Обновляем всё
+      loadData(userId);
       setTimeout(() => setIsHappy(false), 3000);
+    } catch { triggerError(); }
+  }
+
+  // NEW: Функция удаления
+  const handleDeleteTransaction = async (id: number) => {
+    if (!userId) return;
+    WebApp.HapticFeedback.impactOccurred('medium');
+    try {
+      await api.deleteTransaction(userId, id);
+      loadData(userId); // Пересчитать всё
     } catch { triggerError(); }
   }
 
@@ -84,7 +95,6 @@ function App() {
   return (
     <div className="app-container">
       
-      {/* HEADER SECTION */}
       <div className="header-section">
         <motion.div 
           animate={
@@ -108,12 +118,10 @@ function App() {
         )}
       </div>
 
-      {/* CONTENT SECTION */}
       <div className={`content-area ${activeTab === 'stats' ? 'stats-mode' : ''}`}>
         
         {activeTab === 'input' ? (
           <>
-            {/* CATEGORIES SCROLL */}
             <div className="categories-wrapper">
               <div className="categories-scroll">
                 {CATEGORIES.map((cat) => (
@@ -144,12 +152,25 @@ function App() {
             />
           </>
         ) : (
-          /* Используем наш новый компонент */
-          <StatsView data={statsData} total={totalSpent} />
+          /* --- СТАТИСТИКА И ИСТОРИЯ --- */
+          <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
+            
+            <StatsView data={statsData} total={totalSpent} />
+            
+            <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
+            
+            {/* Наш новый компонент списка */}
+            <TransactionList 
+              transactions={transactions} 
+              onDelete={handleDeleteTransaction} 
+            />
+            
+            {/* Отступ, чтобы список не прятался под меню */}
+            <div style={{ height: 80 }} /> 
+          </div>
         )}
       </div>
 
-      {/* BOTTOM MENU */}
       <div className="bottom-tab-bar">
         <button 
           className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`}
