@@ -157,7 +157,7 @@ function App() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {statsData.map((entry, index) => (
+                    {statsData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
