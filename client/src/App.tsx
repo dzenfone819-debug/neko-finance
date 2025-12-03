@@ -3,16 +3,25 @@ import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { NumPad } from './components/NumPad'
-import { LayoutGrid, Plus, Wallet } from 'lucide-react'
+import { LayoutGrid, Plus, Wallet, Coffee, Car, ShoppingBag, Gamepad2, Zap } from 'lucide-react'
 import './App.css'
 
 const API_URL = ''; 
 
-// Яркие пастельные цвета
-const COLORS = ['#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#FFC6FF'];
+// Цвета графика (совпадают с категориями + запасные)
+const COLORS = ['#FFADAD', '#A0C4FF', '#FFD6A5', '#FDFFB6', '#BDB2FF', '#9BF6FF', '#CAFFBF', '#FFC6FF'];
+
+const CATEGORIES = [
+  { id: 'food', name: 'Еда', icon: <Coffee size={24} />, color: '#FFADAD' },
+  { id: 'transport', name: 'Авто', icon: <Car size={24} />, color: '#A0C4FF' },
+  { id: 'shopping', name: 'Покупки', icon: <ShoppingBag size={24} />, color: '#FFD6A5' },
+  { id: 'fun', name: 'Досуг', icon: <Gamepad2 size={24} />, color: '#FDFFB6' },
+  { id: 'bills', name: 'Счета', icon: <Zap size={24} />, color: '#BDB2FF' },
+];
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats'>('input')
+  const [selectedCategory, setSelectedCategory] = useState('food')
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
@@ -22,9 +31,7 @@ function App() {
   
   useEffect(() => {
     WebApp.ready();
-    WebApp.expand(); // Просим телеграм развернуть на весь экран
-    
-    // Запрещаем скролл на уровне WebApp
+    WebApp.expand(); 
     WebApp.enableClosingConfirmation(); 
 
     let currentUserId = 777; 
@@ -62,7 +69,7 @@ function App() {
       const response = await fetch(`${API_URL}/add-expense`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-        body: JSON.stringify({ amount: value }) 
+        body: JSON.stringify({ amount: value, category: selectedCategory }) 
       });
 
       if (response.ok) {
@@ -96,12 +103,16 @@ function App() {
     setTimeout(() => setIsError(false), 500);
   }
 
+  // Вспомогательная функция для получения русского названия категории
+  const getCategoryName = (id: string) => {
+    const cat = CATEGORIES.find(c => c.id === id);
+    return cat ? cat.name : (id === 'general' ? 'Разное' : id);
+  }
+
   return (
     <div className="app-container">
       
-      {/* 1. ШАПКА: Кот и Баланс */}
       <div className="header-section">
-        {/* Баланс только в шапке */}
         <div style={{ position: 'absolute', top: 15, right: 20, textAlign: 'right' }}>
           <span style={{ fontSize: 12, color: '#6B4C75', opacity: 0.7 }}>Потрачено</span>
           <div style={{ fontSize: 20, fontWeight: '800', color: '#6B4C75' }}>
@@ -120,7 +131,6 @@ function App() {
           {isError ? '🙀' : (isHappy ? '😻' : '😿')}
         </motion.div>
         
-        {/* Показываем вводимую сумму ТОЛЬКО на вкладке ввода */}
         {activeTab === 'input' ? (
            <motion.div className="amount-display">
              {amount || '0'} <span className="currency">₽</span>
@@ -132,21 +142,58 @@ function App() {
         )}
       </div>
 
-      {/* 2. КОНТЕНТ: Белая карточка с Numpad или Графиком */}
       <div className="content-area">
         
         {activeTab === 'input' ? (
-          <NumPad 
-            onNumberClick={handleNumberClick}
-            onDelete={handleDelete}
-            onConfirm={handleConfirm}
-          />
+          <>
+            {/* КАРУСЕЛЬ КАТЕГОРИЙ */}
+            <div style={{ 
+              display: 'flex', gap: 12, paddingBottom: 15, marginBottom: 10,
+              overflowX: 'auto', scrollbarWidth: 'none' 
+            }}>
+              {CATEGORIES.map((cat) => (
+                <motion.button
+                  key={cat.id}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => { 
+                    setSelectedCategory(cat.id); 
+                    WebApp.HapticFeedback.selectionChanged(); 
+                  }}
+                  style={{
+                    background: selectedCategory === cat.id ? cat.color : '#F8F9FA',
+                    border: '2px solid',
+                    borderColor: selectedCategory === cat.id ? 'transparent' : 'transparent',
+                    borderRadius: 16,
+                    padding: '10px 0',
+                    width: 70,
+                    minWidth: 70,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    transition: '0.2s',
+                    boxShadow: selectedCategory === cat.id ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  <div style={{ color: '#6B4C75', marginBottom: 4 }}>{cat.icon}</div>
+                  <span style={{ fontSize: 11, fontWeight: '700', color: '#6B4C75' }}>
+                    {cat.name}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+
+            <NumPad 
+              onNumberClick={handleNumberClick}
+              onDelete={handleDelete}
+              onConfirm={handleConfirm}
+            />
+          </>
         ) : (
           /* Экран статистики */
           <div className="stats-container">
             {statsData.length > 0 ? (
               <>
-                {/* Сам График */}
                 <div style={{ width: '100%', height: '220px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -158,9 +205,11 @@ function App() {
                         dataKey="value"
                         stroke="none"
                       >
-                        {statsData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
+                        {statsData.map((entry, index) => {
+                          // Пытаемся найти цвет категории, если она стандартная
+                          const cat = CATEGORIES.find(c => c.id === entry.name);
+                          return <Cell key={`cell-${index}`} fill={cat ? cat.color : COLORS[index % COLORS.length]} />;
+                        })}
                       </Pie>
                       <Tooltip 
                         formatter={(value: number) => `${value} ₽`}
@@ -169,7 +218,6 @@ function App() {
                     </PieChart>
                   </ResponsiveContainer>
                   
-                  {/* Текст в центре бублика */}
                   <div style={{ 
                     position: 'absolute', top: '110px', left: '0', right: '0', 
                     textAlign: 'center', pointerEvents: 'none', color: '#6B4C75', fontWeight: 'bold' 
@@ -178,17 +226,22 @@ function App() {
                   </div>
                 </div>
 
-                {/* Легенда (Список) снизу */}
                 <div className="chart-legend">
-                  {statsData.map((entry, index) => (
-                    <div key={index} className="legend-item">
-                      <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
-                        <div style={{width: 12, height: 12, borderRadius: '50%', background: COLORS[index % COLORS.length]}} />
-                        <span>{entry.name === 'general' ? 'Разное' : entry.name}</span>
+                  {statsData.map((entry, index) => {
+                    const cat = CATEGORIES.find(c => c.id === entry.name);
+                    const color = cat ? cat.color : COLORS[index % COLORS.length];
+                    const name = getCategoryName(entry.name);
+
+                    return (
+                      <div key={index} className="legend-item">
+                        <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                          <div style={{width: 12, height: 12, borderRadius: '50%', background: color}} />
+                          <span>{name}</span>
+                        </div>
+                        <span>{entry.value} ₽</span>
                       </div>
-                      <span>{entry.value} ₽</span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </>
             ) : (
@@ -201,7 +254,6 @@ function App() {
         )}
       </div>
 
-      {/* 3. НИЖНЕЕ МЕНЮ (Tab Bar) */}
       <div className="bottom-tab-bar">
         <button 
           className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`}

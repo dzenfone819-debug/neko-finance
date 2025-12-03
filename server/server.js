@@ -37,8 +37,8 @@ db.serialize(() => {
 
 // Добавить расход
 fastify.post('/add-expense', (request, reply) => {
-  const { amount } = request.body
-  // // NEW: Получаем ID пользователя из заголовков запроса
+  // // NEW: Теперь ждем еще и category
+  const { amount, category } = request.body
   const userId = request.headers['x-user-id']
 
   if (!userId) {
@@ -48,8 +48,8 @@ fastify.post('/add-expense', (request, reply) => {
   const query = `INSERT INTO transactions (amount, category, date, user_id) VALUES (?, ?, ?, ?)`
   const now = new Date().toISOString()
   
-  // // NEW: Записываем userId в базу
-  db.run(query, [amount, 'general', now, userId], function(err) {
+  // // NEW: Используем category || 'general' (если вдруг не прислали - будет general)
+  db.run(query, [amount, category || 'general', now, userId], function(err) {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send({ id: this.lastID, status: 'saved', amount: amount })
   })
