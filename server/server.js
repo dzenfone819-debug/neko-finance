@@ -2,6 +2,9 @@ const fastify = require('fastify')({ logger: true })
 const cors = require('@fastify/cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
+const { startBot } = require('./bot')
+const BOT_TOKEN = '8597578012:AAF9FmLQB5LITYyzK68A9J2ESwP150FneiI'
+const GEMINI_KEY = 'AIzaSyBx_7pTLj_PVLA-Gof5KdCYDcz0gM0IFFs' // <-- NEW
 
 // Раздача фронтенда
 fastify.register(require('@fastify/static'), {
@@ -12,7 +15,11 @@ fastify.register(cors, { origin: true })
 
 const db = new sqlite3.Database('./database.db', (err) => {
   if (err) console.error('Ошибка БД:', err.message)
-  else console.log('Подключено к SQLite')
+  else {
+    console.log('Подключено к SQLite')
+    // Передаем ТРИ аргумента: токен, базу и ключ ии
+    startBot(BOT_TOKEN, db, GEMINI_KEY) // <-- NEW
+  }
 })
 
 // Создание таблицы (с поддержкой user_id)
