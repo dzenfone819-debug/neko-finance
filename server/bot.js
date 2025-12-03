@@ -22,7 +22,7 @@ function startBot(botToken, db, geminiKey) {
   const genAI = new GoogleGenerativeAI(geminiKey)
 
   const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash-001", // <-- Железобетонный вариант
+  model: "gemini-2.5-flash", // <-- Железобетонный вариант
   generationConfig: {
     responseMimeType: "application/json"
   }
