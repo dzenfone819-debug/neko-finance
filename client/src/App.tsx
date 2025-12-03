@@ -3,24 +3,41 @@ import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { NumPad } from './components/NumPad'
-import { LayoutGrid, Plus, Coffee, Car, ShoppingBag, Gamepad2, Zap } from 'lucide-react'
+// Импортируем новые иконки
+import { 
+  LayoutGrid, Plus, Coffee, Car, ShoppingBag, Gamepad2, Zap, 
+  Home, Bus, RefreshCcw, Divide, Armchair, Shirt, PiggyBank, ShoppingBasket 
+} from 'lucide-react'
 import './App.css'
 
 const API_URL = ''; 
 
-const COLORS = ['#FFADAD', '#A0C4FF', '#FFD6A5', '#FDFFB6', '#BDB2FF', '#9BF6FF', '#CAFFBF', '#FFC6FF'];
+// Расширенная палитра цветов для графика
+const COLORS = [
+  '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', 
+  '#A0C4FF', '#BDB2FF', '#FFC6FF', '#FFFFFC', '#E4C1F9', 
+  '#D0F4DE', '#A9DEF9'
+];
 
+// Твой новый список категорий
 const CATEGORIES = [
-  { id: 'food', name: 'Еда', icon: <Coffee size={20} />, color: '#FFADAD' }, // size уменьшил до 20
-  { id: 'transport', name: 'Авто', icon: <Car size={20} />, color: '#A0C4FF' },
-  { id: 'shopping', name: 'Шопинг', icon: <ShoppingBag size={20} />, color: '#FFD6A5' },
-  { id: 'fun', name: 'Досуг', icon: <Gamepad2 size={20} />, color: '#FDFFB6' },
-  { id: 'bills', name: 'Счета', icon: <Zap size={20} />, color: '#BDB2FF' },
+  { id: 'groceries', name: 'Еда', icon: <ShoppingBasket size={20} />, color: '#CAFFBF' }, // Еда (продукты)
+  { id: 'food', name: 'Кафе', icon: <Coffee size={20} />, color: '#FFADAD' }, // Рестораны/Кофе
+  { id: 'transport', name: 'Трансп.', icon: <Car size={20} />, color: '#A0C4FF' }, // Личный транспорт
+  { id: 'commute', name: 'Проезд', icon: <Bus size={20} />, color: '#9BF6FF' }, // Общественный
+  { id: 'mortgage', name: 'Ипотека', icon: <Home size={20} />, color: '#BDB2FF' }, // Ипотека
+  { id: 'bills', name: 'КУ', icon: <Zap size={20} />, color: '#FDFFB6' }, // Коммуналка
+  { id: 'subs', name: 'Подписки', icon: <RefreshCcw size={20} />, color: '#E4C1F9' }, // Подписки
+  { id: 'split', name: 'Сплит', icon: <Divide size={20} />, color: '#FFC6FF' }, // Сплит
+  { id: 'home', name: 'Дом', icon: <Armchair size={20} />, color: '#FFD6A5' }, // Покупки для дома
+  { id: 'personal', name: 'Себе', icon: <Shirt size={20} />, color: '#D0F4DE' }, // Покупки для себя
+  { id: 'fun', name: 'Развл.', icon: <Gamepad2 size={20} />, color: '#A9DEF9' }, // Развлечения
+  { id: 'reserve', name: 'Резерв', icon: <PiggyBank size={20} />, color: '#FFFFFC' }, // Резерв/Копилка
 ];
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats'>('input')
-  const [selectedCategory, setSelectedCategory] = useState('food')
+  const [selectedCategory, setSelectedCategory] = useState('groceries') // По умолчанию Еда (продукты)
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
