@@ -100,3 +100,43 @@
   margin-top: 10px;
   box-shadow: 0 10px 20px rgba(210, 145, 188, 0.4);
 }
+/* ... старый код выше ... */
+
+/* Скрываем скроллбары */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Нижнее меню */
+.bottom-menu {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 5px 20px rgba(107, 76, 117, 0.15);
+  z-index: 100;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #D6D6D6; /* Серый цвет для неактивных */
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-btn.active {
+  color: #D291BC; /* Твой фирменный цвет */
+  transform: scale(1.1);
+}

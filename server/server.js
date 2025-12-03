@@ -70,7 +70,31 @@ fastify.get('/balance', (request, reply) => {
     else reply.send({ total: row.total || 0 })
   })
 })
+// --- Вставь это ПЕРЕД fastify.setNotFoundHandler ---
 
+// Получить статистику по категориям
+fastify.get('/stats', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  // SQL Магия: Группируем траты по категориям и складываем суммы
+  const sql = `
+    SELECT category, SUM(amount) as value 
+    FROM transactions 
+    WHERE user_id = ? 
+    GROUP BY category
+  `
+  
+  db.all(sql, [userId], (err, rows) => {
+    if (err) reply.code(500).send({ error: err.message })
+    else {
+      // Превращаем данные в формат для графика
+      // Например: [{ name: 'general', value: 500 }, { name: 'taxi', value: 150 }]
+      const data = rows.map(r => ({ name: r.category, value: r.value }))
+      reply.send(data)
+    }
+  })
+})
 // Обработка любых других путей (для React)
 fastify.setNotFoundHandler((req, res) => {
   res.sendFile('index.html')
