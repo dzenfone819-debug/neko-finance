@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { NumPad } from './components/NumPad'
-import { LayoutGrid, Plus, Wallet, Coffee, Car, ShoppingBag, Gamepad2, Zap } from 'lucide-react'
+import { LayoutGrid, Plus, Coffee, Car, ShoppingBag, Gamepad2, Zap } from 'lucide-react'
 import './App.css'
 
 const API_URL = ''; 
