@@ -2,8 +2,6 @@ const { Telegraf } = require('telegraf')
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai')
 const axios = require('axios')
 
-// Список категорий (нужен, чтобы ИИ знал, из чего выбирать)
-// Важно: ID категорий должны совпадать с теми, что на Фронтенде!
 const CATEGORIES_LIST = `
 - groceries (продукты, магазин, супермаркет)
 - food (кафе, ресторан, кофе, обед)
@@ -23,24 +21,13 @@ function startBot(botToken, db, geminiKey) {
   const bot = new Telegraf(botToken)
   const genAI = new GoogleGenerativeAI(geminiKey)
 
-  // Настраиваем модель (Gemini 1.5 Flash - быстрая и дешевая)
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     generationConfig: {
-      responseMimeType: "application/json", // Заставляем отвечать только JSON-ом
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          amount: { type: SchemaType.NUMBER },
-          category: { type: SchemaType.STRING },
-          description: { type: SchemaType.STRING }, // Описание траты (напр. "шаурма")
-        },
-        required: ["amount", "category"]
-      }
+      responseMimeType: "application/json"
     }
   });
 
-  // Системная инструкция для ИИ
   const SYSTEM_PROMPT = `
   Ты финансовый ассистент. Твоя задача - извлечь сумму расхода и категорию из сообщения пользователя.
   Если валюта не указана, считай что это рубли.
@@ -48,39 +35,35 @@ function startBot(botToken, db, geminiKey) {
   ${CATEGORIES_LIST}
   
   Если категория не очевидна, используй "general".
-  Верни JSON.
+  Верни ТОЛЬКО JSON объект без markdown форматирования.
+  Пример: {"amount": 100, "category": "food", "description": "кофе"}
   `
 
   // --- ОБРАБОТЧИК ТЕКСТА ---
   bot.on('text', async (ctx) => {
     try {
       const userText = ctx.message.text
-      // Игнорируем команды вроде /start
       if (userText.startsWith('/')) return 
       
+      console.log(`[AI] Обработка текста: "${userText}"`) // ЛОГ
       const result = await processWithAI(model, SYSTEM_PROMPT, userText)
       await saveTransaction(ctx, db, result)
       
     } catch (e) {
-      console.error(e)
-      ctx.reply('😿 Не удалось распознать трату. Попробуй написать проще, например: "150 кофе"')
+      console.error('[AI Error]', e) // ВИДИМ РЕАЛЬНУЮ ОШИБКУ
+      ctx.reply('😿 Ошибка обработки. Проверь консоль сервера.')
     }
   })
 
   // --- ОБРАБОТЧИК ГОЛОСА ---
   bot.on('voice', async (ctx) => {
     try {
-      ctx.sendChatAction('typing') // Показываем, что бот думает...
-      
-      // 1. Получаем ссылку на файл
+      ctx.sendChatAction('typing')
       const fileId = ctx.message.voice.file_id
       const fileLink = await ctx.telegram.getFileLink(fileId)
-      
-      // 2. Скачиваем файл как буфер (набор байтов)
       const response = await axios({ url: fileLink.href, responseType: 'arraybuffer' })
       const audioBuffer = Buffer.from(response.data)
 
-      // 3. Формируем запрос к Gemini (Аудио + Промпт)
       const result = await model.generateContent([
         SYSTEM_PROMPT,
         {
@@ -91,19 +74,18 @@ function startBot(botToken, db, geminiKey) {
         }
       ])
 
-      const jsonData = JSON.parse(result.response.text())
+      const jsonData = cleanJson(result.response.text())
       await saveTransaction(ctx, db, jsonData)
 
     } catch (e) {
-      console.error(e)
-      ctx.reply('😿 Не расслышал... Попробуй сказать четче.')
+      console.error('[AI Voice Error]', e)
+      ctx.reply('😿 Не расслышал...')
     }
   })
 
-  bot.start((ctx) => ctx.reply('Мяу! Я слушаю. \nНапиши "300 такси" или запиши голосовое "Купил продуктов на 2000 рублей".'))
+  bot.start((ctx) => ctx.reply('Мяу! Пиши траты текстом или голосом.'))
   bot.launch()
   
-  // Graceful stop
   process.once('SIGINT', () => bot.stop('SIGINT'))
   process.once('SIGTERM', () => bot.stop('SIGTERM'))
   console.log('🤖 AI Bot запущен!')
@@ -111,9 +93,16 @@ function startBot(botToken, db, geminiKey) {
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
+// Функция очистки от мусора (Markdown, backticks)
+function cleanJson(text) {
+  console.log('[AI Raw Response]:', text) // Смотрим, что ответил ИИ
+  let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
+  return JSON.parse(clean);
+}
+
 async function processWithAI(model, prompt, text) {
   const result = await model.generateContent([prompt, text])
-  return JSON.parse(result.response.text())
+  return cleanJson(result.response.text())
 }
 
 async function saveTransaction(ctx, db, data) {
@@ -132,24 +121,18 @@ async function saveTransaction(ctx, db, data) {
       console.error(err)
       ctx.reply('Ошибка базы данных')
     } else {
-      ctx.reply(`✅ Расход: ${amount}₽\n📂 Категория: ${getCategoryName(category)}\n📝 Коммент: ${description || '-'}`)
+      ctx.reply(`✅ Расход: ${amount}₽\n📂 Категория: ${getCategoryName(category)}\n📝 ${description || ''}`)
     }
   })
 }
 
 function getCategoryName(id) {
+  // ... (оставь как было) ...
   const names = {
-    'groceries': '🛒 Продукты',
-    'food': '☕ Кафе',
-    'transport': '🚗 Авто',
-    'commute': '🚌 Проезд',
-    'mortgage': '🏠 Ипотека',
-    'bills': '⚡ Счета',
-    'subs': '🔄 Подписки',
-    'home': '🛋️ Дом',
-    'personal': '👕 Себе',
-    'fun': '🎮 Развлечения',
-    'reserve': '🐷 Копилка'
+    'groceries': '🛒 Продукты', 'food': '☕ Кафе', 'transport': '🚗 Авто',
+    'commute': '🚌 Проезд', 'mortgage': '🏠 Ипотека', 'bills': '⚡ Счета',
+    'subs': '🔄 Подписки', 'home': '🛋️ Дом', 'personal': '👕 Себе',
+    'fun': '🎮 Развлечения', 'reserve': '🐷 Копилка'
   }
   return names[id] || id
 }
