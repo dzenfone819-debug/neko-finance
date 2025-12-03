@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { NumPad } from './components/NumPad'
 // Импортируем новые иконки
 import { 
-  LayoutGrid, Plus, Coffee, Car, ShoppingBag, Gamepad2, Zap, 
+  LayoutGrid, Plus, Coffee, Car, Gamepad2, Zap, 
   Home, Bus, RefreshCcw, Divide, Armchair, Shirt, PiggyBank, ShoppingBasket 
 } from 'lucide-react'
 import './App.css'
