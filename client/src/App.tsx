@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { NumPad } from './components/NumPad'
-// Импортируем новые иконки
+// Убрали Wallet, чтобы не было ошибки
 import { 
   LayoutGrid, Plus, Coffee, Car, Gamepad2, Zap, 
   Home, Bus, RefreshCcw, Divide, Armchair, Shirt, PiggyBank, ShoppingBasket 
@@ -12,32 +12,30 @@ import './App.css'
 
 const API_URL = ''; 
 
-// Расширенная палитра цветов для графика
 const COLORS = [
   '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', 
   '#A0C4FF', '#BDB2FF', '#FFC6FF', '#FFFFFC', '#E4C1F9', 
   '#D0F4DE', '#A9DEF9'
 ];
 
-// Твой новый список категорий
 const CATEGORIES = [
-  { id: 'groceries', name: 'Еда', icon: <ShoppingBasket size={20} />, color: '#CAFFBF' }, // Еда (продукты)
-  { id: 'food', name: 'Кафе', icon: <Coffee size={20} />, color: '#FFADAD' }, // Рестораны/Кофе
-  { id: 'transport', name: 'Трансп.', icon: <Car size={20} />, color: '#A0C4FF' }, // Личный транспорт
-  { id: 'commute', name: 'Проезд', icon: <Bus size={20} />, color: '#9BF6FF' }, // Общественный
-  { id: 'mortgage', name: 'Ипотека', icon: <Home size={20} />, color: '#BDB2FF' }, // Ипотека
-  { id: 'bills', name: 'КУ', icon: <Zap size={20} />, color: '#FDFFB6' }, // Коммуналка
-  { id: 'subs', name: 'Подписки', icon: <RefreshCcw size={20} />, color: '#E4C1F9' }, // Подписки
-  { id: 'split', name: 'Сплит', icon: <Divide size={20} />, color: '#FFC6FF' }, // Сплит
-  { id: 'home', name: 'Дом', icon: <Armchair size={20} />, color: '#FFD6A5' }, // Покупки для дома
-  { id: 'personal', name: 'Себе', icon: <Shirt size={20} />, color: '#D0F4DE' }, // Покупки для себя
-  { id: 'fun', name: 'Развл.', icon: <Gamepad2 size={20} />, color: '#A9DEF9' }, // Развлечения
-  { id: 'reserve', name: 'Резерв', icon: <PiggyBank size={20} />, color: '#FFFFFC' }, // Резерв/Копилка
+  { id: 'groceries', name: 'Еда', icon: <ShoppingBasket size={20} />, color: '#CAFFBF' },
+  { id: 'food', name: 'Кафе', icon: <Coffee size={20} />, color: '#FFADAD' },
+  { id: 'transport', name: 'Трансп.', icon: <Car size={20} />, color: '#A0C4FF' },
+  { id: 'commute', name: 'Проезд', icon: <Bus size={20} />, color: '#9BF6FF' },
+  { id: 'mortgage', name: 'Ипотека', icon: <Home size={20} />, color: '#BDB2FF' },
+  { id: 'bills', name: 'КУ', icon: <Zap size={20} />, color: '#FDFFB6' },
+  { id: 'subs', name: 'Подписки', icon: <RefreshCcw size={20} />, color: '#E4C1F9' },
+  { id: 'split', name: 'Сплит', icon: <Divide size={20} />, color: '#FFC6FF' },
+  { id: 'home', name: 'Дом', icon: <Armchair size={20} />, color: '#FFD6A5' },
+  { id: 'personal', name: 'Себе', icon: <Shirt size={20} />, color: '#D0F4DE' },
+  { id: 'fun', name: 'Развл.', icon: <Gamepad2 size={20} />, color: '#A9DEF9' },
+  { id: 'reserve', name: 'Резерв', icon: <PiggyBank size={20} />, color: '#FFFFFC' },
 ];
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats'>('input')
-  const [selectedCategory, setSelectedCategory] = useState('groceries') // По умолчанию Еда (продукты)
+  const [selectedCategory, setSelectedCategory] = useState('groceries')
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
@@ -156,7 +154,7 @@ function App() {
         
         {activeTab === 'input' ? (
           <>
-            {/* КАТЕГОРИИ (Горизонтальный скролл) */}
+            {/* КАТЕГОРИИ */}
             <div className="categories-wrapper">
               <div className="categories-scroll">
                 {CATEGORIES.map((cat) => (
@@ -190,7 +188,9 @@ function App() {
         ) : (
           /* СТАТИСТИКА */
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: '100%', height: '220px', flexShrink: 0 }}>
+            
+            {/* --- ИСПРАВЛЕНИЕ ЗДЕСЬ: position: 'relative' --- */}
+            <div style={{ width: '100%', height: '220px', flexShrink: 0, position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -209,6 +209,7 @@ function App() {
                   <Tooltip formatter={(value: number) => `${value} ₽`} />
                 </PieChart>
               </ResponsiveContainer>
+              
               <div style={{ 
                     position: 'absolute', top: '90px', left: '0', right: '0', 
                     textAlign: 'center', pointerEvents: 'none', color: '#6B4C75', fontWeight: 'bold' 
