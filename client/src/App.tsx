@@ -1,28 +1,31 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts' // Библиотека графиков
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { NumPad } from './components/NumPad'
-import { LayoutGrid, Plus } from 'lucide-react' // Иконки для меню
+import { LayoutGrid, Plus, Wallet } from 'lucide-react'
 import './App.css'
 
 const API_URL = ''; 
 
-// Цвета для графика (пастельная палитра Neko)
-const COLORS = ['#D291BC', '#FEC8D8', '#957DAD', '#E0BBE4', '#FFDFD3'];
+// Яркие пастельные цвета
+const COLORS = ['#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#FFC6FF'];
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'input' | 'stats'>('input') // Переключатель экранов
+  const [activeTab, setActiveTab] = useState<'input' | 'stats'>('input')
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
-  const [statsData, setStatsData] = useState<{name: string, value: number}[]>([]) // Данные для графика
+  const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
   
   useEffect(() => {
     WebApp.ready();
-    WebApp.expand();
+    WebApp.expand(); // Просим телеграм развернуть на весь экран
+    
+    // Запрещаем скролл на уровне WebApp
+    WebApp.enableClosingConfirmation(); 
 
     let currentUserId = 777; 
     if (WebApp.initDataUnsafe.user) {
@@ -30,28 +33,23 @@ function App() {
     }
     setUserId(currentUserId);
     fetchBalance(currentUserId);
-    fetchStats(currentUserId); // Загружаем статистику сразу
+    fetchStats(currentUserId);
   }, [])
 
   const fetchBalance = async (uid: number) => {
     try {
-      const response = await fetch(`${API_URL}/balance`, {
-        headers: { 'x-user-id': uid.toString() }
-      });
+      const response = await fetch(`${API_URL}/balance`, { headers: { 'x-user-id': uid.toString() } });
       const data = await response.json();
       setTotalSpent(data.total);
-    } catch (error) { console.error(error); }
+    } catch (e) { console.error(e) }
   }
 
-  // Загрузка данных для графика
   const fetchStats = async (uid: number) => {
     try {
-      const response = await fetch(`${API_URL}/stats`, {
-        headers: { 'x-user-id': uid.toString() }
-      });
+      const response = await fetch(`${API_URL}/stats`, { headers: { 'x-user-id': uid.toString() } });
       const data = await response.json();
       setStatsData(data);
-    } catch (error) { console.error(error); }
+    } catch (e) { console.error(e) }
   }
 
   const handleConfirm = async () => {
@@ -63,11 +61,7 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/add-expense`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-user-id': userId.toString() 
-        },
-        // Пока шлем категорию "general", позже добавим выбор
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
         body: JSON.stringify({ amount: value }) 
       });
 
@@ -76,13 +70,12 @@ function App() {
         setIsHappy(true);
         setAmount('');
         fetchBalance(userId);
-        fetchStats(userId); // Обновляем график
+        fetchStats(userId);
         setTimeout(() => setIsHappy(false), 3000);
       } else { triggerError(); }
     } catch { triggerError(); }
   }
 
-  // ... (Остальные функции handleNumberClick, handleDelete, triggerError такие же) ...
   const handleNumberClick = (num: string) => {
     WebApp.HapticFeedback.impactOccurred('light');
     if (amount.length >= 6) return;
@@ -105,11 +98,13 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Шапка с Котом */}
+      
+      {/* 1. ШАПКА: Кот и Баланс */}
       <div className="header-section">
-        <div style={{ position: 'absolute', top: 20, right: 20, textAlign: 'right' }}>
-          <span style={{ fontSize: 12, color: '#9E9E9E' }}>Всего:</span>
-          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#6B4C75' }}>
+        {/* Баланс только в шапке */}
+        <div style={{ position: 'absolute', top: 15, right: 20, textAlign: 'right' }}>
+          <span style={{ fontSize: 12, color: '#6B4C75', opacity: 0.7 }}>Потрачено</span>
+          <div style={{ fontSize: 20, fontWeight: '800', color: '#6B4C75' }}>
             {totalSpent.toLocaleString()} ₽
           </div>
         </div>
@@ -117,7 +112,7 @@ function App() {
         <motion.div 
           animate={
             isError ? { rotate: [0, -20, 20, 0] } :
-            isHappy ? { scale: 1.2, y: [0, -20, 0] } : 
+            isHappy ? { scale: 1.1, y: [0, -10, 0] } : 
             { scale: 1, y: 0 }
           }
           className="neko-avatar"
@@ -125,16 +120,20 @@ function App() {
           {isError ? '🙀' : (isHappy ? '😻' : '😿')}
         </motion.div>
         
-        {/* Показываем сумму только на экране ввода */}
-        {activeTab === 'input' && (
+        {/* Показываем вводимую сумму ТОЛЬКО на вкладке ввода */}
+        {activeTab === 'input' ? (
            <motion.div className="amount-display">
              {amount || '0'} <span className="currency">₽</span>
            </motion.div>
+        ) : (
+          <div style={{fontSize: 18, color: '#6B4C75', fontWeight: 'bold'}}>
+            Статистика
+          </div>
         )}
       </div>
 
-      {/* Основной контент (Меняется в зависимости от вкладки) */}
-      <div className="content-area" style={{ flex: 1, width: '100%', padding: 20 }}>
+      {/* 2. КОНТЕНТ: Белая карточка с Numpad или Графиком */}
+      <div className="content-area">
         
         {activeTab === 'input' ? (
           <NumPad 
@@ -144,57 +143,79 @@ function App() {
           />
         ) : (
           /* Экран статистики */
-          <div style={{ height: '300px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h3 style={{color: '#6B4C75', marginBottom: 0}}>Структура трат</h3>
-            
+          <div className="stats-container">
             {statsData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statsData}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {statsData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                {/* Сам График */}
+                <div style={{ width: '100%', height: '220px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statsData}
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {statsData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number) => `${value} ₽`}
+                        contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  
+                  {/* Текст в центре бублика */}
+                  <div style={{ 
+                    position: 'absolute', top: '110px', left: '0', right: '0', 
+                    textAlign: 'center', pointerEvents: 'none', color: '#6B4C75', fontWeight: 'bold' 
+                  }}>
+                    {statsData.length} кат.
+                  </div>
+                </div>
+
+                {/* Легенда (Список) снизу */}
+                <div className="chart-legend">
+                  {statsData.map((entry, index) => (
+                    <div key={index} className="legend-item">
+                      <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                        <div style={{width: 12, height: 12, borderRadius: '50%', background: COLORS[index % COLORS.length]}} />
+                        <span>{entry.name === 'general' ? 'Разное' : entry.name}</span>
+                      </div>
+                      <span>{entry.value} ₽</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
-              <p style={{color: '#9E9E9E', marginTop: 50}}>Трат пока нет 😿</p>
+              <div style={{textAlign: 'center', marginTop: 50, color: '#9E9E9E'}}>
+                <Wallet size={48} style={{opacity: 0.3, marginBottom: 10}} />
+                <p>Трат пока нет. <br/>Добавьте первый расход!</p>
+              </div>
             )}
-            
-            {/* Легенда */}
-            <div style={{display: 'flex', gap: 10, fontSize: 14, color: '#6B4C75'}}>
-               {statsData.map((entry, index) => (
-                 <div key={index}>
-                    <span style={{color: COLORS[index % COLORS.length]}}>●</span> {entry.name}
-                 </div>
-               ))}
-            </div>
           </div>
         )}
       </div>
 
-      {/* Нижнее меню навигации */}
-      <div className="bottom-menu">
+      {/* 3. НИЖНЕЕ МЕНЮ (Tab Bar) */}
+      <div className="bottom-tab-bar">
         <button 
-          className={`menu-btn ${activeTab === 'input' ? 'active' : ''}`}
-          onClick={() => setActiveTab('input')}
+          className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('input'); WebApp.HapticFeedback.selectionChanged(); }}
         >
-          <Plus size={24} />
+          <div className="tab-icon-bg"><Plus size={24} /></div>
           <span>Ввод</span>
         </button>
         
         <button 
-          className={`menu-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
+          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}
         >
-          <LayoutGrid size={24} />
+          <div className="tab-icon-bg"><LayoutGrid size={24} /></div>
           <span>Инфо</span>
         </button>
       </div>

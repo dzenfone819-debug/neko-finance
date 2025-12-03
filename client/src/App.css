@@ -1,52 +1,57 @@
-#root {
-  width: 100%;
-  margin: 0;
-  padding: 0; /* Убрали паддинг контейнера */
-  box-sizing: border-box;
-  font-family: 'Nunito', sans-serif;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #FEC8D8;
+/* Глобальные настройки страницы */
+:root {
+  --primary: #D291BC;
+  --bg-color: #FEC8D8;
+  --text-main: #6B4C75;
+  --white: #ffffff;
 }
 
+html, body, #root {
+  height: 100%; /* Фиксируем высоту */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* ЗАПРЕЩАЕМ скролл всей страницы (лечит черный квадрат) */
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--bg-color);
+  user-select: none; /* Запрещаем выделение текста (как в приложениях) */
+  -webkit-tap-highlight-color: transparent; /* Убираем синий квадрат при тапе */
+}
+
+/* Главный контейнер - теперь это Flex-колонна */
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* На всю высоту экрана */
+  height: 100%; /* На весь экран */
   width: 100%;
-  max-width: 450px;
+  max-width: 500px; /* Ограничение для ПК */
   margin: 0 auto;
-  background: white;
+  background-color: var(--bg-color);
   position: relative;
 }
 
-/* Верхняя часть с Котом (фиксированная высота) */
+/* 1. Верхняя часть (Кот) - Фиксирована */
 .header-section {
-  flex: 1; /* Занимает всё свободное место сверху */
+  flex-shrink: 0; /* Не сжимается */
+  height: 35%; /* Занимает 35% экрана */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #FEC8D8;
-  border-bottom-left-radius: 32px;
-  border-bottom-right-radius: 32px;
-  padding-bottom: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  position: relative;
   z-index: 10;
 }
 
 .neko-avatar {
-  font-size: 100px;
+  font-size: 80px;
   filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+  transition: transform 0.2s;
 }
 
-/* Экран ввода суммы */
 .amount-display {
-  font-size: 56px;
+  font-size: 48px;
   font-weight: 800;
-  color: #6B4C75;
-  margin-top: 10px;
+  color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -54,89 +59,136 @@
 
 .currency {
   font-size: 24px;
-  color: #D291BC;
-  font-weight: 600;
+  color: var(--primary);
 }
 
-/* Нижняя часть с клавиатурой */
-.input-section {
-  padding: 20px;
-  background: white;
+/* 2. Центральная часть (Контент) - Растягивается */
+.content-area {
+  flex: 1; /* Занимает всё доступное место между шапкой и меню */
+  background: var(--white);
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
+  overflow-y: auto; /* Скролл только внутри, если контент не влезает */
+  padding: 20px 20px 80px 20px; /* Нижний паддинг, чтобы контент не залез под меню */
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
+/* --- Стили для ввода (Numpad) --- */
 .numpad-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 колонки */
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  height: 100%; /* Растягиваем на всю высоту контента */
+  align-content: center; /* Центрируем кнопки по вертикали */
 }
 
 .numpad-btn {
-  background: none;
+  background: #F8F9FA;
   border: none;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #2D3436;
-  padding: 20px 0;
+  padding: 15px 0;
   border-radius: 16px;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  transition: background 0.1s;
+}
+
+.numpad-btn:active {
+  background: #E0E0E0;
 }
 
 .delete-btn {
   color: #E74C3C;
+  background: #FFF5F5;
 }
 
+/* Кнопка "Внести" теперь часть сетки, но другого цвета */
 .numpad-confirm {
-  grid-column: span 3; /* Кнопка на всю ширину */
-  background-color: #D291BC;
+  grid-column: span 3;
+  background-color: var(--primary);
   color: white;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   border: none;
   padding: 18px;
   border-radius: 20px;
-  margin-top: 10px;
-  box-shadow: 0 10px 20px rgba(210, 145, 188, 0.4);
-}
-/* ... старый код выше ... */
-
-/* Скрываем скроллбары */
-::-webkit-scrollbar {
-  display: none;
+  margin-top: 5px;
+  box-shadow: 0 5px 15px rgba(210, 145, 188, 0.4);
 }
 
-/* Нижнее меню */
-.bottom-menu {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 10px 20px;
-  border-radius: 30px;
+/* --- Стили для Статистики --- */
+.stats-container {
   display: flex;
-  gap: 20px;
-  box-shadow: 0 5px 20px rgba(107, 76, 117, 0.15);
-  z-index: 100;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
 }
 
-.menu-btn {
+.chart-legend {
+  width: 100%;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #F9F9F9;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* 3. Нижнее меню (Tab Bar) - Как в iOS */
+.bottom-tab-bar {
+  flex-shrink: 0;
+  height: 70px; /* Фиксированная высота */
+  background: var(--white);
+  border-top: 1px solid #F0F0F0;
+  display: flex;
+  justify-content: space-around; /* Равномерное распределение */
+  align-items: center;
+  padding-bottom: 10px; /* Отступ для iPhone полоски */
+  z-index: 50;
+}
+
+.tab-btn {
   background: none;
   border: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  color: #D6D6D6; /* Серый цвет для неактивных */
-  font-weight: 700;
+  color: #C4C4C4;
   font-size: 12px;
+  font-weight: 700;
+  width: 60px;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.menu-btn.active {
-  color: #D291BC; /* Твой фирменный цвет */
-  transform: scale(1.1);
+.tab-btn.active {
+  color: var(--primary);
+}
+
+.tab-icon-bg {
+  padding: 8px 20px;
+  border-radius: 20px;
+  transition: 0.3s;
+}
+
+.tab-btn.active .tab-icon-bg {
+  background-color: #FFF0F5;
 }
