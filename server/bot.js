@@ -22,11 +22,11 @@ function startBot(botToken, db, geminiKey) {
   const genAI = new GoogleGenerativeAI(geminiKey)
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json"
-    }
-  });
+  model: "gemini-1.5-flash-latest", // <-- Изменили тут
+  generationConfig: {
+    responseMimeType: "application/json"
+  }
+});
 
   const SYSTEM_PROMPT = `
   Ты финансовый ассистент. Твоя задача - извлечь сумму расхода и категорию из сообщения пользователя.
