@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import WebApp from '@twa-dev/sdk' // Импортируем мостик к Телеграму
+import WebApp from '@twa-dev/sdk'
 import { NumPad } from './components/NumPad'
 import './App.css'
 
@@ -11,19 +11,35 @@ function App() {
   const [totalSpent, setTotalSpent] = useState(0)
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
+  // // NEW: Храним ID пользователя
+  const [userId, setUserId] = useState<number | null>(null)
   
   useEffect(() => {
-    // Сообщаем Телеграму, что приложение готово
+    // Инициализация
     WebApp.ready();
-    // Растягиваем на весь экран
     WebApp.expand();
-    
-    fetchBalance();
+
+    // 1. ОПРЕДЕЛЯЕМ КТО ЭТО
+    let currentUserId = 777; // ID по умолчанию для тестов в браузере
+
+    // Если открыто внутри Телеграма — берем настоящий ID
+    if (WebApp.initDataUnsafe.user) {
+      currentUserId = WebApp.initDataUnsafe.user.id;
+    }
+
+    setUserId(currentUserId);
+    console.log('Текущий User ID:', currentUserId);
+
+    // Загружаем баланс ЭТОГО пользователя
+    fetchBalance(currentUserId);
   }, [])
 
-  const fetchBalance = async () => {
+  const fetchBalance = async (uid: number) => {
     try {
-      const response = await fetch(`${API_URL}/balance`);
+      // // NEW: Передаем ID в заголовке x-user-id
+      const response = await fetch(`${API_URL}/balance`, {
+        headers: { 'x-user-id': uid.toString() }
+      });
       const data = await response.json();
       setTotalSpent(data.total);
     } catch (error) {
@@ -32,28 +48,22 @@ function App() {
   }
 
   const handleNumberClick = (num: string) => {
-    // 1. Легкая вибрация при клике (как на iPhone)
     WebApp.HapticFeedback.impactOccurred('light');
-
     if (amount.length >= 6) return;
     if (num === '.' && amount.includes('.')) return;
-    
     setAmount(prev => prev + num)
     setIsError(false)
   }
 
   const handleDelete = () => {
-    // Вибрация чуть пожестче при удалении
     WebApp.HapticFeedback.impactOccurred('medium');
-    
     setAmount(prev => prev.slice(0, -1))
     setIsError(false)
   }
 
   const handleConfirm = async () => {
     const value = parseFloat(amount);
-
-    if (!amount || amount === '.' || isNaN(value) || value <= 0) {
+    if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) {
       triggerError();
       return;
     }
@@ -61,17 +71,18 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/add-expense`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': userId.toString() // // NEW: Отправляем ID
+        },
         body: JSON.stringify({ amount: value })
       });
 
       if (response.ok) {
-        // 2. Вибрация УСПЕХА (приятная дрожь)
         WebApp.HapticFeedback.notificationOccurred('success');
-        
         setIsHappy(true);
         setAmount('');
-        fetchBalance();
+        fetchBalance(userId); // Обновляем баланс
         setTimeout(() => setIsHappy(false), 3000);
       } else {
         triggerError();
@@ -82,9 +93,7 @@ function App() {
   }
 
   const triggerError = () => {
-    // 3. Вибрация ОШИБКИ (двойной стук)
     WebApp.HapticFeedback.notificationOccurred('error');
-    
     setIsError(true);
     setTimeout(() => setIsError(false), 500);
   }
@@ -93,7 +102,7 @@ function App() {
     <div className="app-container">
       <div className="header-section">
         <div style={{ position: 'absolute', top: 20, right: 20, textAlign: 'right' }}>
-          <span style={{ fontSize: 12, color: '#9E9E9E' }}>Всего потрачено:</span>
+          <span style={{ fontSize: 12, color: '#9E9E9E' }}>Личный баланс:</span>
           <div style={{ fontSize: 18, fontWeight: 'bold', color: '#6B4C75' }}>
             {totalSpent.toLocaleString()} ₽
           </div>

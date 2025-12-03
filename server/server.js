@@ -3,63 +3,83 @@ const cors = require('@fastify/cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
-// 1. Статика (Наш Фронтенд)
-// Мы говорим серверу: "Если просят сайт, отдай файлы из папки client/dist"
+// Раздача фронтенда
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, '../client/dist'),
 })
 
 fastify.register(cors, { origin: true })
 
-// 2. База Данных
 const db = new sqlite3.Database('./database.db', (err) => {
   if (err) console.error('Ошибка БД:', err.message)
   else console.log('Подключено к SQLite')
 })
 
+// Создание таблицы (с поддержкой user_id)
 db.serialize(() => {
+  // Мы создаем таблицу, если её нет
   db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       amount REAL,
       category TEXT,
-      date TEXT
+      date TEXT,
+      user_id INTEGER  -- // NEW: Колонка для владельца
     )
   `)
+  
+  // // NEW: Хак для миграции (если таблица уже была старой)
+  // Пытаемся добавить колонку, если её нет. Ошибку игнорируем (если колонка есть).
+  db.run("ALTER TABLE transactions ADD COLUMN user_id INTEGER", () => {})
 })
 
-// 3. API Маршруты
+// --- API ---
 
-// ВАЖНО: API теперь должны отличаться от обычных страниц, 
-// но так как у нас SPA, можно оставить как есть, главное не перекрывать имена файлов.
-
+// Добавить расход
 fastify.post('/add-expense', (request, reply) => {
   const { amount } = request.body
-  const query = `INSERT INTO transactions (amount, category, date) VALUES (?, ?, ?)`
+  // // NEW: Получаем ID пользователя из заголовков запроса
+  const userId = request.headers['x-user-id']
+
+  if (!userId) {
+    return reply.code(400).send({ error: 'User ID is required' })
+  }
+
+  const query = `INSERT INTO transactions (amount, category, date, user_id) VALUES (?, ?, ?, ?)`
   const now = new Date().toISOString()
   
-  db.run(query, [amount, 'general', now], function(err) {
+  // // NEW: Записываем userId в базу
+  db.run(query, [amount, 'general', now, userId], function(err) {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send({ id: this.lastID, status: 'saved', amount: amount })
   })
 })
 
+// Получить баланс конкретного пользователя
 fastify.get('/balance', (request, reply) => {
-  db.get("SELECT SUM(amount) as total FROM transactions", [], (err, row) => {
+  // // NEW: Получаем ID из заголовков
+  const userId = request.headers['x-user-id']
+
+  if (!userId) {
+    return reply.code(400).send({ error: 'User ID is required' })
+  }
+
+  // // NEW: Фильтруем данные: WHERE user_id = ?
+  db.get("SELECT SUM(amount) as total FROM transactions WHERE user_id = ?", [userId], (err, row) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send({ total: row.total || 0 })
   })
 })
 
-// Если ввели неизвестный адрес — отдаем главную страницу (для React Router в будущем)
+// Обработка любых других путей (для React)
 fastify.setNotFoundHandler((req, res) => {
   res.sendFile('index.html')
 })
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000, host: '0.0.0.0' }) // 0.0.0.0 важно для доступа извне
-    console.log('Сервер Neko Finance запущен на порту 3000')
+    await fastify.listen({ port: 3000, host: '0.0.0.0' })
+    console.log('Сервер запущен')
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)
