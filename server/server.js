@@ -84,68 +84,90 @@ fastify.post('/add-expense', (request, reply) => {
   })
 })
 
-// Получить баланс (Доходы - Расходы)
+// --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ SQL ---
+// Формирует условие WHERE для фильтрации по месяцу
+const getDateFilter = (query) => {
+  const { month, year } = query;
+  if (month !== undefined && year !== undefined) {
+    // В JS месяцы 0-11, но мы будем слать 1-12. 
+    // SQLite хранит даты как "YYYY-MM-DD..."
+    // Нам нужно привести 3 к "03"
+    const m = month.toString().padStart(2, '0');
+    const y = year.toString();
+    // Фильтр: дата начинается с "2024-03"
+    return {
+      sql: ` AND strftime('%Y-%m', date) = ? `,
+      params: [`${y}-${m}`]
+    };
+  }
+  return { sql: '', params: [] };
+}
+
+// 1. БАЛАНС (С учетом месяца)
 fastify.get('/balance', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  // SQL Магия: Если income, то прибавляем, иначе вычитаем (но мы храним суммы положительными)
-  // Проще посчитать две суммы
+  const filter = getDateFilter(request.query);
+
   const sql = `
     SELECT 
       SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
       SUM(CASE WHEN type = 'expense' OR type IS NULL THEN amount ELSE 0 END) as total_expense
     FROM transactions 
-    WHERE user_id = ?
+    WHERE user_id = ? ${filter.sql}
   `
 
-  db.get(sql, [userId], (err, row) => {
+  db.get(sql, [userId, ...filter.params], (err, row) => {
     if (err) reply.code(500).send({ error: err.message })
     else {
       const income = row.total_income || 0
       const expense = row.total_expense || 0
-      // Баланс = Заработал - Потратил
-      // Но для Кота "Потрачено" (totalSpent) это именно расходы.
-      // Давай вернем всё, чтобы фронтенд решал.
       reply.send({ 
-        balance: income - expense, // Текущий остаток денег
-        total_expense: expense,    // Всего потрачено (для прогресс бара)
-        total_income: income       // Всего заработано
+        balance: income - expense, // Остаток за ЭТОТ месяц
+        total_expense: expense,
+        total_income: income
       })
     }
   })
 })
 
-// Статистика (ТОЛЬКО РАСХОДЫ для графика)
+// 2. СТАТИСТИКА (С учетом месяца)
 fastify.get('/stats', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
+  const filter = getDateFilter(request.query);
+
   const sql = `
     SELECT category, SUM(amount) as value 
     FROM transactions 
-    WHERE user_id = ? AND (type = 'expense' OR type IS NULL)
+    WHERE user_id = ? AND (type = 'expense' OR type IS NULL) ${filter.sql}
     GROUP BY category
   `
-  db.all(sql, [userId], (err, rows) => {
+  db.all(sql, [userId, ...filter.params], (err, rows) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send(rows.map(r => ({ name: r.category, value: r.value })))
   })
 })
 
-// История (Всё вместе, но возвращаем тип)
+// 3. ИСТОРИЯ (С учетом месяца)
 fastify.get('/transactions', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
+  const filter = getDateFilter(request.query);
+
   const sql = `
     SELECT id, amount, category, date, type
     FROM transactions 
-    WHERE user_id = ? 
-    ORDER BY id DESC 
-    LIMIT 20
+    WHERE user_id = ? ${filter.sql}
+    ORDER BY date DESC, id DESC 
+    LIMIT 100 
   `
-  db.all(sql, [userId], (err, rows) => {
+  // Увеличили лимит до 100, так как мы теперь смотрим конкретный месяц
+  
+  db.all(sql, [userId, ...filter.params], (err, rows) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send(rows)
   })
