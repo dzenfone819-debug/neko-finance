@@ -3,16 +3,17 @@ import { motion } from 'framer-motion';
 import { CATEGORIES } from '../data/constants';
 
 interface Props {
-  stats: { name: string; value: number }[]; // Сколько потрачено
-  limits: Record<string, number>; // Лимиты { food: 5000 }
+  stats: { name: string; value: number }[];
+  limits: Record<string, number>;
   totalLimit: number;
-  onUpdateLimit: (category: string, newLimit: number) => void;
-  onUpdateTotal: () => void;
+  // Теперь мы просто просим открыть редактор, а не передаем сразу значение
+  onEditCategory: (categoryId: string) => void; 
+  onEditTotal: () => void;
 }
 
-export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, onUpdateLimit, onUpdateTotal }) => {
+export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, onEditCategory, onEditTotal }) => {
   
-  // Вспомогательная функция для отрисовки одного бара
+  // Рендер одной полоски
   const renderBar = (title: string, spent: number, limit: number, color: string, onClick: () => void, icon?: React.ReactNode) => {
     const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
     const isOver = spent > limit && limit > 0;
@@ -26,12 +27,11 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, onUpdat
           </div>
           <div style={{ color: isOver ? '#E74C3C' : '#6B4C75' }}>
             <span style={{ fontWeight: 'bold' }}>{spent}</span> 
-            <span style={{ opacity: 0.6 }}> / {limit > 0 ? limit : '∞'} ₽</span>
+            <span style={{ opacity: 0.6 }}> / {limit > 0 ? limit : '∞'}</span>
           </div>
         </div>
 
-        {/* Фон бара */}
-        <div style={{ width: '100%', height: 10, background: '#F0F0F0', borderRadius: 5, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ width: '100%', height: 10, background: '#F0F0F0', borderRadius: 5, overflow: 'hidden' }}>
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
@@ -47,7 +47,6 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, onUpdat
     );
   };
 
-  // Считаем общую сумму трат
   const totalSpent = stats.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
@@ -56,10 +55,8 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, onUpdat
       {/* 1. ОБЩИЙ БЮДЖЕТ */}
       <div style={{ background: '#FFF0F5', padding: 15, borderRadius: 20, marginBottom: 20 }}>
         <h3 style={{ margin: '0 0 10px 0', color: '#6B4C75', fontSize: 16 }}>Общий бюджет</h3>
-        {renderBar('Всего', totalSpent, totalLimit, '#D291BC', onUpdateTotal)}
-        <div style={{ fontSize: 11, color: '#9E9E9E', marginTop: 5 }}>
-          Нажмите, чтобы изменить общий лимит
-        </div>
+        {/* Клик открывает модалку общего бюджета */}
+        {renderBar('Всего', totalSpent, totalLimit, '#D291BC', onEditTotal)}
       </div>
 
       {/* 2. ПО КАТЕГОРИЯМ */}
@@ -67,23 +64,14 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, onUpdat
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {CATEGORIES.map((cat) => {
-          // Ищем, сколько потрачено в этой категории
           const stat = stats.find(s => s.name === cat.id);
           const spent = stat ? stat.value : 0;
           const limit = limits[cat.id] || 0;
 
-          // Если лимита нет и трат нет - можно не показывать (или показывать, чтобы настроить)
-          // Давай показывать всё, чтобы можно было настроить.
-          
           return (
             <div key={cat.id}>
-              {renderBar(cat.name, spent, limit, cat.color, () => {
-                const input = prompt(`Лимит для "${cat.name}" (0 - без лимита):`, limit.toString());
-                if (input !== null) {
-                  const val = parseFloat(input);
-                  if (!isNaN(val)) onUpdateLimit(cat.id, val);
-                }
-              }, cat.icon)}
+              {/* Клик открывает модалку категории */}
+              {renderBar(cat.name, spent, limit, cat.color, () => onEditCategory(cat.id), cat.icon)}
             </div>
           )
         })}

@@ -9,7 +9,7 @@ import { StatsView } from './components/StatsView'
 import { TransactionList } from './components/TransactionList'
 import { BudgetStatus } from './components/BudgetStatus'
 import { BudgetView } from './components/BudgetView'
-import { ModalInput } from './components/ModalInput' // NEW
+import { ModalInput } from './components/ModalInput'
 import { CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -26,7 +26,6 @@ function App() {
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
 
-  // NEW: Состояние для модального окна
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<{type: 'total' | 'category', id?: string} | null>(null)
 
@@ -49,20 +48,21 @@ function App() {
     } catch (e) { console.error(e) }
   }
 
-  // --- ОТКРЫТИЕ МОДАЛКИ ---
+  // ОТКРЫТИЕ МОДАЛКИ (Total)
   const openEditTotal = () => {
     WebApp.HapticFeedback.impactOccurred('light');
     setEditTarget({ type: 'total' });
     setModalOpen(true);
   }
 
+  // ОТКРЫТИЕ МОДАЛКИ (Category)
   const openEditCategory = (catId: string) => {
     WebApp.HapticFeedback.impactOccurred('light');
     setEditTarget({ type: 'category', id: catId });
     setModalOpen(true);
   }
 
-  // --- СОХРАНЕНИЕ ИЗ МОДАЛКИ ---
+  // СОХРАНЕНИЕ
   const handleModalSave = async (val: number) => {
     if (!userId || !editTarget) return;
     WebApp.HapticFeedback.notificationOccurred('success');
@@ -86,7 +86,6 @@ function App() {
     return '😸';
   }
 
-  // ... (Стандартные хендлеры: handleConfirm, handleDeleteTransaction, handleNumberClick, handleDelete, triggerError - без изменений) ...
   const handleConfirm = async () => {
     const value = parseFloat(amount);
     if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { triggerError(); return; }
@@ -119,7 +118,6 @@ function App() {
   return (
     <div className="app-container">
       
-      {/* МОДАЛКА (Рендерится поверх всего) */}
       <ModalInput 
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -136,7 +134,7 @@ function App() {
           {getNekoMood()}
         </motion.div>
         
-        {/* Чистый бар без кнопок */}
+        {/* ИСПРАВЛЕНО: Бар теперь показывается всегда, даже если лимит 0 */}
         <BudgetStatus total={totalSpent} limit={budgetLimit} />
 
         {activeTab === 'input' ? (
@@ -192,9 +190,9 @@ function App() {
                stats={statsData}
                limits={catLimits}
                totalLimit={budgetLimit}
-               // Теперь передаем открытие модалки
-               onUpdateLimit={(catId) => openEditCategory(catId)}
-               onUpdateTotal={openEditTotal}
+               // ИСПРАВЛЕНО: Теперь открывает модалку категории
+               onEditCategory={openEditCategory}
+               onEditTotal={openEditTotal}
              />
              <div style={{ height: 80 }} />
           </div>
