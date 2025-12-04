@@ -46,3 +46,23 @@ export const deleteTransaction = async (userId: number, transactionId: number) =
   if (!response.ok) throw new Error('Failed to delete');
   return true;
 };
+
+export const fetchBudget = async (userId: number) => {
+  const response = await fetch(`${API_URL}/settings`, { 
+    headers: { 'x-user-id': userId.toString() } 
+  });
+  const data = await response.json();
+  return data.budget || 0;
+};
+
+export const setBudget = async (userId: number, budget: number) => {
+  const response = await fetch(`${API_URL}/settings`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json', 
+      'x-user-id': userId.toString() 
+    },
+    body: JSON.stringify({ budget }) 
+  });
+  return await response.json();
+};

@@ -34,6 +34,12 @@ db.serialize(() => {
       user_id INTEGER  -- // NEW: Колонка для владельца
     )
   `)
+  db.run(`
+  CREATE TABLE IF NOT EXISTS user_settings (
+    user_id INTEGER PRIMARY KEY,
+    budget_limit REAL DEFAULT 0
+  )
+`)
   
   // // NEW: Хак для миграции (если таблица уже была старой)
   // Пытаемся добавить колонку, если её нет. Ошибку игнорируем (если колонка есть).
@@ -100,6 +106,31 @@ fastify.get('/stats', (request, reply) => {
       const data = rows.map(r => ({ name: r.category, value: r.value }))
       reply.send(data)
     }
+  })
+})
+
+// Получить настройки (Лимит)
+fastify.get('/settings', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  db.get("SELECT budget_limit FROM user_settings WHERE user_id = ?", [userId], (err, row) => {
+    if (err) reply.code(500).send({ error: err.message })
+    else reply.send({ budget: row ? row.budget_limit : 0 })
+  })
+})
+
+// Обновить лимит
+fastify.post('/settings', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const { budget } = request.body
+  
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  // Используем REPLACE INTO - это как "Вставь или Обнови"
+  db.run("REPLACE INTO user_settings (user_id, budget_limit) VALUES (?, ?)", [userId, budget], (err) => {
+    if (err) reply.code(500).send({ error: err.message })
+    else reply.send({ status: 'ok', budget })
   })
 })
 // --- ИСТОРИЯ И УДАЛЕНИЕ ---

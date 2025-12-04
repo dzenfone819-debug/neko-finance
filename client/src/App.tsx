@@ -6,7 +6,8 @@ import './App.css'
 
 import { NumPad } from './components/NumPad'
 import { StatsView } from './components/StatsView'
-import { TransactionList } from './components/TransactionList' // NEW
+import { TransactionList } from './components/TransactionList'
+import { BudgetStatus } from './components/BudgetStatus' // NEW
 import { CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -15,8 +16,9 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('groceries')
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
+  const [budgetLimit, setBudgetLimit] = useState(0) // NEW
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
-  const [transactions, setTransactions] = useState<any[]>([]) // NEW
+  const [transactions, setTransactions] = useState<any[]>([])
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
@@ -38,11 +40,13 @@ function App() {
     try {
       const balance = await api.fetchBalance(uid);
       const stats = await api.fetchStats(uid);
-      const history = await api.fetchTransactions(uid); // NEW
+      const history = await api.fetchTransactions(uid);
+      const budget = await api.fetchBudget(uid); // NEW
 
       setTotalSpent(balance);
       setStatsData(stats);
-      setTransactions(history); // NEW
+      setTransactions(history);
+      setBudgetLimit(budget); // NEW
     } catch (e) { console.error(e) }
   }
 
@@ -62,14 +66,40 @@ function App() {
     } catch { triggerError(); }
   }
 
-  // NEW: Функция удаления
   const handleDeleteTransaction = async (id: number) => {
     if (!userId) return;
     WebApp.HapticFeedback.impactOccurred('medium');
     try {
       await api.deleteTransaction(userId, id);
-      loadData(userId); // Пересчитать всё
+      loadData(userId);
     } catch { triggerError(); }
+  }
+
+  // NEW: Редактирование бюджета
+  const handleEditBudget = async () => {
+    WebApp.HapticFeedback.impactOccurred('medium');
+    const input = prompt("Установите месячный бюджет (₽):", budgetLimit ? budgetLimit.toString() : "0");
+    if (input !== null && userId) {
+      const newLimit = parseFloat(input);
+      if (!isNaN(newLimit) && newLimit >= 0) {
+        await api.setBudget(userId, newLimit);
+        loadData(userId);
+      }
+    }
+  }
+
+  // NEW: Логика эмоций
+  const getNekoMood = () => {
+    if (isError) return '🙀';
+    if (isHappy) return '😻';
+    
+    if (budgetLimit > 0) {
+      const percent = totalSpent / budgetLimit;
+      if (percent >= 1.0) return '💀'; // Превышение
+      if (percent > 0.85) return '😿'; // Почти всё
+      if (percent > 0.5) return '😾'; // Половина прошла
+    }
+    return '😸'; // Обычный
   }
 
   const handleNumberClick = (num: string) => {
@@ -104,15 +134,22 @@ function App() {
           }
           className="neko-avatar"
         >
-          {isError ? '🙀' : (isHappy ? '😻' : '😿')}
+          {getNekoMood()} {/* Используем умную функцию */}
         </motion.div>
         
+        {/* NEW: Прогресс бар под котом */}
+        <BudgetStatus 
+          total={totalSpent} 
+          limit={budgetLimit} 
+          onEdit={handleEditBudget} 
+        />
+
         {activeTab === 'input' ? (
            <motion.div className="amount-display">
              {amount || '0'} <span className="currency">₽</span>
            </motion.div>
         ) : (
-          <div style={{fontSize: 24, color: '#6B4C75', fontWeight: 'bold', marginTop: 10}}>
+          <div style={{fontSize: 24, color: '#6B4C75', fontWeight: 'bold', marginTop: 5}}>
             Ваши траты
           </div>
         )}
@@ -152,20 +189,13 @@ function App() {
             />
           </>
         ) : (
-          /* --- СТАТИСТИКА И ИСТОРИЯ --- */
           <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
-            
             <StatsView data={statsData} total={totalSpent} />
-            
             <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
-            
-            {/* Наш новый компонент списка */}
             <TransactionList 
               transactions={transactions} 
               onDelete={handleDeleteTransaction} 
             />
-            
-            {/* Отступ, чтобы список не прятался под меню */}
             <div style={{ height: 80 }} /> 
           </div>
         )}
