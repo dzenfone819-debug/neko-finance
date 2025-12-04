@@ -66,3 +66,20 @@ export const setBudget = async (userId: number, budget: number) => {
   });
   return await response.json();
 };
+
+// Получить лимиты категорий
+export const fetchCategoryLimits = async (userId: number) => {
+  const response = await fetch(`${API_URL}/limits`, { 
+    headers: { 'x-user-id': userId.toString() } 
+  });
+  return await response.json(); // Вернет объект { food: 1000, ... }
+};
+
+// Установить лимит категории
+export const setCategoryLimit = async (userId: number, category: string, limit: number) => {
+  await fetch(`${API_URL}/limits`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ category, limit }) 
+  });
+};

@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
-import { LayoutGrid, Plus } from 'lucide-react'
+import { LayoutGrid, Plus, Target } from 'lucide-react'
 import './App.css'
 
 import { NumPad } from './components/NumPad'
 import { StatsView } from './components/StatsView'
 import { TransactionList } from './components/TransactionList'
-import { BudgetStatus } from './components/BudgetStatus' // NEW
+import { BudgetStatus } from './components/BudgetStatus'
+import { BudgetView } from './components/BudgetView' // NEW
 import { CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'input' | 'stats'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'budget'>('input')
   const [selectedCategory, setSelectedCategory] = useState('groceries')
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
-  const [budgetLimit, setBudgetLimit] = useState(0) // NEW
+  const [budgetLimit, setBudgetLimit] = useState(0)
+  const [catLimits, setCatLimits] = useState<Record<string, number>>({}) // NEW
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const [isHappy, setIsHappy] = useState(false)
@@ -41,12 +43,14 @@ function App() {
       const balance = await api.fetchBalance(uid);
       const stats = await api.fetchStats(uid);
       const history = await api.fetchTransactions(uid);
-      const budget = await api.fetchBudget(uid); // NEW
+      const budget = await api.fetchBudget(uid);
+      const limits = await api.fetchCategoryLimits(uid); // NEW
 
       setTotalSpent(balance);
       setStatsData(stats);
       setTransactions(history);
-      setBudgetLimit(budget); // NEW
+      setBudgetLimit(budget);
+      setCatLimits(limits); // NEW
     } catch (e) { console.error(e) }
   }
 
@@ -75,10 +79,10 @@ function App() {
     } catch { triggerError(); }
   }
 
-  // NEW: Редактирование бюджета
   const handleEditBudget = async () => {
+    // Эта функция теперь меняет ТОЛЬКО общий бюджет
     WebApp.HapticFeedback.impactOccurred('medium');
-    const input = prompt("Установите месячный бюджет (₽):", budgetLimit ? budgetLimit.toString() : "0");
+    const input = prompt("Общий бюджет на месяц (₽):", budgetLimit ? budgetLimit.toString() : "0");
     if (input !== null && userId) {
       const newLimit = parseFloat(input);
       if (!isNaN(newLimit) && newLimit >= 0) {
@@ -88,34 +92,37 @@ function App() {
     }
   }
 
-  // NEW: Логика эмоций
+  // NEW: Обновление лимита категории
+  const handleUpdateCategoryLimit = async (category: string, limit: number) => {
+    if (!userId) return;
+    WebApp.HapticFeedback.impactOccurred('medium');
+    await api.setCategoryLimit(userId, category, limit);
+    loadData(userId);
+  }
+
   const getNekoMood = () => {
     if (isError) return '🙀';
     if (isHappy) return '😻';
-    
     if (budgetLimit > 0) {
       const percent = totalSpent / budgetLimit;
-      if (percent >= 1.0) return '💀'; // Превышение
-      if (percent > 0.85) return '😿'; // Почти всё
-      if (percent > 0.5) return '😾'; // Половина прошла
+      if (percent >= 1.0) return '💀';
+      if (percent > 0.85) return '😿';
+      if (percent > 0.5) return '😾';
     }
-    return '😸'; // Обычный
+    return '😸';
   }
 
+  // --- Стандартные хендлеры ---
   const handleNumberClick = (num: string) => {
     WebApp.HapticFeedback.impactOccurred('light');
     if (amount.length >= 6) return;
     if (num === '.' && amount.includes('.')) return;
-    setAmount(prev => prev + num)
-    setIsError(false)
+    setAmount(prev => prev + num); setIsError(false);
   }
-
   const handleDelete = () => {
     WebApp.HapticFeedback.impactOccurred('medium');
-    setAmount(prev => prev.slice(0, -1))
-    setIsError(false)
+    setAmount(prev => prev.slice(0, -1)); setIsError(false);
   }
-
   const triggerError = () => {
     WebApp.HapticFeedback.notificationOccurred('error');
     setIsError(true);
@@ -125,39 +132,33 @@ function App() {
   return (
     <div className="app-container">
       
+      {/* HEADER: Всегда показывает Кота и Общий статус */}
       <div className="header-section">
         <motion.div 
-          animate={
-            isError ? { rotate: [0, -20, 20, 0] } :
-            isHappy ? { scale: 1.1, y: [0, -10, 0] } : 
-            { scale: 1, y: 0 }
-          }
+          animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
           className="neko-avatar"
         >
-          {getNekoMood()} {/* Используем умную функцию */}
+          {getNekoMood()}
         </motion.div>
         
-        {/* NEW: Прогресс бар под котом */}
-        <BudgetStatus 
-          total={totalSpent} 
-          limit={budgetLimit} 
-          onEdit={handleEditBudget} 
-        />
+        {/* Показываем общий бар, но без кнопки настроек (она дублируется, но не страшно) */}
+        {/* Можно кликнуть и тут, чтобы быстро сменить общий лимит */}
+        <BudgetStatus total={totalSpent} limit={budgetLimit} onEdit={handleEditBudget} />
 
         {activeTab === 'input' ? (
            <motion.div className="amount-display">
              {amount || '0'} <span className="currency">₽</span>
            </motion.div>
         ) : (
-          <div style={{fontSize: 24, color: '#6B4C75', fontWeight: 'bold', marginTop: 5}}>
-            Ваши траты
+          <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold', marginTop: 5}}>
+            {activeTab === 'stats' ? 'Статистика' : 'Бюджет'}
           </div>
         )}
       </div>
 
-      <div className={`content-area ${activeTab === 'stats' ? 'stats-mode' : ''}`}>
+      <div className={`content-area ${activeTab !== 'input' ? 'stats-mode' : ''}`}>
         
-        {activeTab === 'input' ? (
+        {activeTab === 'input' && (
           <>
             <div className="categories-wrapper">
               <div className="categories-scroll">
@@ -165,10 +166,7 @@ function App() {
                   <motion.button
                     key={cat.id}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => { 
-                      setSelectedCategory(cat.id); 
-                      WebApp.HapticFeedback.selectionChanged(); 
-                    }}
+                    onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }}
                     className="category-btn"
                     style={{
                       background: selectedCategory === cat.id ? cat.color : '#F8F9FA',
@@ -181,41 +179,49 @@ function App() {
                 ))}
               </div>
             </div>
-
-            <NumPad 
-              onNumberClick={handleNumberClick}
-              onDelete={handleDelete}
-              onConfirm={handleConfirm}
-            />
+            <NumPad onNumberClick={handleNumberClick} onDelete={handleDelete} onConfirm={handleConfirm} />
           </>
-        ) : (
+        )}
+
+        {activeTab === 'stats' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
             <StatsView data={statsData} total={totalSpent} />
             <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
-            <TransactionList 
-              transactions={transactions} 
-              onDelete={handleDeleteTransaction} 
-            />
+            <TransactionList transactions={transactions} onDelete={handleDeleteTransaction} />
             <div style={{ height: 80 }} /> 
+          </div>
+        )}
+
+        {/* NEW: Вкладка Бюджета */}
+        {activeTab === 'budget' && (
+          <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+            <BudgetView 
+               stats={statsData}
+               limits={catLimits}
+               totalLimit={budgetLimit}
+               onUpdateLimit={handleUpdateCategoryLimit}
+               onUpdateTotal={handleEditBudget}
+             />
+             <div style={{ height: 80 }} />
           </div>
         )}
       </div>
 
+      {/* BOTTOM MENU (3 TABS) */}
       <div className="bottom-tab-bar">
-        <button 
-          className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('input'); WebApp.HapticFeedback.selectionChanged(); }}
-        >
+        <button className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`} onClick={() => { setActiveTab('input'); WebApp.HapticFeedback.selectionChanged(); }}>
           <div className="tab-icon-bg"><Plus size={24} /></div>
           <span>Ввод</span>
         </button>
         
-        <button 
-          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}
-        >
+        <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}>
           <div className="tab-icon-bg"><LayoutGrid size={24} /></div>
           <span>Инфо</span>
+        </button>
+
+        <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}>
+          <div className="tab-icon-bg"><Target size={24} /></div>
+          <span>Бюджет</span>
         </button>
       </div>
 

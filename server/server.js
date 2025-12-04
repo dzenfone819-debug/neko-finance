@@ -40,6 +40,15 @@ db.serialize(() => {
     budget_limit REAL DEFAULT 0
   )
 `)
+  db.run(`
+  CREATE TABLE IF NOT EXISTS category_limits (
+    user_id INTEGER,
+    category_id TEXT,
+    limit_amount REAL,
+    PRIMARY KEY (user_id, category_id)
+  )
+`)
+
   
   // // NEW: Хак для миграции (если таблица уже была старой)
   // Пытаемся добавить колонку, если её нет. Ошибку игнорируем (если колонка есть).
@@ -132,6 +141,39 @@ fastify.post('/settings', (request, reply) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send({ status: 'ok', budget })
   })
+})
+
+// Получить все лимиты категорий пользователя
+fastify.get('/limits', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
+    if (err) reply.code(500).send({ error: err.message })
+    else {
+      // Превращаем массив в объект { food: 5000, taxi: 2000 }
+      const limits = {}
+      rows.forEach(r => limits[r.category_id] = r.limit_amount)
+      reply.send(limits)
+    }
+  })
+})
+
+// Установить лимит для конкретной категории
+fastify.post('/limits', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const { category, limit } = request.body
+
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  db.run(
+    "REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", 
+    [userId, category, limit], 
+    (err) => {
+      if (err) reply.code(500).send({ error: err.message })
+      else reply.send({ status: 'ok' })
+    }
+  )
 })
 // --- ИСТОРИЯ И УДАЛЕНИЕ ---
 
