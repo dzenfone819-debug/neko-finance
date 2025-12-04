@@ -22,40 +22,34 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  position: relative;
-  background-color: var(--bg-color);
+  background: #FEC8D8; /* Розовый фон */
+  /* Удален overflow: hidden, чтобы можно было скроллить контент */
 }
 
 /* --- 1. ВЕРХНЯЯ ЧАСТЬ (Резиновая) --- */
 /* Она сжимается, если места мало */
 .header-section {
-  flex: 1; /* Занимай всё свободное место */
+  flex: 0 0 auto; /* Убрали жесткую высоту 35% */
+  padding: 20px 0 15px 0; /* Уменьшили верхний и нижний отступы */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100px; /* Но не исчезай совсем */
-  padding-bottom: 10px;
+  position: relative; /* Чтобы кот не вылезал */
 }
 
 .neko-avatar {
-  font-size: 80px;
-  /* Адаптивный размер шрифта в зависимости от высоты экрана */
-  font-size: min(80px, 15vh); 
-  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
-  transition: transform 0.2s;
+  font-size: 64px; /* Было 80px. Уменьшили кота */
+  margin-bottom: 10px; /* Было 20px. Уменьшили отступ снизу */
+  line-height: 1;
 }
 
 .amount-display {
-  font-size: 42px;
-  font-weight: 800;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  font-size: 48px; /* Было 64px. Уменьшили шрифт суммы */
+  font-weight: bold;
+  color: #6B4C75;
+  margin-top: 10px; /* Было 20px. Уменьшили отступ сверху */
+  /* Удален абсолютный позишн и трансформ */
 }
 
 /* --- 2. НИЖНЯЯ ЧАСТЬ (Белая карточка) --- */
