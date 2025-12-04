@@ -15,29 +15,27 @@ export const BudgetStatus: React.FC<Props> = ({ total, limit }) => {
   if (total > limit && limit > 0) color = '#E74C3C';
 
   return (
-    // Ширина 70%, минимальные отступы
-    <div style={{ width: '70%', marginBottom: 5, marginTop: 5 }}>
-      {/* Текст очень маленький */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6B4C75', marginBottom: 2, fontWeight: 'bold', opacity: 0.8 }}>
-        <span>
-          {limit > 0 ? `${Math.round(percentage)}%` : 'Нет лимита'}
-        </span>
-        <span>
-          {limit > 0 ? `${limit.toLocaleString()} ₽` : ''}
-        </span>
+    // БЫЛО: width: '85%'
+    // СТАЛО: width: '100%' (занимает всё место в правой колонке)
+    <div style={{ width: '100%', marginBottom: 2 }}>
+      {/* Текст */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6B4C75', marginBottom: 3, fontWeight: 'bold', opacity: 0.8 }}>
+        <span>{limit > 0 ? 'Бюджет' : 'Лимит не задан'}</span>
+        <span>{limit > 0 ? `${Math.round(percentage)}%` : ''}</span>
       </div>
 
+      {/* Бар */}
       <div style={{ 
-        width: '100%', height: 6, background: 'rgba(255,255,255,0.5)', 
-        borderRadius: 4, overflow: 'hidden',
-        border: limit === 0 ? '1px dashed #D6D6D6' : 'none' 
+        width: '100%', height: 8, background: 'rgba(255,255,255,0.6)', 
+        borderRadius: 6, overflow: 'hidden',
+        border: limit === 0 ? '1px dashed rgba(107, 76, 117, 0.2)' : 'none' 
       }}>
         {limit > 0 && (
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
             transition={{ duration: 1 }}
-            style={{ height: '100%', background: color, borderRadius: 4 }}
+            style={{ height: '100%', background: color, borderRadius: 6 }}
           />
         )}
       </div>

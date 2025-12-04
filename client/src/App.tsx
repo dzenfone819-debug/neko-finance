@@ -125,29 +125,54 @@ function App() {
       <ModalInput isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleModalSave} title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'} initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)} />
 
       <div className="header-section">
-        {/* NEW: Селектор месяца в самом верху */}
+        {/* 1. Дата сверху (Компактно) */}
         <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
 
-        <motion.div animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }} className="neko-avatar">
-          {getNekoMood()}
-        </motion.div>
-        
-        <BudgetStatus total={totalSpent} limit={budgetLimit} />
-        
-        {activeTab === 'input' && (
-          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', marginTop: 8, marginBottom: 2, opacity: 0.7 }}>
-            Доступно: {displayBalance.toLocaleString()} ₽
-          </div>
-        )}
+        {/* 2. Геройский блок (Кот + Статистика в ряд) */}
+        <div className="hero-row">
+          {/* Кот Слева */}
+          <motion.div 
+            animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+            className="neko-avatar"
+          >
+            {getNekoMood()}
+          </motion.div>
 
+          {/* Инфо Справа (Прогресс бар и Доступно) */}
+          <div className="info-block">
+            {/* Статус бюджета (Бар) */}
+            <BudgetStatus total={totalSpent} limit={budgetLimit} />
+            
+            {/* Доступно (Текст под баром) */}
+            {activeTab === 'input' && (
+              <div style={{ 
+                fontSize: 12, fontWeight: '600', color: '#6B4C75', 
+                opacity: 0.7, marginTop: 2, textAlign: 'right' 
+              }}>
+                Остаток: <span style={{fontWeight: '800'}}>{displayBalance.toLocaleString()} ₽</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Сумма ввода (По центру снизу) */}
         {activeTab === 'input' ? (
-           <motion.div className="amount-display">
-             <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>{amount || '0'}</span> 
+           <motion.div 
+             className="amount-display"
+             // Анимация при наборе цифр
+             key={amount} 
+             initial={{ scale: 0.95, opacity: 0.5 }}
+             animate={{ scale: 1, opacity: 1 }}
+             transition={{ duration: 0.1 }}
+           >
+             <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>
+               {amount || '0'}
+             </span> 
              <span className="currency">₽</span>
            </motion.div>
         ) : (
-          <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold', marginTop: 5}}>
-            {activeTab === 'stats' ? 'Статистика' : 'Бюджет'}
+          <div style={{fontSize: 20, color: '#6B4C75', fontWeight: 'bold', marginTop: 10}}>
+            {activeTab === 'stats' ? 'Статистика' : 'Настройка Бюджета'}
           </div>
         )}
       </div>

@@ -27,24 +27,28 @@ export const MonthSelector: React.FC<Props> = ({ currentDate, onChange }) => {
   return (
     <div style={{ 
       display: 'flex', alignItems: 'center', justifyContent: 'center', 
-      gap: 20, marginBottom: 10, marginTop: 5 
+      gap: 10, /* Меньше отступ */
+      marginBottom: 5, marginTop: 0, /* Убрали лишние отступы */
+      paddingTop: 10, /* Небольшой отступ от "чёлки" телефона */
+      zIndex: 20
     }}>
       <button 
         onClick={() => changeMonth(-1)}
-        style={{ background: 'none', border: 'none', padding: 5, cursor: 'pointer', color: '#6B4C75', opacity: 0.6 }}
+        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
       >
-        <ChevronLeft size={24} />
+        <ChevronLeft size={20} /> {/* Чуть меньше иконка */}
       </button>
 
-      <span style={{ fontSize: 16, fontWeight: '800', color: '#6B4C75', minWidth: 120, textAlign: 'center' }}>
+      {/* Шрифт меньше и аккуратнее */}
+      <span style={{ fontSize: 14, fontWeight: '700', color: '#6B4C75', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>
         {formatMonth(currentDate)}
       </span>
 
       <button 
         onClick={() => changeMonth(1)}
-        style={{ background: 'none', border: 'none', padding: 5, cursor: 'pointer', color: '#6B4C75', opacity: 0.6 }}
+        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
       >
-        <ChevronRight size={24} />
+        <ChevronRight size={20} />
       </button>
     </div>
   );
