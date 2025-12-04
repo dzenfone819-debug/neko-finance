@@ -2,12 +2,16 @@ version: '3.8'
 
 services:
   # Наше приложение (скрыто внутри, наружу не торчит)
+  services:
   neko-app:
     build: .
     container_name: neko_finance
     restart: always
     expose:
-      - "3000" # Открываем порт ТОЛЬКО для Caddy, не для интернета
+      - "3000"
+    # ВОТ ЭТО ДОБАВИТЬ:
+    env_file:
+      - .env
     volumes:
       - ./server/database.db:/app/server/database.db
 

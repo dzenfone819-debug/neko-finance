@@ -3,8 +3,15 @@ const cors = require('@fastify/cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const { startBot } = require('./bot')
-const BOT_TOKEN = '8597578012:AAF9FmLQB5LITYyzK68A9J2ESwP150FneiI'
-const GEMINI_KEY = 'AIzaSyBx_7pTLj_PVLA-Gof5KdCYDcz0gM0IFFs' // <-- NEW
+// Берем секреты из переменных окружения
+const BOT_TOKEN = process.env.BOT_TOKEN
+const GEMINI_KEY = process.env.GEMINI_KEY
+
+// Проверка на всякий случай (чтобы не гадать, почему не работает)
+if (!BOT_TOKEN || !GEMINI_KEY) {
+  console.error('❌ ОШИБКА: Нет токенов! Проверь файл .env')
+  process.exit(1)
+}
 
 // Раздача фронтенда
 fastify.register(require('@fastify/static'), {
