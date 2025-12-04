@@ -36,7 +36,12 @@ function App() {
   const [userId, setUserId] = useState<number | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<{type: 'total' | 'category', id?: string} | null>(null)
-
+  // --- ВОТ ТУТ НОВАЯ ЛОГИКА ---
+  // Если есть бюджет - пляшем от него. Если нет - от реальных денег.
+  const displayBalance = budgetLimit > 0 
+    ? budgetLimit - totalSpent 
+    : currentBalance;
+  // ---------------------------
   useEffect(() => {
     WebApp.ready(); WebApp.expand(); WebApp.enableClosingConfirmation(); 
     let currentUserId = 777; 
@@ -129,7 +134,7 @@ function App() {
     marginBottom: 2, 
     opacity: 0.7 
   }}>
-    Доступно: {currentBalance.toLocaleString()} ₽
+    Доступно: {displayBalance.toLocaleString()} ₽
   </div>
 )}
 
