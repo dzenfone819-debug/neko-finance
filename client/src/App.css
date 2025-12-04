@@ -3,7 +3,7 @@
   --bg-color: #FEC8D8;
   --text-main: #6B4C75;
   --white: #ffffff;
-  --tab-bar-height: 70px;
+  --tab-bar-height: 65px; /* Чуть уменьшили меню */
 }
 
 html, body, #root {
@@ -11,7 +11,7 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Никакого скролла страницы */
+  overflow: hidden; /* Жесткий запрет на скролл */
   font-family: 'Nunito', sans-serif;
   background-color: var(--bg-color);
   user-select: none;
@@ -21,82 +21,92 @@ html, body, #root {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: #FEC8D8; /* Розовый фон */
-  /* Удален overflow: hidden, чтобы можно было скроллить контент */
+  height: 100vh; /* Ровно высота экрана */
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  background-color: var(--bg-color);
 }
 
-/* --- 1. ВЕРХНЯЯ ЧАСТЬ (Резиновая) --- */
-/* Она сжимается, если места мало */
+/* --- 1. ШАПКА (Ровно 30% экрана) --- */
 .header-section {
-  flex: 0 0 auto; /* Убрали жесткую высоту 35% */
-  padding: 20px 0 15px 0; /* Уменьшили верхний и нижний отступы */
+  height: 30vh; /* Фиксированная высота */
+  min-height: 160px; /* Чтобы не сплющило совсем на старых телефонах */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: relative; /* Чтобы кот не вылезал */
+  justify-content: center; /* Центрируем кота и сумму */
+  position: relative;
+  flex-shrink: 0; /* Не даем шапке сжиматься */
 }
 
 .neko-avatar {
-  font-size: 64px; /* Было 80px. Уменьшили кота */
-  margin-bottom: 10px; /* Было 20px. Уменьшили отступ снизу */
+  font-size: 50px; /* Компактный кот */
   line-height: 1;
+  margin-bottom: 5px;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
 }
 
 .amount-display {
-  font-size: 48px; /* Было 64px. Уменьшили шрифт суммы */
-  font-weight: bold;
-  color: #6B4C75;
-  margin-top: 10px; /* Было 20px. Уменьшили отступ сверху */
-  /* Удален абсолютный позишн и трансформ */
+  font-size: 36px; /* Компактная сумма */
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  line-height: 1;
 }
 
-/* --- 2. НИЖНЯЯ ЧАСТЬ (Белая карточка) --- */
+.currency { font-size: 20px; color: var(--primary); }
+
+/* --- 2. КОНТЕНТ (Остальные 70%) --- */
 .content-area {
+  flex: 1; /* Занимает всё оставшееся место */
   background: var(--white);
   border-top-left-radius: 32px;
   border-top-right-radius: 32px;
   box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
   
-  /* Важно: отступ снизу под меню */
-  padding: 20px 20px calc(var(--tab-bar-height) + 10px) 20px;
+  /* Отступы: Сверху 15px, Снизу (под меню) 75px */
+  padding: 15px 15px calc(var(--tab-bar-height) + 10px) 15px;
   
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; /* Прижимаем контент к низу */
+  overflow: hidden; /* Запрет скролла внутри белой карточки (для ввода) */
   z-index: 10;
 }
 
-/* Если мы в режиме Статистики - разрешаем скролл и растягиваем наверх */
+/* Режим статистики (разрешаем скролл) */
 .content-area.stats-mode {
-  flex: 2; /* Занимает больше места */
   justify-content: flex-start;
   overflow-y: auto;
 }
 
 /* --- КАТЕГОРИИ --- */
 .categories-wrapper {
-  margin-bottom: 15px;
+  flex-shrink: 0; /* Не сжимать */
+  margin-bottom: 10px;
   width: 100%;
 }
 
 .categories-scroll {
   display: flex;
-  gap: 10px;
-  overflow-X: auto;
-  padding: 5px 2px;
-  scrollbar-width: none; /* Скрыть скроллбар Firefox */
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
 }
-.categories-scroll::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+.categories-scroll::-webkit-scrollbar { display: none; }
 
 .category-btn {
   background: #F8F9FA;
   border: 2px solid transparent;
-  border-radius: 16px;
-  padding: 8px 0;
-  width: 65px;
-  min-width: 65px;
+  border-radius: 14px;
+  padding: 6px 0;
+  width: 60px; /* Чуть уже */
+  min-width: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -104,33 +114,37 @@ html, body, #root {
   transition: 0.2s;
 }
 
-.category-icon { color: var(--text-main); margin-bottom: 2px; }
-.category-label { font-size: 10px; font-weight: 700; color: var(--text-main); }
+.category-icon { color: var(--text-main); margin-bottom: 2px; transform: scale(0.9); }
+.category-label { font-size: 9px; font-weight: 700; color: var(--text-main); }
 
-/* --- NUMPAD (Компактный) --- */
+/* --- NUMPAD (Растягиваем на всё доступное место) --- */
 .numpad-grid {
+  flex: 1; /* Занимает всё место до низа */
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px; /* Уменьшили отступы */
+  grid-template-rows: repeat(5, 1fr); /* 4 ряда цифр + 1 ряд кнопка */
+  gap: 8px;
 }
 
 .numpad-btn {
   background: #F4F6F8;
   border: none;
-  font-size: 22px; /* Чуть меньше шрифт */
+  font-size: 20px;
   font-weight: 700;
   color: #2D3436;
-  padding: 12px 0; /* Компактные кнопки */
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
+  width: 100%;
+  height: 100%; /* Растягиваем кнопку */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .numpad-btn:active { background: #E0E0E0; }
-.delete-btn { background: #FFF0F0; color: #E74C3C; }
+.delete-btn { background: #FFF0F5; color: #E74C3C; }
 
+/* Кнопка "Внести" */
 .numpad-confirm {
   grid-column: span 3;
   background-color: var(--primary);
@@ -138,13 +152,13 @@ html, body, #root {
   font-size: 16px;
   font-weight: bold;
   border: none;
-  padding: 14px;
-  border-radius: 16px;
-  margin-top: 5px;
-  box-shadow: 0 4px 10px rgba(210, 145, 188, 0.4);
+  border-radius: 14px;
+  width: 100%;
+  height: 100%; /* Растягиваем */
+  box-shadow: 0 4px 10px rgba(210, 145, 188, 0.3);
 }
 
-/* --- TAB BAR (Фиксирован внизу) --- */
+/* --- TAB BAR --- */
 .bottom-tab-bar {
   position: absolute;
   bottom: 0;
@@ -152,12 +166,12 @@ html, body, #root {
   width: 100%;
   height: var(--tab-bar-height);
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px); /* Эффект матового стекла */
+  backdrop-filter: blur(10px);
   border-top: 1px solid #F0F0F0;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding-bottom: 10px; /* Для iPhone */
+  padding-bottom: 5px;
   z-index: 100;
 }
 
@@ -167,9 +181,9 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   color: #C4C4C4;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   width: 60px;
   cursor: pointer;
