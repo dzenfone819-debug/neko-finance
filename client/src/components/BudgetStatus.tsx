@@ -15,11 +15,10 @@ export const BudgetStatus: React.FC<Props> = ({ total, limit }) => {
   if (total > limit && limit > 0) color = '#E74C3C';
 
   return (
-    // БЫЛО: width: '85%'
-    // СТАЛО: width: '100%' (занимает всё место в правой колонке)
-    <div style={{ width: '100%', marginBottom: 2 }}>
+    // ВЕРНУЛИ 85% ширины
+    <div style={{ width: '85%', marginBottom: 5, marginTop: 5 }}>
       {/* Текст */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6B4C75', marginBottom: 3, fontWeight: 'bold', opacity: 0.8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B4C75', marginBottom: 2, fontWeight: 'bold', opacity: 0.8 }}>
         <span>{limit > 0 ? 'Бюджет' : 'Лимит не задан'}</span>
         <span>{limit > 0 ? `${Math.round(percentage)}%` : ''}</span>
       </div>

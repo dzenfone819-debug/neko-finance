@@ -8,8 +8,6 @@ interface Props {
 }
 
 export const MonthSelector: React.FC<Props> = ({ currentDate, onChange }) => {
-  
-  // Переключение месяца
   const changeMonth = (delta: number) => {
     WebApp.HapticFeedback.selectionChanged();
     const newDate = new Date(currentDate);
@@ -17,9 +15,7 @@ export const MonthSelector: React.FC<Props> = ({ currentDate, onChange }) => {
     onChange(newDate);
   };
 
-  // Красивое название месяца (Март 2024)
   const formatMonth = (date: Date) => {
-    // Делаем первую букву заглавной, так как toLocaleString может вернуть "март"
     const str = date.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
@@ -27,28 +23,25 @@ export const MonthSelector: React.FC<Props> = ({ currentDate, onChange }) => {
   return (
     <div style={{ 
       display: 'flex', alignItems: 'center', justifyContent: 'center', 
-      gap: 10, /* Меньше отступ */
-      marginBottom: 5, marginTop: 0, /* Убрали лишние отступы */
-      paddingTop: 10, /* Небольшой отступ от "чёлки" телефона */
-      zIndex: 20
+      gap: 15, /* Компактный отступ */
+      /* Убрали margin/padding контейнера, ими управляет App.tsx */
     }}>
       <button 
         onClick={() => changeMonth(-1)}
-        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
+        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
       >
-        <ChevronLeft size={20} /> {/* Чуть меньше иконка */}
+        <ChevronLeft size={18} />
       </button>
 
-      {/* Шрифт меньше и аккуратнее */}
-      <span style={{ fontSize: 14, fontWeight: '700', color: '#6B4C75', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>
+      <span style={{ fontSize: 13, fontWeight: '700', color: '#6B4C75', minWidth: 100, textAlign: 'center' }}>
         {formatMonth(currentDate)}
       </span>
 
       <button 
         onClick={() => changeMonth(1)}
-        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
+        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
       >
-        <ChevronRight size={20} />
+        <ChevronRight size={18} />
       </button>
     </div>
   );
