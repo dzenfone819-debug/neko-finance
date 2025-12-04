@@ -123,10 +123,15 @@ function App() {
         
         {/* NEW: Показываем реальный баланс денег */}
         {activeTab === 'input' && (
-          <div style={{ fontSize: 12, color: '#6B4C75', marginTop: -10, marginBottom: 5, opacity: 0.6 }}>
-            Доступно: {currentBalance.toLocaleString()} ₽
-          </div>
-        )}
+  <div style={{ 
+    fontSize: 11, fontWeight: 'bold', color: '#6B4C75', 
+    marginTop: 8,  /* <-- БЫЛО -10, СТАЛО 8 (отлепили от бара) */
+    marginBottom: 2, 
+    opacity: 0.7 
+  }}>
+    Доступно: {currentBalance.toLocaleString()} ₽
+  </div>
+)}
 
         {activeTab === 'input' ? (
            <motion.div className="amount-display">

@@ -29,33 +29,34 @@ html, body, #root {
   background-color: var(--bg-color);
 }
 
-/* --- 1. ШАПКА (Ровно 30% экрана) --- */
+/* --- 1. ШАПКА (Уменьшили до 22%) --- */
 .header-section {
-  height: 30vh; /* Фиксированная высота */
-  min-height: 160px; /* Чтобы не сплющило совсем на старых телефонах */
+  height: 22vh; /* Было 30vh. Сделали компактнее */
+  min-height: 140px; 
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* Центрируем кота и сумму */
+  justify-content: flex-end; /* Прижимаем всё к низу шапки */
   position: relative;
-  flex-shrink: 0; /* Не даем шапке сжиматься */
+  flex-shrink: 0;
+  padding-bottom: 10px; /* Небольшой отступ снизу */
 }
 
 .neko-avatar {
-  font-size: 50px; /* Компактный кот */
+  font-size: 42px; /* Чуть уменьшили кота (было 50) */
   line-height: 1;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
   filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
 }
 
 .amount-display {
-  font-size: 36px; /* Компактная сумма */
+  font-size: 32px; /* Чуть уменьшили цифры (было 36) */
   font-weight: 800;
   color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-top: 5px;
+  margin-top: 2px;
   line-height: 1;
 }
 
