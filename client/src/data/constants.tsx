@@ -1,6 +1,7 @@
 import { 
   Coffee, Car, Gamepad2, Zap, 
-  Home, Bus, RefreshCcw, Divide, Armchair, Shirt, PiggyBank, ShoppingBasket 
+  Home, Bus, RefreshCcw, Divide, Armchair, Shirt, PiggyBank, ShoppingBasket,
+  Briefcase, Gift, Percent, Wallet
 } from 'lucide-react'
 
 // Палитра
@@ -10,8 +11,8 @@ export const COLORS = [
   '#D0F4DE', '#A9DEF9'
 ];
 
-// Категории
-export const CATEGORIES = [
+// Категории РАСХОДОВ
+export const EXPENSE_CATEGORIES = [
   { id: 'groceries', name: 'Еда', icon: <ShoppingBasket size={20} />, color: '#CAFFBF' },
   { id: 'food', name: 'Кафе', icon: <Coffee size={20} />, color: '#FFADAD' },
   { id: 'transport', name: 'Трансп.', icon: <Car size={20} />, color: '#A0C4FF' },
@@ -26,7 +27,26 @@ export const CATEGORIES = [
   { id: 'reserve', name: 'Резерв', icon: <PiggyBank size={20} />, color: '#FFFFFC' },
 ];
 
+// Категории ДОХОДОВ
+export const INCOME_CATEGORIES = [
+  { id: 'salary', name: 'Зарплата', icon: <Briefcase size={20} />, color: '#4ADE80' }, 
+  { id: 'gift', name: 'Подарок', icon: <Gift size={20} />, color: '#F472B6' },
+  { id: 'cashback', name: 'Кешбэк', icon: <Percent size={20} />, color: '#60A5FA' },
+  { id: 'other_income', name: 'Другое', icon: <Wallet size={20} />, color: '#FACC15' },
+];
+
+// --- ВОТ ЭТО ИСПРАВЛЕНИЕ ---
+// Мы говорим: "Если кто-то просит просто CATEGORIES, дай им Расходы"
+export const CATEGORIES = EXPENSE_CATEGORIES;
+
 export const getCategoryName = (id: string) => {
-  const cat = CATEGORIES.find(c => c.id === id);
+  const all = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+  const cat = all.find(c => c.id === id);
   return cat ? cat.name : (id === 'general' ? 'Разное' : id);
+}
+
+export const getCategoryColor = (id: string) => {
+  const all = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+  const cat = all.find(c => c.id === id);
+  return cat ? cat.color : '#eee';
 }

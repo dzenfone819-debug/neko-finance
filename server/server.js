@@ -2,16 +2,9 @@ const fastify = require('fastify')({ logger: true })
 const cors = require('@fastify/cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
-const { startBot } = require('./bot')
-// Берем секреты из переменных окружения
+// Подключаем переменные окружения
 const BOT_TOKEN = process.env.BOT_TOKEN
 const GEMINI_KEY = process.env.GEMINI_KEY
-
-// Проверка на всякий случай (чтобы не гадать, почему не работает)
-if (!BOT_TOKEN || !GEMINI_KEY) {
-  console.error('❌ ОШИБКА: Нет токенов! Проверь файл .env')
-  process.exit(1)
-}
 
 // Раздача фронтенда
 fastify.register(require('@fastify/static'), {
@@ -20,205 +13,188 @@ fastify.register(require('@fastify/static'), {
 
 fastify.register(cors, { origin: true })
 
+// Подключаем бота
+const { startBot } = require('./bot')
+
 const db = new sqlite3.Database('./database.db', (err) => {
   if (err) console.error('Ошибка БД:', err.message)
   else {
     console.log('Подключено к SQLite')
-    // Передаем ТРИ аргумента: токен, базу и ключ ии
-    startBot(BOT_TOKEN, db, GEMINI_KEY) // <-- NEW
+    if (BOT_TOKEN && GEMINI_KEY) {
+      startBot(BOT_TOKEN, db, GEMINI_KEY)
+    }
   }
 })
 
-// Создание таблицы (с поддержкой user_id)
+// Создание таблиц
 db.serialize(() => {
-  // Мы создаем таблицу, если её нет
+  // Транзакции
   db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       amount REAL,
       category TEXT,
       date TEXT,
-      user_id INTEGER  -- // NEW: Колонка для владельца
+      user_id INTEGER,
+      type TEXT DEFAULT 'expense' -- // NEW: Тип транзакции (expense/income)
     )
   `)
-  db.run(`
-  CREATE TABLE IF NOT EXISTS user_settings (
-    user_id INTEGER PRIMARY KEY,
-    budget_limit REAL DEFAULT 0
-  )
-`)
-  db.run(`
-  CREATE TABLE IF NOT EXISTS category_limits (
-    user_id INTEGER,
-    category_id TEXT,
-    limit_amount REAL,
-    PRIMARY KEY (user_id, category_id)
-  )
-`)
-
   
-  // // NEW: Хак для миграции (если таблица уже была старой)
-  // Пытаемся добавить колонку, если её нет. Ошибку игнорируем (если колонка есть).
-  db.run("ALTER TABLE transactions ADD COLUMN user_id INTEGER", () => {})
+  // Миграция для старых баз (добавляем колонку type, если её нет)
+  db.run("ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT 'expense'", () => {})
+
+  // Настройки пользователя (Общий лимит)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_id INTEGER PRIMARY KEY,
+      budget_limit REAL DEFAULT 0
+    )
+  `)
+
+  // Лимиты категорий
+  db.run(`
+    CREATE TABLE IF NOT EXISTS category_limits (
+      user_id INTEGER,
+      category_id TEXT,
+      limit_amount REAL,
+      PRIMARY KEY (user_id, category_id)
+    )
+  `)
 })
 
 // --- API ---
 
-// Добавить расход
+// Добавить операцию (Расход или Доход)
 fastify.post('/add-expense', (request, reply) => {
-  // // NEW: Теперь ждем еще и category
-  const { amount, category } = request.body
+  // Теперь принимаем и TYPE
+  const { amount, category, type } = request.body
   const userId = request.headers['x-user-id']
 
-  if (!userId) {
-    return reply.code(400).send({ error: 'User ID is required' })
-  }
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const query = `INSERT INTO transactions (amount, category, date, user_id) VALUES (?, ?, ?, ?)`
+  // По умолчанию считаем расходом, если тип не передан
+  const finalType = type || 'expense'
+
+  const query = `INSERT INTO transactions (amount, category, date, user_id, type) VALUES (?, ?, ?, ?, ?)`
   const now = new Date().toISOString()
   
-  // // NEW: Используем category || 'general' (если вдруг не прислали - будет general)
-  db.run(query, [amount, category || 'general', now, userId], function(err) {
+  db.run(query, [amount, category || 'general', now, userId, finalType], function(err) {
     if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ id: this.lastID, status: 'saved', amount: amount })
+    else reply.send({ id: this.lastID, status: 'saved', amount, type: finalType })
   })
 })
 
-// Получить баланс конкретного пользователя
+// Получить баланс (Доходы - Расходы)
 fastify.get('/balance', (request, reply) => {
-  // // NEW: Получаем ID из заголовков
   const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  if (!userId) {
-    return reply.code(400).send({ error: 'User ID is required' })
-  }
+  // SQL Магия: Если income, то прибавляем, иначе вычитаем (но мы храним суммы положительными)
+  // Проще посчитать две суммы
+  const sql = `
+    SELECT 
+      SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+      SUM(CASE WHEN type = 'expense' OR type IS NULL THEN amount ELSE 0 END) as total_expense
+    FROM transactions 
+    WHERE user_id = ?
+  `
 
-  // // NEW: Фильтруем данные: WHERE user_id = ?
-  db.get("SELECT SUM(amount) as total FROM transactions WHERE user_id = ?", [userId], (err, row) => {
+  db.get(sql, [userId], (err, row) => {
     if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ total: row.total || 0 })
+    else {
+      const income = row.total_income || 0
+      const expense = row.total_expense || 0
+      // Баланс = Заработал - Потратил
+      // Но для Кота "Потрачено" (totalSpent) это именно расходы.
+      // Давай вернем всё, чтобы фронтенд решал.
+      reply.send({ 
+        balance: income - expense, // Текущий остаток денег
+        total_expense: expense,    // Всего потрачено (для прогресс бара)
+        total_income: income       // Всего заработано
+      })
+    }
   })
 })
-// --- Вставь это ПЕРЕД fastify.setNotFoundHandler ---
 
-// Получить статистику по категориям
+// Статистика (ТОЛЬКО РАСХОДЫ для графика)
 fastify.get('/stats', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  // SQL Магия: Группируем траты по категориям и складываем суммы
   const sql = `
     SELECT category, SUM(amount) as value 
     FROM transactions 
-    WHERE user_id = ? 
+    WHERE user_id = ? AND (type = 'expense' OR type IS NULL)
     GROUP BY category
   `
-  
   db.all(sql, [userId], (err, rows) => {
     if (err) reply.code(500).send({ error: err.message })
-    else {
-      // Превращаем данные в формат для графика
-      // Например: [{ name: 'general', value: 500 }, { name: 'taxi', value: 150 }]
-      const data = rows.map(r => ({ name: r.category, value: r.value }))
-      reply.send(data)
-    }
+    else reply.send(rows.map(r => ({ name: r.category, value: r.value })))
   })
 })
 
-// Получить настройки (Лимит)
-fastify.get('/settings', (request, reply) => {
-  const userId = request.headers['x-user-id']
-  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
-
-  db.get("SELECT budget_limit FROM user_settings WHERE user_id = ?", [userId], (err, row) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ budget: row ? row.budget_limit : 0 })
-  })
-})
-
-// Обновить лимит
-fastify.post('/settings', (request, reply) => {
-  const userId = request.headers['x-user-id']
-  const { budget } = request.body
-  
-  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
-
-  // Используем REPLACE INTO - это как "Вставь или Обнови"
-  db.run("REPLACE INTO user_settings (user_id, budget_limit) VALUES (?, ?)", [userId, budget], (err) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ status: 'ok', budget })
-  })
-})
-
-// Получить все лимиты категорий пользователя
-fastify.get('/limits', (request, reply) => {
-  const userId = request.headers['x-user-id']
-  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
-
-  db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else {
-      // Превращаем массив в объект { food: 5000, taxi: 2000 }
-      const limits = {}
-      rows.forEach(r => limits[r.category_id] = r.limit_amount)
-      reply.send(limits)
-    }
-  })
-})
-
-// Установить лимит для конкретной категории
-fastify.post('/limits', (request, reply) => {
-  const userId = request.headers['x-user-id']
-  const { category, limit } = request.body
-
-  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
-
-  db.run(
-    "REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", 
-    [userId, category, limit], 
-    (err) => {
-      if (err) reply.code(500).send({ error: err.message })
-      else reply.send({ status: 'ok' })
-    }
-  )
-})
-// --- ИСТОРИЯ И УДАЛЕНИЕ ---
-
-// 1. Получить последние 20 транзакций
+// История (Всё вместе, но возвращаем тип)
 fastify.get('/transactions', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   const sql = `
-    SELECT id, amount, category, date 
+    SELECT id, amount, category, date, type
     FROM transactions 
     WHERE user_id = ? 
     ORDER BY id DESC 
     LIMIT 20
   `
-  
   db.all(sql, [userId], (err, rows) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send(rows)
   })
 })
 
-// 2. Удалить транзакцию (Обязательно проверяем user_id, чтобы не удалили чужое!)
+// Удаление
 fastify.delete('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-user-id']
   const { id } = request.params
-
-  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
-
   const sql = `DELETE FROM transactions WHERE id = ? AND user_id = ?`
-  
   db.run(sql, [id, userId], function(err) {
     if (err) reply.code(500).send({ error: err.message })
-    else if (this.changes === 0) reply.code(404).send({ error: 'Record not found or access denied' })
     else reply.send({ status: 'deleted', id })
   })
 })
-// Обработка любых других путей (для React)
+
+// Настройки бюджета (Общий)
+fastify.get('/settings', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  db.get("SELECT budget_limit FROM user_settings WHERE user_id = ?", [userId], (err, row) => {
+    reply.send({ budget: row ? row.budget_limit : 0 })
+  })
+})
+
+fastify.post('/settings', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const { budget } = request.body
+  db.run("REPLACE INTO user_settings (user_id, budget_limit) VALUES (?, ?)", [userId, budget], () => {
+    reply.send({ status: 'ok' })
+  })
+})
+
+// Лимиты категорий
+fastify.get('/limits', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
+    const limits = {}; rows.forEach(r => limits[r.category_id] = r.limit_amount); reply.send(limits)
+  })
+})
+
+fastify.post('/limits', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const { category, limit } = request.body
+  db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit], () => {
+    reply.send({ status: 'ok' })
+  })
+})
+
+// Роутинг
 fastify.setNotFoundHandler((req, res) => {
   res.sendFile('index.html')
 })
@@ -232,5 +208,4 @@ const start = async () => {
     process.exit(1)
   }
 }
-
 start()
