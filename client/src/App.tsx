@@ -8,7 +8,8 @@ import { NumPad } from './components/NumPad'
 import { StatsView } from './components/StatsView'
 import { TransactionList } from './components/TransactionList'
 import { BudgetStatus } from './components/BudgetStatus'
-import { BudgetView } from './components/BudgetView' // NEW
+import { BudgetView } from './components/BudgetView'
+import { ModalInput } from './components/ModalInput' // NEW
 import { CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -18,91 +19,64 @@ function App() {
   const [amount, setAmount] = useState('')
   const [totalSpent, setTotalSpent] = useState(0)
   const [budgetLimit, setBudgetLimit] = useState(0)
-  const [catLimits, setCatLimits] = useState<Record<string, number>>({}) // NEW
+  const [catLimits, setCatLimits] = useState<Record<string, number>>({})
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
-  
-  useEffect(() => {
-    WebApp.ready();
-    WebApp.expand(); 
-    WebApp.enableClosingConfirmation(); 
 
+  // NEW: Состояние для модального окна
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<{type: 'total' | 'category', id?: string} | null>(null)
+
+  useEffect(() => {
+    WebApp.ready(); WebApp.expand(); WebApp.enableClosingConfirmation(); 
     let currentUserId = 777; 
-    if (WebApp.initDataUnsafe.user) {
-      currentUserId = WebApp.initDataUnsafe.user.id;
-    }
+    if (WebApp.initDataUnsafe.user) currentUserId = WebApp.initDataUnsafe.user.id;
     setUserId(currentUserId);
     loadData(currentUserId);
   }, [])
 
   const loadData = async (uid: number) => {
     try {
-      const balance = await api.fetchBalance(uid);
-      const stats = await api.fetchStats(uid);
-      const history = await api.fetchTransactions(uid);
-      const budget = await api.fetchBudget(uid);
-      const limits = await api.fetchCategoryLimits(uid); // NEW
-
-      setTotalSpent(balance);
-      setStatsData(stats);
-      setTransactions(history);
-      setBudgetLimit(budget);
-      setCatLimits(limits); // NEW
+      const [bal, stats, hist, bud, lims] = await Promise.all([
+        api.fetchBalance(uid), api.fetchStats(uid), api.fetchTransactions(uid),
+        api.fetchBudget(uid), api.fetchCategoryLimits(uid)
+      ]);
+      setTotalSpent(bal); setStatsData(stats); setTransactions(hist);
+      setBudgetLimit(bud); setCatLimits(lims);
     } catch (e) { console.error(e) }
   }
 
-  const handleConfirm = async () => {
-    const value = parseFloat(amount);
-    if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) {
-      triggerError(); return;
+  // --- ОТКРЫТИЕ МОДАЛКИ ---
+  const openEditTotal = () => {
+    WebApp.HapticFeedback.impactOccurred('light');
+    setEditTarget({ type: 'total' });
+    setModalOpen(true);
+  }
+
+  const openEditCategory = (catId: string) => {
+    WebApp.HapticFeedback.impactOccurred('light');
+    setEditTarget({ type: 'category', id: catId });
+    setModalOpen(true);
+  }
+
+  // --- СОХРАНЕНИЕ ИЗ МОДАЛКИ ---
+  const handleModalSave = async (val: number) => {
+    if (!userId || !editTarget) return;
+    WebApp.HapticFeedback.notificationOccurred('success');
+    
+    if (editTarget.type === 'total') {
+      await api.setBudget(userId, val);
+    } else if (editTarget.type === 'category' && editTarget.id) {
+      await api.setCategoryLimit(userId, editTarget.id, val);
     }
-
-    try {
-      await api.addExpense(userId, value, selectedCategory);
-      WebApp.HapticFeedback.notificationOccurred('success');
-      setIsHappy(true);
-      setAmount('');
-      loadData(userId);
-      setTimeout(() => setIsHappy(false), 3000);
-    } catch { triggerError(); }
-  }
-
-  const handleDeleteTransaction = async (id: number) => {
-    if (!userId) return;
-    WebApp.HapticFeedback.impactOccurred('medium');
-    try {
-      await api.deleteTransaction(userId, id);
-      loadData(userId);
-    } catch { triggerError(); }
-  }
-
-  const handleEditBudget = async () => {
-    // Эта функция теперь меняет ТОЛЬКО общий бюджет
-    WebApp.HapticFeedback.impactOccurred('medium');
-    const input = prompt("Общий бюджет на месяц (₽):", budgetLimit ? budgetLimit.toString() : "0");
-    if (input !== null && userId) {
-      const newLimit = parseFloat(input);
-      if (!isNaN(newLimit) && newLimit >= 0) {
-        await api.setBudget(userId, newLimit);
-        loadData(userId);
-      }
-    }
-  }
-
-  // NEW: Обновление лимита категории
-  const handleUpdateCategoryLimit = async (category: string, limit: number) => {
-    if (!userId) return;
-    WebApp.HapticFeedback.impactOccurred('medium');
-    await api.setCategoryLimit(userId, category, limit);
     loadData(userId);
   }
 
   const getNekoMood = () => {
-    if (isError) return '🙀';
-    if (isHappy) return '😻';
+    if (isError) return '🙀'; if (isHappy) return '😻';
     if (budgetLimit > 0) {
       const percent = totalSpent / budgetLimit;
       if (percent >= 1.0) return '💀';
@@ -112,7 +86,21 @@ function App() {
     return '😸';
   }
 
-  // --- Стандартные хендлеры ---
+  // ... (Стандартные хендлеры: handleConfirm, handleDeleteTransaction, handleNumberClick, handleDelete, triggerError - без изменений) ...
+  const handleConfirm = async () => {
+    const value = parseFloat(amount);
+    if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { triggerError(); return; }
+    try {
+      await api.addExpense(userId, value, selectedCategory);
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setIsHappy(true); setAmount(''); loadData(userId);
+      setTimeout(() => setIsHappy(false), 3000);
+    } catch { triggerError(); }
+  }
+  const handleDeleteTransaction = async (id: number) => {
+    if (!userId) return; WebApp.HapticFeedback.impactOccurred('medium');
+    try { await api.deleteTransaction(userId, id); loadData(userId); } catch { triggerError(); }
+  }
   const handleNumberClick = (num: string) => {
     WebApp.HapticFeedback.impactOccurred('light');
     if (amount.length >= 6) return;
@@ -125,14 +113,21 @@ function App() {
   }
   const triggerError = () => {
     WebApp.HapticFeedback.notificationOccurred('error');
-    setIsError(true);
-    setTimeout(() => setIsError(false), 500);
+    setIsError(true); setTimeout(() => setIsError(false), 500);
   }
 
   return (
     <div className="app-container">
       
-      {/* HEADER: Всегда показывает Кота и Общий статус */}
+      {/* МОДАЛКА (Рендерится поверх всего) */}
+      <ModalInput 
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleModalSave}
+        title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'}
+        initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)}
+      />
+
       <div className="header-section">
         <motion.div 
           animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
@@ -141,9 +136,8 @@ function App() {
           {getNekoMood()}
         </motion.div>
         
-        {/* Показываем общий бар, но без кнопки настроек (она дублируется, но не страшно) */}
-        {/* Можно кликнуть и тут, чтобы быстро сменить общий лимит */}
-        <BudgetStatus total={totalSpent} limit={budgetLimit} onEdit={handleEditBudget} />
+        {/* Чистый бар без кнопок */}
+        <BudgetStatus total={totalSpent} limit={budgetLimit} />
 
         {activeTab === 'input' ? (
            <motion.div className="amount-display">
@@ -192,33 +186,30 @@ function App() {
           </div>
         )}
 
-        {/* NEW: Вкладка Бюджета */}
         {activeTab === 'budget' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
             <BudgetView 
                stats={statsData}
                limits={catLimits}
                totalLimit={budgetLimit}
-               onUpdateLimit={handleUpdateCategoryLimit}
-               onUpdateTotal={handleEditBudget}
+               // Теперь передаем открытие модалки
+               onUpdateLimit={(catId) => openEditCategory(catId)}
+               onUpdateTotal={openEditTotal}
              />
              <div style={{ height: 80 }} />
           </div>
         )}
       </div>
 
-      {/* BOTTOM MENU (3 TABS) */}
       <div className="bottom-tab-bar">
         <button className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`} onClick={() => { setActiveTab('input'); WebApp.HapticFeedback.selectionChanged(); }}>
           <div className="tab-icon-bg"><Plus size={24} /></div>
           <span>Ввод</span>
         </button>
-        
         <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}>
           <div className="tab-icon-bg"><LayoutGrid size={24} /></div>
           <span>Инфо</span>
         </button>
-
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}>
           <div className="tab-icon-bg"><Target size={24} /></div>
           <span>Бюджет</span>
