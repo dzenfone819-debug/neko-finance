@@ -34,7 +34,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [newAccountName, setNewAccountName] = useState('');
-  const [newAccountBalance, setNewAccountBalance] = useState('');
+  const [newAccountType, setNewAccountType] = useState('cash');
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalTarget, setNewGoalTarget] = useState('');
   const [selectedColor, setSelectedColor] = useState('#CAFFBF');
@@ -43,14 +43,20 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [transferAmount, setTransferAmount] = useState('');
 
   const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#D0F4DE'];
+  const accountTypes = [
+    { value: 'cash', label: '💵 Наличные' },
+    { value: 'card', label: '💳 Карта' },
+    { value: 'checking', label: '🏦 Расчетный счет' },
+    { value: 'savings', label: '💰 Сбережения' }
+  ];
 
   const handleCreateAccount = async () => {
-    if (!userId || !newAccountName || !newAccountBalance) return;
+    if (!userId || !newAccountName || !newAccountType) return;
     try {
-      await api.createAccount(userId, newAccountName, parseFloat(newAccountBalance), 'cash', selectedColor);
+      await api.createAccount(userId, newAccountName, 0, newAccountType, selectedColor);
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewAccountName('');
-      setNewAccountBalance('');
+      setNewAccountType('cash');
       setShowAccountForm(false);
       onRefresh();
     } catch (e) {
@@ -269,11 +275,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   boxSizing: 'border-box'
                 }}
               />
-              <input
-                type="number"
-                placeholder="Баланс"
-                value={newAccountBalance}
-                onChange={(e) => setNewAccountBalance(e.target.value)}
+              <select
+                value={newAccountType}
+                onChange={(e) => setNewAccountType(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -281,9 +285,16 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   border: '1px solid #DDD',
                   borderRadius: 8,
                   fontSize: 14,
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  background: 'white'
                 }}
-              />
+              >
+                {accountTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
               <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
                 {colors.map((col) => (
                   <motion.button

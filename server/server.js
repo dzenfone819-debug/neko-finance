@@ -156,28 +156,32 @@ fastify.post('/add-expense', (request, reply) => {
       if (account_id) {
         if (finalTargetType === 'goal') {
           // Обновляем текущую сумму в копилке
+          // При расходе - вычитаем (ведь это копилка, тратим из неё)
+          // При доходе - прибавляем (пополняем копилку)
           if (finalType === 'expense') {
-            db.run("UPDATE savings_goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?", [amount, account_id, userId], (err) => {
-              if (err) console.error('Goal balance update error:', err);
-              else console.log('✅ Goal balance updated');
+            db.run("UPDATE savings_goals SET current_amount = current_amount - ? WHERE id = ? AND user_id = ?", [amount, account_id, userId], (err) => {
+              if (err) console.error('❌ Goal balance update error:', err);
+              else console.log('✅ Goal balance updated (expense: -' + amount + ')');
             })
           } else if (finalType === 'income') {
             db.run("UPDATE savings_goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?", [amount, account_id, userId], (err) => {
-              if (err) console.error('Goal balance update error:', err);
-              else console.log('✅ Goal balance updated');
+              if (err) console.error('❌ Goal balance update error:', err);
+              else console.log('✅ Goal balance updated (income: +' + amount + ')');
             })
           }
         } else {
           // Обновляем баланс счета
+          // При расходе - вычитаем
+          // При доходе - прибавляем
           if (finalType === 'expense') {
             db.run("UPDATE accounts SET balance = balance - ? WHERE id = ? AND user_id = ?", [amount, account_id, userId], (err) => {
-              if (err) console.error('Balance update error:', err);
-              else console.log('✅ Account balance updated');
+              if (err) console.error('❌ Balance update error:', err);
+              else console.log('✅ Account balance updated (expense: -' + amount + ')');
             })
           } else if (finalType === 'income') {
             db.run("UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?", [amount, account_id, userId], (err) => {
-              if (err) console.error('Balance update error:', err);
-              else console.log('✅ Account balance updated');
+              if (err) console.error('❌ Balance update error:', err);
+              else console.log('✅ Account balance updated (income: +' + amount + ')');
             })
           }
         }
