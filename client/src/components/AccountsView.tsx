@@ -255,9 +255,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
               animate={{ opacity: 1, y: 0 }}
               style={{
                 background: '#F5F5F5',
-                padding: '15px',
-                borderRadius: '12px',
-                marginTop: 15
+                padding: '12px',
+                borderRadius: '10px',
+                marginTop: 12
               }}
             >
               <input
@@ -267,10 +267,10 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 onChange={(e) => setNewAccountName(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px',
-                  marginBottom: 10,
+                  padding: '8px 10px',
+                  marginBottom: 8,
                   border: '1px solid #DDD',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   fontSize: 14,
                   boxSizing: 'border-box'
                 }}
@@ -280,10 +280,10 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 onChange={(e) => setNewAccountType(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px',
-                  marginBottom: 10,
+                  padding: '8px 10px',
+                  marginBottom: 8,
                   border: '1px solid #DDD',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   fontSize: 14,
                   boxSizing: 'border-box',
                   background: 'white'
@@ -295,15 +295,15 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   </option>
                 ))}
               </select>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {colors.map((col) => (
                   <motion.button
                     key={col}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setSelectedColor(col)}
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: 32,
+                      height: 32,
                       borderRadius: '50%',
                       background: col,
                       border: selectedColor === col ? '3px solid #333' : '2px solid #DDD',
@@ -317,13 +317,14 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 onClick={handleCreateAccount}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '8px',
                   background: '#667eea',
                   color: 'white',
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   fontWeight: 'bold',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  fontSize: 14
                 }}
               >
                 Создать счет
@@ -435,9 +436,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
               animate={{ opacity: 1, y: 0 }}
               style={{
                 background: '#F5F5F5',
-                padding: '15px',
-                borderRadius: '12px',
-                marginTop: 15
+                padding: '12px',
+                borderRadius: '10px',
+                marginTop: 12
               }}
             >
               <input
@@ -447,10 +448,10 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 onChange={(e) => setNewGoalName(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px',
-                  marginBottom: 10,
+                  padding: '8px 10px',
+                  marginBottom: 8,
                   border: '1px solid #DDD',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   fontSize: 14,
                   boxSizing: 'border-box'
                 }}
@@ -462,23 +463,23 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 onChange={(e) => setNewGoalTarget(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px',
-                  marginBottom: 10,
+                  padding: '8px 10px',
+                  marginBottom: 8,
                   border: '1px solid #DDD',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   fontSize: 14,
                   boxSizing: 'border-box'
                 }}
               />
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {colors.map((col) => (
                   <motion.button
                     key={col}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setSelectedColor(col)}
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: 32,
+                      height: 32,
                       borderRadius: '50%',
                       background: col,
                       border: selectedColor === col ? '3px solid #333' : '2px solid #DDD',
@@ -492,13 +493,14 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 onClick={handleCreateGoal}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '8px',
                   background: '#667eea',
                   color: 'white',
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   fontWeight: 'bold',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  fontSize: 14
                 }}
               >
                 Создать копилку

@@ -96,7 +96,22 @@ html, body, #root {
   gap: 8px; 
   overflow-x: auto; 
   padding: 2px; 
-  scrollbar-width: none; 
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.categories-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- ACCOUNT SCROLL --- */
+.account-scroll {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.account-scroll::-webkit-scrollbar {
+  display: none;
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
 

@@ -233,9 +233,9 @@ function App() {
             </div>
 
             {(accounts.length > 0 || goals.length > 0) && (
-              <div style={{ padding: '0 10px', marginBottom: 12, overflow: 'hidden' }}>
-                <label style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', display: 'block', marginBottom: 8 }}>На счет/копилку:</label>
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 5, scrollBehavior: 'smooth' }}>
+              <div style={{ marginBottom: 10, width: '100%' }}>
+                <label style={{ fontSize: 12, fontWeight: 'bold', color: '#6B4C75', display: 'block', marginBottom: 8, paddingLeft: '2px' }}>На счет/копилку:</label>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }} className="account-scroll">
                   {accounts.map((acc) => {
                     const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
                     console.log('🔄 Rendering account button:', acc.name, 'id:', acc.id, 'selectedAccount:', selectedAccount, 'isSelected:', isSelected);
@@ -248,17 +248,19 @@ function App() {
                         setSelectedAccount({type: 'account', id: acc.id});
                       }}
                       style={{
-                        padding: '8px 14px',
-                        borderRadius: 12,
+                        padding: '10px 16px',
+                        borderRadius: 10,
                         border: isSelected ? '2px solid ' + acc.color : '1px solid #D291BC',
                         background: isSelected ? acc.color : '#F8F9FA',
                         color: isSelected ? 'white' : '#6B4C75',
                         fontWeight: 'bold',
-                        fontSize: 12,
+                        fontSize: 13,
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
                         flexShrink: 0,
-                        transition: '0.2s'
+                        transition: '0.2s',
+                        minWidth: '80px',
+                        textAlign: 'center'
                       }}
                     >
                       {acc.name}
@@ -276,17 +278,19 @@ function App() {
                         setSelectedAccount({type: 'goal', id: goal.id});
                       }}
                       style={{
-                        padding: '8px 14px',
-                        borderRadius: 12,
+                        padding: '10px 16px',
+                        borderRadius: 10,
                         border: isSelected ? '2px solid ' + (goal.color || '#FFB6C1') : '1px solid #D291BC',
                         background: isSelected ? (goal.color || '#FFB6C1') : '#F8F9FA',
                         color: isSelected ? 'white' : '#6B4C75',
                         fontWeight: 'bold',
-                        fontSize: 12,
+                        fontSize: 13,
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
                         flexShrink: 0,
-                        transition: '0.2s'
+                        transition: '0.2s',
+                        minWidth: '80px',
+                        textAlign: 'center'
                       }}
                     >
                       💰 {goal.name}
@@ -335,8 +339,8 @@ function App() {
       <div className="bottom-tab-bar">
         <button className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`} onClick={() => { setActiveTab('input'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Plus size={24} /></div><span>Ввод</span></button>
         <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><LayoutGrid size={24} /></div><span>Инфо</span></button>
-        <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Target size={24} /></div><span>Бюджет</span></button>
+        <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
       </div>
     </div>
   )
