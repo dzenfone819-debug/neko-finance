@@ -429,7 +429,7 @@ html, body, #root {
 }
 
 .modal-close {
-  background: #FFE5E5;
+  background: none;
   border: none;
   width: 32px;
   height: 32px;
@@ -438,14 +438,12 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #FF4444;
-  font-size: 20px;
+  font-size: 24px;
   transition: all 0.2s;
 }
 
 .modal-close:hover {
-  background: #FFD0D0;
-  color: #FF0000;
+  transform: scale(1.1);
 }
 
 .modal-body {
@@ -510,8 +508,8 @@ html, body, #root {
 }
 
 .color-option {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
