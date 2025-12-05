@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Plus, Trash2, ArrowRightLeft } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
+import { Modal } from './Modal';
 
 interface Account {
   id: number;
@@ -228,7 +229,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           {/* КНОПКА ДОБАВИТЬ СЧЕТ */}
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAccountForm(!showAccountForm)}
+            onClick={() => setShowAccountForm(true)}
             style={{
               width: '100%',
               marginTop: 20,
@@ -247,92 +248,53 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           >
             <Plus size={20} /> Добавить счет
           </motion.button>
-
-          {/* ФОРМА СОЗДАНИЯ СЧЕТА */}
-          {showAccountForm && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                background: '#F5F5F5',
-                padding: '12px',
-                borderRadius: '10px',
-                marginTop: 12
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Название счета"
-                value={newAccountName}
-                onChange={(e) => setNewAccountName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  marginBottom: 8,
-                  border: '1px solid #DDD',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <select
-                value={newAccountType}
-                onChange={(e) => setNewAccountType(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  marginBottom: 8,
-                  border: '1px solid #DDD',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box',
-                  background: 'white'
-                }}
-              >
-                {accountTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {colors.map((col) => (
-                  <motion.button
-                    key={col}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setSelectedColor(col)}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      background: col,
-                      border: selectedColor === col ? '3px solid #333' : '2px solid #DDD',
-                      cursor: 'pointer'
-                    }}
-                  />
-                ))}
-              </div>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCreateAccount}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  fontSize: 14
-                }}
-              >
-                Создать счет
-              </motion.button>
-            </motion.div>
-          )}
         </div>
       )}
+
+      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ СЧЕТА */}
+      <Modal isOpen={showAccountForm} onClose={() => setShowAccountForm(false)} title="Новый счет">
+        <div className="modal-body">
+          <input
+            type="text"
+            placeholder="Название счета"
+            value={newAccountName}
+            onChange={(e) => setNewAccountName(e.target.value)}
+            className="modal-input"
+          />
+          <select
+            value={newAccountType}
+            onChange={(e) => setNewAccountType(e.target.value)}
+            className="modal-select"
+          >
+            {accountTypes.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+          <div className="color-picker">
+            {colors.map((col) => (
+              <motion.button
+                key={col}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedColor(col)}
+                className="color-option"
+                style={{
+                  background: col,
+                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                }}
+              />
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleCreateAccount}
+            className="modal-submit-button"
+          >
+            Создать счет
+          </motion.button>
+        </div>
+      </Modal>
 
       {/* КОПИЛКИ */}
       {activeTab === 'goals' && (
@@ -409,7 +371,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           {/* КНОПКА ДОБАВИТЬ КОПИЛКУ */}
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowGoalForm(!showGoalForm)}
+            onClick={() => setShowGoalForm(true)}
             style={{
               width: '100%',
               marginTop: 20,
@@ -428,93 +390,55 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           >
             <Plus size={20} /> Новая копилка
           </motion.button>
-
-          {/* ФОРМА СОЗДАНИЯ КОПИЛКИ */}
-          {showGoalForm && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                background: '#F5F5F5',
-                padding: '12px',
-                borderRadius: '10px',
-                marginTop: 12
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Название цели"
-                value={newGoalName}
-                onChange={(e) => setNewGoalName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  marginBottom: 8,
-                  border: '1px solid #DDD',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="number"
-                placeholder="Целевая сумма"
-                value={newGoalTarget}
-                onChange={(e) => setNewGoalTarget(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  marginBottom: 8,
-                  border: '1px solid #DDD',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {colors.map((col) => (
-                  <motion.button
-                    key={col}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setSelectedColor(col)}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      background: col,
-                      border: selectedColor === col ? '3px solid #333' : '2px solid #DDD',
-                      cursor: 'pointer'
-                    }}
-                  />
-                ))}
-              </div>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCreateGoal}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  fontSize: 14
-                }}
-              >
-                Создать копилку
-              </motion.button>
-            </motion.div>
-          )}
         </div>
       )}
+
+      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ КОПИЛКИ */}
+      <Modal isOpen={showGoalForm} onClose={() => setShowGoalForm(false)} title="Новая копилка">
+        <div className="modal-body">
+          <input
+            type="text"
+            placeholder="Название цели"
+            value={newGoalName}
+            onChange={(e) => setNewGoalName(e.target.value)}
+            className="modal-input"
+          />
+          <input
+            type="number"
+            placeholder="Целевая сумма"
+            value={newGoalTarget}
+            onChange={(e) => setNewGoalTarget(e.target.value)}
+            className="modal-input"
+          />
+          <div className="color-picker">
+            {colors.map((col) => (
+              <motion.button
+                key={col}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedColor(col)}
+                className="color-option"
+                style={{
+                  background: col,
+                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                }}
+              />
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleCreateGoal}
+            className="modal-submit-button"
+          >
+            Создать копилку
+          </motion.button>
+        </div>
+      </Modal>
 
       {/* КНОПКА ПЕРЕВОДА */}
       <div style={{ padding: '15px' }}>
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => setShowTransfer(!showTransfer)}
+          onClick={() => setShowTransfer(true)}
           style={{
             width: '100%',
             padding: '12px',
@@ -532,116 +456,77 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
         >
           <ArrowRightLeft size={20} /> Перевод между счетами
         </motion.button>
-
-        {/* ФОРМА ПЕРЕВОДА */}
-        {showTransfer && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              background: '#F5F5F5',
-              padding: '15px',
-              borderRadius: '12px',
-              marginTop: 15
-            }}
-          >
-            <div style={{ marginBottom: 15 }}>
-              <div style={{ fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 8 }}>Откуда</div>
-              <select
-                value={transferFrom ? `${transferFrom.type}-${transferFrom.id}` : ''}
-                onChange={(e) => {
-                  const [type, id] = e.target.value.split('-');
-                  setTransferFrom({ type, id: parseInt(id) });
-                }}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #DDD',
-                  borderRadius: 8,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">Выбери счет или копилку</option>
-                {accounts.map((acc) => (
-                  <option key={`acc-${acc.id}`} value={`account-${acc.id}`}>
-                    💳 {acc.name} ({acc.balance}₽)
-                  </option>
-                ))}
-                {goals.map((goal) => (
-                  <option key={`goal-${goal.id}`} value={`goal-${goal.id}`}>
-                    🐷 {goal.name} ({goal.current_amount}₽)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: 15 }}>
-              <div style={{ fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 8 }}>Куда</div>
-              <select
-                value={transferTo ? `${transferTo.type}-${transferTo.id}` : ''}
-                onChange={(e) => {
-                  const [type, id] = e.target.value.split('-');
-                  setTransferTo({ type, id: parseInt(id) });
-                }}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #DDD',
-                  borderRadius: 8,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">Выбери счет или копилку</option>
-                {accounts.map((acc) => (
-                  <option key={`acc-${acc.id}`} value={`account-${acc.id}`}>
-                    💳 {acc.name} ({acc.balance}₽)
-                  </option>
-                ))}
-                {goals.map((goal) => (
-                  <option key={`goal-${goal.id}`} value={`goal-${goal.id}`}>
-                    🐷 {goal.name} ({goal.current_amount}₽)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <input
-              type="number"
-              placeholder="Сумма перевода"
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginBottom: 10,
-                border: '1px solid #DDD',
-                borderRadius: 8,
-                fontSize: 14,
-                boxSizing: 'border-box'
-              }}
-            />
-
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleTransfer}
-              style={{
-                width: '100%',
-                padding: '10px',
-                background: '#4ECDC4',
-                color: 'white',
-                border: 'none',
-                borderRadius: 8,
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              Перевести
-            </motion.button>
-          </motion.div>
-        )}
       </div>
+
+      {/* МОДАЛЬНОЕ ОКНО ПЕРЕВОДА */}
+      <Modal isOpen={showTransfer} onClose={() => setShowTransfer(false)} title="Перевод между счетами">
+        <div className="modal-body">
+          <div style={{ marginBottom: 15 }}>
+            <label className="modal-label">Откуда</label>
+            <select
+              value={transferFrom ? `${transferFrom.type}-${transferFrom.id}` : ''}
+              onChange={(e) => {
+                const [type, id] = e.target.value.split('-');
+                setTransferFrom({ type, id: parseInt(id) });
+              }}
+              className="modal-select"
+            >
+              <option value="">Выбери счет или копилку</option>
+              {accounts.map((acc) => (
+                <option key={`acc-${acc.id}`} value={`account-${acc.id}`}>
+                  💳 {acc.name} ({acc.balance}₽)
+                </option>
+              ))}
+              {goals.map((goal) => (
+                <option key={`goal-${goal.id}`} value={`goal-${goal.id}`}>
+                  🐷 {goal.name} ({goal.current_amount}₽)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 15 }}>
+            <label className="modal-label">Куда</label>
+            <select
+              value={transferTo ? `${transferTo.type}-${transferTo.id}` : ''}
+              onChange={(e) => {
+                const [type, id] = e.target.value.split('-');
+                setTransferTo({ type, id: parseInt(id) });
+              }}
+              className="modal-select"
+            >
+              <option value="">Выбери счет или копилку</option>
+              {accounts.map((acc) => (
+                <option key={`acc-${acc.id}`} value={`account-${acc.id}`}>
+                  💳 {acc.name} ({acc.balance}₽)
+                </option>
+              ))}
+              {goals.map((goal) => (
+                <option key={`goal-${goal.id}`} value={`goal-${goal.id}`}>
+                  🐷 {goal.name} ({goal.current_amount}₽)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <input
+            type="number"
+            placeholder="Сумма перевода"
+            value={transferAmount}
+            onChange={(e) => setTransferAmount(e.target.value)}
+            className="modal-input"
+          />
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleTransfer}
+            className="modal-submit-button"
+            style={{ background: '#4ECDC4' }}
+          >
+            Перевести
+          </motion.button>
+        </div>
+      </Modal>
     </div>
   );
 };
