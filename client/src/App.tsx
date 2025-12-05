@@ -50,6 +50,11 @@ function App() {
     loadData(currentUserId, new Date());
   }, [])
 
+  // Следим за изменениями selectedAccountId
+  useEffect(() => {
+    console.log('🔵 selectedAccountId changed to:', selectedAccountId);
+  }, [selectedAccountId])
+
   const loadData = async (uid: number, date: Date) => {
     try {
       const month = date.getMonth() + 1;
@@ -92,20 +97,31 @@ function App() {
 
   const handleConfirm = async () => {
     const value = parseFloat(amount);
-    if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { triggerError(); return; }
-    if (!selectedAccountId) { triggerError(); return; }
+    if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { 
+      console.log('❌ Validation failed:', { amount, value, userId });
+      triggerError(); 
+      return; 
+    }
+    if (!selectedAccountId) { 
+      console.error('❌ No account selected! selectedAccountId:', selectedAccountId);
+      triggerError(); 
+      return; 
+    }
     try {
       // Определяем тип - это счет (account) или копилка (goal)
       const isGoal = goals.some(g => g.id === selectedAccountId);
       const targetType = isGoal ? 'goal' : 'account';
-      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, selectedAccountId, targetType });
+      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, selectedAccountId, targetType, isGoal, accountsCount: accounts.length, goalsCount: goals.length });
       const result = await api.addTransaction(userId, value, selectedCategory, transType, selectedAccountId, targetType);
       console.log('✅ Transaction result:', result);
       WebApp.HapticFeedback.notificationOccurred('success');
       setIsHappy(true); setAmount(''); 
       loadData(userId, currentDate);
       setTimeout(() => setIsHappy(false), 3000);
-    } catch { triggerError(); }
+    } catch (e) { 
+      console.error('❌ Transaction error:', e);
+      triggerError(); 
+    }
   }
 
   const openEditTotal = () => { WebApp.HapticFeedback.impactOccurred('light'); setEditTarget({ type: 'total' }); setModalOpen(true); }
