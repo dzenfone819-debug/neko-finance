@@ -85,8 +85,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 0;
   padding: 12px 14px 8px 14px;
   overflow-y: auto;
   overflow-x: hidden;
