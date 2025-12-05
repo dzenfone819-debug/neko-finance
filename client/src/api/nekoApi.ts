@@ -34,11 +34,21 @@ export const fetchTransactions = async (userId: number, month?: number, year?: n
 
 // ... Остальные функции (add, delete, settings, limits) без изменений ...
 // (Обязательно оставь их!)
-export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income') => {
+export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account') => {
+  const payload = { amount, category, type, account_id: accountId, target_type: targetType };
+  console.log('🔵 API addTransaction payload:', payload);
   const response = await fetch(`${API_URL}/add-expense`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ amount, category, type }) 
-  }); if (!response.ok) throw new Error('Failed to add'); return await response.json();
+    body: JSON.stringify(payload) 
+  }); 
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('❌ API error response:', error);
+    throw new Error('Failed to add: ' + error);
+  }
+  const result = await response.json();
+  console.log('✅ API addTransaction result:', result);
+  return result;
 };
 export const deleteTransaction = async (userId: number, transactionId: number) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
@@ -64,4 +74,92 @@ export const setCategoryLimit = async (userId: number, category: string, limit: 
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
     body: JSON.stringify({ category, limit }) 
   });
+};
+
+// ========== СЧЕТА ==========
+
+export const fetchAccounts = async (userId: number) => {
+  const response = await fetch(`${API_URL}/accounts`, { 
+    headers: { 'x-user-id': userId.toString() } 
+  });
+  return await response.json();
+};
+
+export const createAccount = async (userId: number, name: string, balance: number, type: string, color: string) => {
+  const response = await fetch(`${API_URL}/accounts`, {
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ name, balance, type, color })
+  });
+  return await response.json();
+};
+
+export const updateAccount = async (userId: number, accountId: number, data: any) => {
+  const response = await fetch(`${API_URL}/accounts/${accountId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify(data)
+  });
+  return await response.json();
+};
+
+export const deleteAccount = async (userId: number, accountId: number) => {
+  const response = await fetch(`${API_URL}/accounts/${accountId}`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
+// ========== КОПИЛКИ (SAVINGS GOALS) ==========
+
+export const fetchGoals = async (userId: number) => {
+  const response = await fetch(`${API_URL}/goals`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
+export const createGoal = async (userId: number, name: string, target_amount: number, color: string, icon: string) => {
+  const response = await fetch(`${API_URL}/goals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ name, target_amount, color, icon })
+  });
+  return await response.json();
+};
+
+export const updateGoal = async (userId: number, goalId: number, data: any) => {
+  const response = await fetch(`${API_URL}/goals/${goalId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify(data)
+  });
+  return await response.json();
+};
+
+export const deleteGoal = async (userId: number, goalId: number) => {
+  const response = await fetch(`${API_URL}/goals/${goalId}`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
+// ========== ПЕРЕВОДЫ ==========
+
+export const transfer = async (userId: number, from_type: string, from_id: number, to_type: string, to_id: number, amount: number, description?: string) => {
+  const response = await fetch(`${API_URL}/transfer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ from_type, from_id, to_type, to_id, amount, description })
+  });
+  return await response.json();
+};
+
+export const fetchTotalBalance = async (userId: number) => {
+  const response = await fetch(`${API_URL}/total-balance`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
 };

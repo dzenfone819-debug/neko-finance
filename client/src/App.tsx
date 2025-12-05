@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
-import { LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react'
 import './App.css'
 
 import { NumPad } from './components/NumPad'
@@ -11,13 +11,15 @@ import { BudgetStatus } from './components/BudgetStatus'
 import { BudgetView } from './components/BudgetView'
 import { ModalInput } from './components/ModalInput'
 import { MonthSelector } from './components/MonthSelector'
+import { AccountsView } from './components/AccountsView'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'budget'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget'>('input')
   const [transType, setTransType] = useState<'expense' | 'income'>('expense')
   const [selectedCategory, setSelectedCategory] = useState('groceries')
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   
   // Текущая дата для фильтрации
@@ -34,6 +36,8 @@ function App() {
   const [userId, setUserId] = useState<number | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<{type: 'total' | 'category', id?: string} | null>(null)
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [goals, setGoals] = useState<any[]>([])
 
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
@@ -51,12 +55,14 @@ function App() {
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
 
-      const [balData, stats, hist, bud, lims] = await Promise.all([
+      const [balData, stats, hist, bud, lims, accs, gls] = await Promise.all([
         api.fetchBalance(uid, month, year),
         api.fetchStats(uid, month, year),
         api.fetchTransactions(uid, month, year),
         api.fetchBudget(uid),
-        api.fetchCategoryLimits(uid)
+        api.fetchCategoryLimits(uid),
+        api.fetchAccounts(uid),
+        api.fetchGoals(uid)
       ]);
       
       setTotalSpent(balData.total_expense);
@@ -65,6 +71,8 @@ function App() {
       setTransactions(hist);
       setBudgetLimit(bud);
       setCatLimits(lims);
+      setAccounts(accs);
+      setGoals(gls);
     } catch (e) { console.error(e) }
   }
 
@@ -85,8 +93,14 @@ function App() {
   const handleConfirm = async () => {
     const value = parseFloat(amount);
     if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { triggerError(); return; }
+    if (!selectedAccountId) { triggerError(); return; }
     try {
-      await api.addTransaction(userId, value, selectedCategory, transType);
+      // Определяем тип - это счет (account) или копилка (goal)
+      const isGoal = goals.some(g => g.id === selectedAccountId);
+      const targetType = isGoal ? 'goal' : 'account';
+      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, selectedAccountId, targetType });
+      const result = await api.addTransaction(userId, value, selectedCategory, transType, selectedAccountId, targetType);
+      console.log('✅ Transaction result:', result);
       WebApp.HapticFeedback.notificationOccurred('success');
       setIsHappy(true); setAmount(''); 
       loadData(userId, currentDate);
@@ -98,10 +112,21 @@ function App() {
   const openEditCategory = (catId: string) => { WebApp.HapticFeedback.impactOccurred('light'); setEditTarget({ type: 'category', id: catId }); setModalOpen(true); }
   
   const handleModalSave = async (val: number) => {
-    if (!userId || !editTarget) return; WebApp.HapticFeedback.notificationOccurred('success');
-    if (editTarget.type === 'total') await api.setBudget(userId, val);
-    else if (editTarget.type === 'category' && editTarget.id) await api.setCategoryLimit(userId, editTarget.id, val);
-    loadData(userId, currentDate);
+    if (!userId || !editTarget) return;
+    try {
+      WebApp.HapticFeedback.notificationOccurred('success');
+      if (editTarget.type === 'total') {
+        await api.setBudget(userId, val);
+        setBudgetLimit(val);
+      } else if (editTarget.type === 'category' && editTarget.id) {
+        await api.setCategoryLimit(userId, editTarget.id, val);
+        setCatLimits({ ...catLimits, [editTarget.id]: val });
+      }
+      setModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
   }
 
   const getNekoMood = () => {
@@ -156,7 +181,7 @@ function App() {
            </motion.div>
         ) : (
           <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold', marginTop: 5}}>
-            {activeTab === 'stats' ? 'Статистика' : 'Бюджет'}
+            {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
           </div>
         )}
       </div>
@@ -173,6 +198,58 @@ function App() {
                 <ArrowUpCircle size={18} /> Доход
               </button>
             </div>
+
+            {(accounts.length > 0 || goals.length > 0) && (
+              <div style={{ padding: '0 10px', marginBottom: 12, overflow: 'hidden' }}>
+                <label style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', display: 'block', marginBottom: 8 }}>На счет/копилку:</label>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 5, scrollBehavior: 'smooth' }}>
+                  {accounts.map((acc) => (
+                    <motion.button
+                      key={`acc-${acc.id}`}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedAccountId(acc.id)}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: 12,
+                        border: selectedAccountId === acc.id ? '2px solid ' + acc.color : '1px solid #D291BC',
+                        background: selectedAccountId === acc.id ? acc.color : '#F8F9FA',
+                        color: selectedAccountId === acc.id ? 'white' : '#6B4C75',
+                        fontWeight: 'bold',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: '0.2s'
+                      }}
+                    >
+                      {acc.name}
+                    </motion.button>
+                  ))}
+                  {goals.map((goal) => (
+                    <motion.button
+                      key={`goal-${goal.id}`}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedAccountId(goal.id)}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: 12,
+                        border: selectedAccountId === goal.id ? '2px solid ' + (goal.color || '#FFB6C1') : '1px solid #D291BC',
+                        background: selectedAccountId === goal.id ? (goal.color || '#FFB6C1') : '#F8F9FA',
+                        color: selectedAccountId === goal.id ? 'white' : '#6B4C75',
+                        fontWeight: 'bold',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: '0.2s'
+                      }}
+                    >
+                      💰 {goal.name}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="categories-wrapper">
               <div className="categories-scroll">
@@ -197,6 +274,10 @@ function App() {
           </div>
         )}
 
+        {activeTab === 'accounts' && (
+          <AccountsView userId={userId} accounts={accounts} goals={goals} onRefresh={() => userId && loadData(userId, currentDate)} />
+        )}
+
         {activeTab === 'budget' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
             <BudgetView stats={statsData} limits={catLimits} totalLimit={budgetLimit} onEditCategory={openEditCategory} onEditTotal={openEditTotal} />
@@ -208,6 +289,7 @@ function App() {
       <div className="bottom-tab-bar">
         <button className={`tab-btn ${activeTab === 'input' ? 'active' : ''}`} onClick={() => { setActiveTab('input'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Plus size={24} /></div><span>Ввод</span></button>
         <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><LayoutGrid size={24} /></div><span>Инфо</span></button>
+        <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Target size={24} /></div><span>Бюджет</span></button>
       </div>
     </div>

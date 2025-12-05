@@ -33,7 +33,7 @@ function startBot(botToken, db, geminiKey) {
 
   const SYSTEM_PROMPT = `
   Ты финансовый ассистент Neko Finance. 
-  Твоя задача - извлечь сумму расхода и категорию из сообщения.
+  Твоя задача - извлечь сумму расхода, категорию и опциональное название счета из сообщения.
   
   Если валюта не указана, считай что это рубли (RUB).
   
@@ -42,8 +42,12 @@ function startBot(botToken, db, geminiKey) {
   
   Если подходящей категории нет, используй "groceries" (как самую частую) или ту, что ближе по смыслу.
   
+  Если в начале сообщения указан счет (например "Счет1:", "Карта:", "Наличные:"), извлеки его название.
+  
   Верни ТОЛЬКО JSON объект.
-  Пример: {"amount": 500, "category": "bills", "description": "оплата интернета"}
+  Примеры: 
+  {"amount": 500, "category": "bills", "description": "оплата интернета"}
+  {"amount": 500, "category": "bills", "description": "оплата интернета", "account": "Счет1"}
   `
 
   // --- ОБРАБОТЧИК ТЕКСТА ---
@@ -116,11 +120,11 @@ async function processWithAI(model, prompt, text) {
 }
 
 async function saveTransaction(ctx, db, data) {
-  const { amount, category, description } = data
+  const { amount, category, description, account } = data
   const userId = ctx.from.id
 
   if (!amount || amount <= 0) {
-    return ctx.reply('😿 Не понял сумму. Напиши, например: "100 хлеб"')
+    return ctx.reply('😿 Не понял сумму. Напиши, например: "100 хлеб" или "Счет1: 500 интернет"')
   }
 
   // Проверка на валидность категории (на всякий случай)
@@ -131,18 +135,40 @@ async function saveTransaction(ctx, db, data) {
   
   const finalCategory = validCategories.includes(category) ? category : 'groceries';
 
-  const query = `INSERT INTO transactions (amount, category, date, user_id) VALUES (?, ?, ?, ?)`
-  const now = new Date().toISOString()
+  // Если указан счет, сначала ищем его по названию
+  let accountId = null;
+  if (account) {
+    db.get(
+      "SELECT id FROM accounts WHERE user_id = ? AND name = ? LIMIT 1",
+      [userId, account],
+      (err, row) => {
+        if (row) accountId = row.id;
+        insertTransaction();
+      }
+    );
+  } else {
+    insertTransaction();
+  }
 
-  db.run(query, [amount, finalCategory, now, userId], function(err) {
-    if (err) {
-      console.error(err)
-      ctx.reply('Ошибка базы данных')
-    } else {
-      // Тут мы используем красивые названия для ответа пользователю
-      ctx.reply(`✅ Расход: ${amount}₽\n📂 Категория: ${getCategoryName(finalCategory)}\n📝 ${description || ''}`)
-    }
-  })
+  function insertTransaction() {
+    const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id) VALUES (?, ?, ?, ?, ?, ?)`
+    const now = new Date().toISOString()
+
+    db.run(query, [amount, finalCategory, now, userId, 'expense', accountId || null], function(err) {
+      if (err) {
+        console.error(err)
+        ctx.reply('Ошибка базы данных')
+      } else {
+        // Если указан счет, вычитаем сумму из баланса счета
+        if (accountId) {
+          db.run("UPDATE accounts SET balance = balance - ? WHERE id = ?", [amount, accountId]);
+        }
+        // Красивый ответ
+        const accountInfo = account ? `\n💳 На счет: ${account}` : '';
+        ctx.reply(`✅ Расход: ${amount}₽\n📂 Категория: ${getCategoryName(finalCategory)}\n📝 ${description || ''}${accountInfo}`)
+      }
+    })
+  }
 }
 
 // Функция для красивого отображения в чате (Синхронизировано с App)
