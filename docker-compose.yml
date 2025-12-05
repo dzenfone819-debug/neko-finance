@@ -10,9 +10,9 @@ services:
       - NODE_ENV=production
       - BOT_TOKEN=${BOT_TOKEN}
       - GEMINI_KEY=${GEMINI_KEY}
-      - DB_PATH=/app/database.db
+      - DB_PATH=/data/database.db
     volumes:
-      - neko_data:/app/database.db
+      - neko_data:/data
 
   # Умный швейцар Caddy (торчит наружу и дает HTTPS)
   caddy:
