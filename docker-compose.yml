@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   # Наше приложение (скрыто внутри, наружу не торчит)
-  services:
   neko-app:
     build: .
     container_name: neko_finance
@@ -13,7 +12,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./server/database.db:/app/server/database.db
+      - ./database.db:/app/database.db
 
   # Умный швейцар Caddy (торчит наружу и дает HTTPS)
   caddy:
