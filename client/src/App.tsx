@@ -19,7 +19,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget'>('input')
   const [transType, setTransType] = useState<'expense' | 'income'>('expense')
   const [selectedCategory, setSelectedCategory] = useState('groceries')
-  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
+  const [selectedAccount, setSelectedAccount] = useState<{type: 'account' | 'goal', id: number} | null>(null)
   const [amount, setAmount] = useState('')
   
   // Текущая дата для фильтрации
@@ -50,10 +50,23 @@ function App() {
     loadData(currentUserId, new Date());
   }, [])
 
-  // Следим за изменениями selectedAccountId
+  // Следим за изменениями selectedAccount
   useEffect(() => {
-    console.log('🔵 selectedAccountId changed to:', selectedAccountId);
-  }, [selectedAccountId])
+    console.log('🔵 selectedAccount changed to:', selectedAccount);
+  }, [selectedAccount])
+
+  // Логируем загруженные аккаунты
+  useEffect(() => {
+    if (accounts.length > 0) {
+      console.log('📋 Accounts loaded:', accounts.map(a => ({ id: a.id, name: a.name, idType: typeof a.id })));
+    }
+  }, [accounts])
+
+  useEffect(() => {
+    if (goals.length > 0) {
+      console.log('🎯 Goals loaded:', goals.map(g => ({ id: g.id, name: g.name, idType: typeof g.id })));
+    }
+  }, [goals])
 
   const loadData = async (uid: number, date: Date) => {
     try {
@@ -99,20 +112,23 @@ function App() {
     const value = parseFloat(amount);
     if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { 
       console.log('❌ Validation failed:', { amount, value, userId });
+      api.logToServer('❌ Validation failed:', { amount, value, userId });
       triggerError(); 
       return; 
     }
-    if (!selectedAccountId) { 
-      console.error('❌ No account selected! selectedAccountId:', selectedAccountId);
+    if (!selectedAccount) { 
+      console.error('❌ No account selected! selectedAccount:', selectedAccount);
+      api.logToServer('❌ NO ACCOUNT SELECTED', { selectedAccount, accounts: accounts.map(a => ({id: a.id, name: a.name})), goals: goals.map(g => ({id: g.id, name: g.name})) });
       triggerError(); 
       return; 
     }
     try {
-      // Определяем тип - это счет (account) или копилка (goal)
-      const isGoal = goals.some(g => g.id === selectedAccountId);
-      const targetType = isGoal ? 'goal' : 'account';
-      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, selectedAccountId, targetType, isGoal, accountsCount: accounts.length, goalsCount: goals.length });
-      const result = await api.addTransaction(userId, value, selectedCategory, transType, selectedAccountId, targetType);
+      // Используем тип из selectedAccount
+      const targetType = selectedAccount.type;
+      const targetId = selectedAccount.id;
+      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, targetId, targetType, accountsCount: accounts.length, goalsCount: goals.length });
+      api.logToServer('📤 BEFORE API.addTransaction', { userId, value, selectedCategory, transType, targetId, targetType, accountsCount: accounts.length, goalsCount: goals.length });
+      const result = await api.addTransaction(userId, value, selectedCategory, transType, targetId, targetType);
       console.log('✅ Transaction result:', result);
       WebApp.HapticFeedback.notificationOccurred('success');
       setIsHappy(true); setAmount(''); 
@@ -120,6 +136,7 @@ function App() {
       setTimeout(() => setIsHappy(false), 3000);
     } catch (e) { 
       console.error('❌ Transaction error:', e);
+      api.logToServer('❌ TRANSACTION ERROR', { error: String(e) });
       triggerError(); 
     }
   }
@@ -219,17 +236,23 @@ function App() {
               <div style={{ padding: '0 10px', marginBottom: 12, overflow: 'hidden' }}>
                 <label style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', display: 'block', marginBottom: 8 }}>На счет/копилку:</label>
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 5, scrollBehavior: 'smooth' }}>
-                  {accounts.map((acc) => (
+                  {accounts.map((acc) => {
+                    const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
+                    console.log('🔄 Rendering account button:', acc.name, 'id:', acc.id, 'selectedAccount:', selectedAccount, 'isSelected:', isSelected);
+                    return (
                     <motion.button
                       key={`acc-${acc.id}`}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedAccountId(acc.id)}
+                      onClick={() => {
+                        console.log('🔘 Clicked account:', acc.id, 'name:', acc.name);
+                        setSelectedAccount({type: 'account', id: acc.id});
+                      }}
                       style={{
                         padding: '8px 14px',
                         borderRadius: 12,
-                        border: selectedAccountId === acc.id ? '2px solid ' + acc.color : '1px solid #D291BC',
-                        background: selectedAccountId === acc.id ? acc.color : '#F8F9FA',
-                        color: selectedAccountId === acc.id ? 'white' : '#6B4C75',
+                        border: isSelected ? '2px solid ' + acc.color : '1px solid #D291BC',
+                        background: isSelected ? acc.color : '#F8F9FA',
+                        color: isSelected ? 'white' : '#6B4C75',
                         fontWeight: 'bold',
                         fontSize: 12,
                         cursor: 'pointer',
@@ -240,18 +263,24 @@ function App() {
                     >
                       {acc.name}
                     </motion.button>
-                  ))}
-                  {goals.map((goal) => (
+                    );
+                  })}
+                  {goals.map((goal) => {
+                    const isSelected = selectedAccount?.type === 'goal' && selectedAccount?.id === goal.id;
+                    return (
                     <motion.button
                       key={`goal-${goal.id}`}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedAccountId(goal.id)}
+                      onClick={() => {
+                        console.log('🎯 Clicked goal:', goal.id, 'name:', goal.name);
+                        setSelectedAccount({type: 'goal', id: goal.id});
+                      }}
                       style={{
                         padding: '8px 14px',
                         borderRadius: 12,
-                        border: selectedAccountId === goal.id ? '2px solid ' + (goal.color || '#FFB6C1') : '1px solid #D291BC',
-                        background: selectedAccountId === goal.id ? (goal.color || '#FFB6C1') : '#F8F9FA',
-                        color: selectedAccountId === goal.id ? 'white' : '#6B4C75',
+                        border: isSelected ? '2px solid ' + (goal.color || '#FFB6C1') : '1px solid #D291BC',
+                        background: isSelected ? (goal.color || '#FFB6C1') : '#F8F9FA',
+                        color: isSelected ? 'white' : '#6B4C75',
                         fontWeight: 'bold',
                         fontSize: 12,
                         cursor: 'pointer',
@@ -262,7 +291,8 @@ function App() {
                     >
                       💰 {goal.name}
                     </motion.button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -128,12 +128,20 @@ db.serialize(() => {
 
 // --- API ---
 
+// Логирование
+fastify.post('/log-client', (request, reply) => {
+  const { message, data } = request.body
+  console.log('🔵 CLIENT LOG:', message, data)
+  reply.send({ status: 'logged' })
+})
+
 // Добавить операцию (Расход или Доход)
 fastify.post('/add-expense', (request, reply) => {
   // Теперь принимаем TYPE, ACCOUNT_ID, и TARGET_TYPE (account или goal)
   const { amount, category, type, account_id, target_type } = request.body
   const userId = request.headers['x-user-id']
 
+  console.log('📥 /add-expense FULL request.body:', JSON.stringify(request.body, null, 2));
   console.log('📥 /add-expense request:', { userId, amount, category, type, account_id, target_type });
 
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })

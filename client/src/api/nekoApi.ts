@@ -157,6 +157,18 @@ export const transfer = async (userId: number, from_type: string, from_id: numbe
   return await response.json();
 };
 
+export const logToServer = async (message: string, data?: any) => {
+  try {
+    await fetch(`${API_URL}/log-client`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, data })
+    });
+  } catch (e) {
+    console.error('Failed to log to server:', e);
+  }
+};
+
 export const fetchTotalBalance = async (userId: number) => {
   const response = await fetch(`${API_URL}/total-balance`, {
     headers: { 'x-user-id': userId.toString() }
