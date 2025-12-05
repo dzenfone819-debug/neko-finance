@@ -48,6 +48,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ accountId: number; x: number; y: number } | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editAccountName, setEditAccountName] = useState('');
+  const [editAccountBalance, setEditAccountBalance] = useState('');
 
   const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#D0F4DE'];
   const accountEmojis = ['💳', '💵', '🏦', '💰', '💸', '🪙', '💴', '💶', '💷', '🤑'];
@@ -101,6 +104,33 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleEditAccount = async () => {
+    if (!userId || !editingAccount || !editAccountName) return;
+    try {
+      await api.updateAccount(userId, editingAccount.id, {
+        name: editAccountName,
+        balance: parseFloat(editAccountBalance) || editingAccount.balance,
+        color: selectedColor,
+        icon: selectedEmoji
+      });
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setEditingAccount(null);
+      onRefresh();
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
+  };
+
+  const openEditModal = (account: Account) => {
+    setEditingAccount(account);
+    setEditAccountName(account.name);
+    setEditAccountBalance(account.balance.toString());
+    setSelectedColor(account.color);
+    setSelectedEmoji(account.icon || '💳');
+    setContextMenu(null);
   };
 
   const handleLongPressStart = (accountId: number, e: React.TouchEvent | React.MouseEvent) => {
@@ -350,10 +380,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   <motion.button
                     key={col}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      setSelectedColor(col);
-                      setShowColorPicker(false);
-                    }}
+                    onClick={() => setSelectedColor(col)}
                     className="color-option"
                     style={{
                       background: col,
@@ -375,10 +402,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   <motion.button
                     key={emoji}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      setSelectedEmoji(emoji);
-                      setShowEmojiPicker(false);
-                    }}
+                    onClick={() => setSelectedEmoji(emoji)}
                     className="emoji-option"
                     style={{
                       border: selectedEmoji === emoji ? '3px solid #667eea' : '2px solid #E0E0E0',
@@ -396,6 +420,125 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             className="modal-submit-button"
           >
             Создать счет
+          </motion.button>
+        </div>
+      </Modal>
+
+      {/* МОДАЛКА РЕДАКТИРОВАНИЯ СЧЕТА */}
+      <Modal
+        isOpen={!!editingAccount}
+        onClose={() => setEditingAccount(null)}
+        title="Редактировать счет"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+          <input
+            className="modal-input"
+            type="text"
+            placeholder="Название счета"
+            value={editAccountName}
+            onChange={(e) => setEditAccountName(e.target.value)}
+          />
+          <input
+            className="modal-input"
+            type="number"
+            placeholder="Текущий баланс"
+            value={editAccountBalance}
+            onChange={(e) => setEditAccountBalance(e.target.value)}
+          />
+          <div>
+            <label className="modal-label">Цвет и иконка</label>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E0E0',
+                  background: '#F8F9FA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: selectedColor, flexShrink: 0 }} />
+                <span style={{ color: '#666' }}>Выбрать цвет</span>
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E0E0',
+                  background: '#F8F9FA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                <span style={{ fontSize: 24 }}>{selectedEmoji}</span>
+                <span style={{ color: '#666' }}>Выбрать иконку</span>
+              </motion.button>
+            </div>
+            {showColorPicker && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="color-picker"
+                style={{ marginTop: 10 }}
+              >
+                {colors.map((col) => (
+                  <motion.button
+                    key={col}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSelectedColor(col)}
+                    className="color-option"
+                    style={{
+                      background: col,
+                      border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
+            {showEmojiPicker && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="emoji-picker"
+                style={{ marginTop: 10 }}
+              >
+                {accountEmojis.map((emoji) => (
+                  <motion.button
+                    key={emoji}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSelectedEmoji(emoji)}
+                    className="emoji-option"
+                    style={{
+                      border: selectedEmoji === emoji ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    }}
+                  >
+                    {emoji}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleEditAccount}
+            className="modal-submit-button"
+          >
+            Сохранить изменения
           </motion.button>
         </div>
       </Modal>
@@ -568,10 +711,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   <motion.button
                     key={col}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      setSelectedColor(col);
-                      setShowColorPicker(false);
-                    }}
+                    onClick={() => setSelectedColor(col)}
                     className="color-option"
                     style={{
                       background: col,
@@ -593,10 +733,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   <motion.button
                     key={emoji}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      setSelectedEmoji(emoji);
-                      setShowEmojiPicker(false);
-                    }}
+                    onClick={() => setSelectedEmoji(emoji)}
                     className="emoji-option"
                     style={{
                       border: selectedEmoji === emoji ? '3px solid #667eea' : '2px solid #E0E0E0',
@@ -744,8 +881,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           >
             <button
               onClick={() => {
-                // TODO: implement edit
-                setContextMenu(null);
+                const account = accounts.find(acc => acc.id === contextMenu.accountId);
+                if (account) openEditModal(account);
               }}
               style={{
                 width: '100%',
