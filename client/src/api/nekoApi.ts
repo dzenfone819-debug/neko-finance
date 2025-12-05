@@ -85,11 +85,11 @@ export const fetchAccounts = async (userId: number) => {
   return await response.json();
 };
 
-export const createAccount = async (userId: number, name: string, balance: number, type: string, color: string) => {
+export const createAccount = async (userId: number, name: string, balance: number, type: string, color: string, currency: string = 'RUB', icon: string = '💳') => {
   const response = await fetch(`${API_URL}/accounts`, {
     method: 'POST', 
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ name, balance, type, color })
+    body: JSON.stringify({ name, balance, type, color, currency, icon })
   });
   return await response.json();
 };
@@ -120,7 +120,7 @@ export const fetchGoals = async (userId: number) => {
   return await response.json();
 };
 
-export const createGoal = async (userId: number, name: string, target_amount: number, color: string, icon: string) => {
+export const createGoal = async (userId: number, name: string, target_amount: number, color: string, icon: string = '🐷') => {
   const response = await fetch(`${API_URL}/goals`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },

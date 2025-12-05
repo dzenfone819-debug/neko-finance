@@ -11,6 +11,7 @@ interface Account {
   balance: number;
   type: string;
   color: string;
+  icon?: string;
 }
 
 interface Goal {
@@ -39,11 +40,14 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalTarget, setNewGoalTarget] = useState('');
   const [selectedColor, setSelectedColor] = useState('#CAFFBF');
+  const [selectedEmoji, setSelectedEmoji] = useState('💳');
   const [transferFrom, setTransferFrom] = useState<{ type: string; id: number } | null>(null);
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
 
   const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#D0F4DE'];
+  const accountEmojis = ['💳', '💵', '🏦', '💰', '💸', '🪙', '💴', '💶', '💷', '🤑'];
+  const goalEmojis = ['🐷', '🎯', '🏠', '✈️', '🚗', '🎓', '💍', '🎁', '🌟', '💎'];
   const accountTypes = [
     { value: 'cash', label: '💵 Наличные' },
     { value: 'card', label: '💳 Карта' },
@@ -54,10 +58,11 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const handleCreateAccount = async () => {
     if (!userId || !newAccountName || !newAccountType) return;
     try {
-      await api.createAccount(userId, newAccountName, 0, newAccountType, selectedColor);
+      await api.createAccount(userId, newAccountName, 0, newAccountType, selectedColor, 'RUB', selectedEmoji);
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewAccountName('');
       setNewAccountType('cash');
+      setSelectedEmoji('💳');
       setShowAccountForm(false);
       onRefresh();
     } catch (e) {
@@ -69,10 +74,11 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const handleCreateGoal = async () => {
     if (!userId || !newGoalName || !newGoalTarget) return;
     try {
-      await api.createGoal(userId, newGoalName, parseFloat(newGoalTarget), selectedColor, '🐷');
+      await api.createGoal(userId, newGoalName, parseFloat(newGoalTarget), selectedColor, selectedEmoji);
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewGoalName('');
       setNewGoalTarget('');
+      setSelectedEmoji('🐷');
       setShowGoalForm(false);
       onRefresh();
     } catch (e) {
@@ -203,24 +209,38 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>{acc.name}</div>
                     <div style={{ fontSize: 20, fontWeight: 'bold' }}>{acc.balance.toLocaleString()} ₽</div>
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleDeleteAccount(acc.id)}
-                    style={{
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      fontSize: 28,
                       background: 'rgba(255,255,255,0.3)',
-                      border: 'none',
                       borderRadius: '50%',
-                      width: 40,
-                      height: 40,
+                      width: 50,
+                      height: 50,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      color: 'white'
-                    }}
-                  >
-                    <Trash2 size={18} />
-                  </motion.button>
+                      justifyContent: 'center'
+                    }}>
+                      {acc.icon || '💳'}
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDeleteAccount(acc.id)}
+                      style={{
+                        background: 'rgba(255,255,255,0.3)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 36,
+                        height: 36,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'white'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </motion.button>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -272,19 +292,40 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
               </option>
             ))}
           </select>
-          <div className="color-picker">
-            {colors.map((col) => (
-              <motion.button
-                key={col}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSelectedColor(col)}
-                className="color-option"
-                style={{
-                  background: col,
-                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
-                }}
-              />
-            ))}
+          <div>
+            <label className="modal-label">Цвет</label>
+            <div className="color-picker">
+              {colors.map((col) => (
+                <motion.button
+                  key={col}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedColor(col)}
+                  className="color-option"
+                  style={{
+                    background: col,
+                    border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="modal-label">Иконка</label>
+            <div className="emoji-picker">
+              {accountEmojis.map((emoji) => (
+                <motion.button
+                  key={emoji}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedEmoji(emoji)}
+                  className="emoji-option"
+                  style={{
+                    border: selectedEmoji === emoji ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  }}
+                >
+                  {emoji}
+                </motion.button>
+              ))}
+            </div>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -410,19 +451,40 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             onChange={(e) => setNewGoalTarget(e.target.value)}
             className="modal-input"
           />
-          <div className="color-picker">
-            {colors.map((col) => (
-              <motion.button
-                key={col}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSelectedColor(col)}
-                className="color-option"
-                style={{
-                  background: col,
-                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
-                }}
-              />
-            ))}
+          <div>
+            <label className="modal-label">Цвет</label>
+            <div className="color-picker">
+              {colors.map((col) => (
+                <motion.button
+                  key={col}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedColor(col)}
+                  className="color-option"
+                  style={{
+                    background: col,
+                    border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="modal-label">Иконка</label>
+            <div className="emoji-picker">
+              {goalEmojis.map((emoji) => (
+                <motion.button
+                  key={emoji}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedEmoji(emoji)}
+                  className="emoji-option"
+                  style={{
+                    border: selectedEmoji === emoji ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  }}
+                >
+                  {emoji}
+                </motion.button>
+              ))}
+            </div>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
