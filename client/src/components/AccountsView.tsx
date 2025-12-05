@@ -43,7 +43,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
 
-  const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#D0F4DE'];
+  const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'];
   const accountTypes = [
     { value: 'cash', label: '💵 Наличные' },
     { value: 'card', label: '💳 Карта' },
