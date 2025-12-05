@@ -91,6 +91,10 @@ function App() {
       setCatLimits(lims);
       setAccounts(accs);
       setGoals(gls);
+      // Устанавливаем первый счет по умолчанию, если не выбран
+      if (!selectedAccount && accs.length > 0) {
+        setSelectedAccount({type: 'account', id: accs[0].id});
+      }
     } catch (e) { console.error(e) }
   }
 

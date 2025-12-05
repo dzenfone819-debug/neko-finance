@@ -338,7 +338,7 @@ fastify.get('/accounts', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
-  db.all("SELECT * FROM accounts WHERE user_id = ? ORDER BY created_at DESC", [userId], (err, rows) => {
+  db.all("SELECT * FROM accounts WHERE user_id = ? ORDER BY created_at ASC", [userId], (err, rows) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send(rows || [])
   })
@@ -410,7 +410,7 @@ fastify.get('/goals', (request, reply) => {
   const userId = request.headers['x-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
-  db.all("SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at DESC", [userId], (err, rows) => {
+  db.all("SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at ASC", [userId], (err, rows) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send(rows || [])
   })
