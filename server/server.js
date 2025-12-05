@@ -2,9 +2,14 @@ const fastify = require('fastify')({ logger: true })
 const cors = require('@fastify/cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
+const fs = require('fs')
+
 // Подключаем переменные окружения
 const BOT_TOKEN = process.env.BOT_TOKEN
 const GEMINI_KEY = process.env.GEMINI_KEY
+
+// Определяем путь к БД - используем /app/database.db (абсолютный путь в контейнере)
+const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'database.db')
 
 // Раздача фронтенда
 fastify.register(require('@fastify/static'), {
@@ -16,10 +21,13 @@ fastify.register(cors, { origin: true })
 // Подключаем бота
 const { startBot } = require('./bot')
 
-const db = new sqlite3.Database('./database.db', (err) => {
-  if (err) console.error('Ошибка БД:', err.message)
-  else {
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Ошибка БД:', err.message)
+    console.error('Путь к БД:', dbPath)
+  } else {
     console.log('Подключено к SQLite')
+    console.log('Путь к БД:', dbPath)
     if (BOT_TOKEN && GEMINI_KEY) {
       startBot(BOT_TOKEN, db, GEMINI_KEY)
     }
