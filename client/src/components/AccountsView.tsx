@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, ArrowRightLeft } from 'lucide-react';
+import { Plus, ArrowRightLeft } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { Modal } from './Modal';
@@ -47,10 +47,14 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ accountId: number; x: number; y: number } | null>(null);
+  const [goalContextMenu, setGoalContextMenu] = useState<{ goalId: number; x: number; y: number } | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editAccountName, setEditAccountName] = useState('');
   const [editAccountBalance, setEditAccountBalance] = useState('');
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [editGoalName, setEditGoalName] = useState('');
+  const [editGoalTarget, setEditGoalTarget] = useState('');
 
   const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#D0F4DE'];
   const accountEmojis = ['💳', '💵', '🏦', '💰', '💸', '🪙', '💴', '💶', '💷', '🤑'];
@@ -135,11 +139,47 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     setContextMenu(null);
   };
 
+  const handleEditGoal = async () => {
+    if (!userId || !editingGoal || !editGoalName || !editGoalTarget) return;
+    try {
+      await api.updateGoal(userId, editingGoal.id, {
+        name: editGoalName,
+        target_amount: parseFloat(editGoalTarget),
+        color: selectedColor,
+        icon: selectedEmoji
+      });
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setEditingGoal(null);
+      onRefresh();
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
+  };
+
+  const openEditGoalModal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setEditGoalName(goal.name);
+    setEditGoalTarget(goal.target_amount.toString());
+    setSelectedColor(goal.color);
+    setSelectedEmoji(goal.icon || '🐷');
+    setGoalContextMenu(null);
+  };
+
   const handleLongPressStart = (accountId: number, e: React.TouchEvent | React.MouseEvent) => {
     const timer = window.setTimeout(() => {
       WebApp.HapticFeedback.impactOccurred('medium');
       const rect = (e.target as HTMLElement).getBoundingClientRect();
       setContextMenu({ accountId, x: rect.right - 150, y: rect.bottom });
+    }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressStartGoal = (goalId: number, e: React.TouchEvent | React.MouseEvent) => {
+    const timer = window.setTimeout(() => {
+      WebApp.HapticFeedback.impactOccurred('medium');
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      setGoalContextMenu({ goalId, x: rect.right - 150, y: rect.bottom });
     }, 500);
     setLongPressTimer(timer);
   };
@@ -545,6 +585,125 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
         </div>
       </Modal>
 
+      {/* МОДАЛКА РЕДАКТИРОВАНИЯ КОПИЛКИ */}
+      <Modal
+        isOpen={!!editingGoal}
+        onClose={() => setEditingGoal(null)}
+        title="Редактировать копилку"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+          <input
+            className="modal-input"
+            type="text"
+            placeholder="Название копилки"
+            value={editGoalName}
+            onChange={(e) => setEditGoalName(e.target.value)}
+          />
+          <input
+            className="modal-input"
+            type="number"
+            placeholder="Целевая сумма"
+            value={editGoalTarget}
+            onChange={(e) => setEditGoalTarget(e.target.value)}
+          />
+          <div>
+            <label className="modal-label">Цвет и иконка</label>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E0E0',
+                  background: '#F8F9FA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: selectedColor, flexShrink: 0 }} />
+                <span style={{ color: '#666' }}>Выбрать цвет</span>
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E0E0',
+                  background: '#F8F9FA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{selectedEmoji}</span>
+                <span style={{ color: '#666' }}>Выбрать иконку</span>
+              </motion.button>
+            </div>
+            {showColorPicker && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="color-picker"
+                style={{ marginTop: 10 }}
+              >
+                {colors.map((col) => (
+                  <motion.button
+                    key={col}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSelectedColor(col)}
+                    className="color-option"
+                    style={{
+                      background: col,
+                      border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
+            {showEmojiPicker && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="emoji-picker"
+                style={{ marginTop: 10 }}
+              >
+                {goalEmojis.map((emoji) => (
+                  <motion.button
+                    key={emoji}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSelectedEmoji(emoji)}
+                    className="emoji-option"
+                    style={{
+                      border: selectedEmoji === emoji ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    }}
+                  >
+                    {emoji}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleEditGoal}
+            className="modal-submit-button"
+          >
+            Сохранить изменения
+          </motion.button>
+        </div>
+      </Modal>
+
       {/* КОПИЛКИ */}
       {activeTab === 'goals' && (
         <div style={{ padding: '15px' }}>
@@ -562,39 +721,28 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     key={goal.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
+                    onTouchStart={(e) => handleLongPressStartGoal(goal.id, e)}
+                    onTouchEnd={handleLongPressEnd}
+                    onMouseDown={(e) => handleLongPressStartGoal(goal.id, e)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
                     style={{
                       background: 'white',
                       padding: '15px',
                       borderRadius: '15px',
                       border: `2px solid ${goal.color}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                      cursor: 'pointer',
+                      userSelect: 'none'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 'bold' }}>{goal.icon} {goal.name}</div>
+                        <div style={{ fontSize: 14, fontWeight: 'bold' }}>{goal.icon || '🐷'} {goal.name}</div>
                         <div style={{ fontSize: 11, color: '#999', marginTop: 5 }}>
                           {goal.current_amount.toLocaleString()} / {goal.target_amount.toLocaleString()} ₽
                         </div>
                       </div>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDeleteGoal(goal.id)}
-                        style={{
-                          background: '#FFE5E5',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 36,
-                          height: 36,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          color: '#FF6B6B'
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </motion.button>
                     </div>
                     <div style={{ width: '100%', height: 8, background: '#F0F0F0', borderRadius: 4, overflow: 'hidden' }}>
                       <motion.div
@@ -903,6 +1051,76 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             </button>
             <button
               onClick={() => handleDeleteAccount(contextMenu.accountId)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: 'none',
+                background: 'white',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#FF6B6B'
+              }}
+            >
+              🗑️ Удалить
+            </button>
+          </motion.div>
+        </>
+      )}
+
+      {/* КОНТЕКСТНОЕ МЕНЮ ДЛЯ КОПИЛОК */}
+      {goalContextMenu && (
+        <>
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 999
+            }}
+            onClick={() => setGoalContextMenu(null)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{
+              position: 'fixed',
+              top: goalContextMenu.y,
+              left: goalContextMenu.x,
+              background: 'white',
+              borderRadius: 12,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              overflow: 'hidden',
+              zIndex: 1000,
+              minWidth: 150
+            }}
+          >
+            <button
+              onClick={() => {
+                const goal = goals.find(g => g.id === goalContextMenu.goalId);
+                if (goal) openEditGoalModal(goal);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: 'none',
+                background: 'white',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#667eea',
+                borderBottom: '1px solid #F0F0F0'
+              }}
+            >
+              ✏️ Редактировать
+            </button>
+            <button
+              onClick={() => handleDeleteGoal(goalContextMenu.goalId)}
               style={{
                 width: '100%',
                 padding: '12px 16px',
