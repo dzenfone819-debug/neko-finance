@@ -43,19 +43,7 @@ function App() {
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
 
   useEffect(() => {
-    WebApp.ready(); 
-    WebApp.expand(); 
-    WebApp.enableClosingConfirmation();
-    
-    // Отключаем вертикальные свайпы и устанавливаем стабильную высоту viewport
-    if (WebApp.isVersionAtLeast('6.1')) {
-      WebApp.setHeaderColor('#FEC8D8');
-      WebApp.setBackgroundColor('#FEC8D8');
-    }
-    if (WebApp.isVersionAtLeast('7.7')) {
-      WebApp.disableVerticalSwipes();
-    }
-    
+    WebApp.ready(); WebApp.expand(); WebApp.enableClosingConfirmation(); 
     let currentUserId = 777; 
     if (WebApp.initDataUnsafe.user) currentUserId = WebApp.initDataUnsafe.user.id;
     setUserId(currentUserId);
