@@ -22,13 +22,17 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  height: 100dvh; /* dynamic viewport height for mobile */
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: var(--bg-color);
   overflow: hidden;
+  touch-action: pan-y;
+  overscroll-behavior: none;
 }
 
 /* --- HEADER --- */
@@ -342,10 +346,12 @@ html, body, #root {
 
 /* --- BOTTOM TAB BAR --- */
 .bottom-tab-bar { 
-  position: absolute; 
+  position: fixed; 
   bottom: 0; 
-  left: 0; 
+  left: 50%; 
+  transform: translateX(-50%);
   width: 100%; 
+  max-width: 500px;
   height: var(--tab-bar-height); 
   background: rgba(255, 255, 255, 0.98); 
   backdrop-filter: blur(20px); 
