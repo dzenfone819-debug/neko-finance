@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Наше приложение (скрыто внутри, наружу не торчит)
   neko-app:
@@ -8,9 +6,10 @@ services:
     restart: always
     expose:
       - "3000"
-    # ВОТ ЭТО ДОБАВИТЬ:
-    env_file:
-      - .env
+    environment:
+      - NODE_ENV=production
+      - BOT_TOKEN=${BOT_TOKEN}
+      - GEMINI_KEY=${GEMINI_KEY}
     volumes:
       - ./database.db:/app/database.db
 
