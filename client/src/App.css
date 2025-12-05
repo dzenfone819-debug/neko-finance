@@ -408,6 +408,7 @@ html, body, #root {
   justify-content: center;
   z-index: 1000;
   padding: 0;
+  overflow: hidden;
 }
 
 .modal-content {
@@ -415,13 +416,15 @@ html, body, #root {
   border-radius: 24px 24px 0 0;
   width: 100%;
   max-width: 500px;
-  max-height: 70vh;
+  max-height: calc(100vh - env(safe-area-inset-top, 0px));
+  height: auto;
   overflow-y: auto;
   padding: 20px;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 20px;
   box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
+  overscroll-behavior: contain;
 }
 
 .modal-header {

@@ -356,6 +356,12 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             value={newAccountName}
             onChange={(e) => setNewAccountName(e.target.value)}
             className="modal-input"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <select
             value={newAccountType}
@@ -479,6 +485,12 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             placeholder="Название счета"
             value={editAccountName}
             onChange={(e) => setEditAccountName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <input
             className="modal-input"
@@ -486,6 +498,13 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             placeholder="Текущий баланс"
             value={editAccountBalance}
             onChange={(e) => setEditAccountBalance(e.target.value)}
+            inputMode="decimal"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <div>
             <label className="modal-label">Цвет и иконка</label>
@@ -598,6 +617,12 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             placeholder="Название копилки"
             value={editGoalName}
             onChange={(e) => setEditGoalName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <input
             className="modal-input"
@@ -605,6 +630,13 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             placeholder="Целевая сумма"
             value={editGoalTarget}
             onChange={(e) => setEditGoalTarget(e.target.value)}
+            inputMode="numeric"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <div>
             <label className="modal-label">Цвет и иконка</label>
@@ -799,6 +831,12 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             value={newGoalName}
             onChange={(e) => setNewGoalName(e.target.value)}
             className="modal-input"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <input
             type="number"
@@ -806,6 +844,13 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             value={newGoalTarget}
             onChange={(e) => setNewGoalTarget(e.target.value)}
             className="modal-input"
+            inputMode="numeric"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
           />
           <div>
             <label className="modal-label">Цвет и иконка</label>
