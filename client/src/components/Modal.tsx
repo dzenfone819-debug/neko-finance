@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
             <div className="modal-header">
               <h2 className="modal-title">{title}</h2>
               <button className="modal-close" onClick={onClose}>
-                ✖️
+                <X size={18} />
               </button>
             </div>
             {children}
