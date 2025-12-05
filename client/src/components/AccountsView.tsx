@@ -69,6 +69,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewAccountName('');
       setNewAccountType('cash');
+      setSelectedColor('#667eea');
       setSelectedEmoji('💳');
       setShowAccountForm(false);
       onRefresh();
@@ -85,6 +86,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewGoalName('');
       setNewGoalTarget('');
+      setSelectedColor('#667eea');
       setSelectedEmoji('🐷');
       setShowGoalForm(false);
       onRefresh();
@@ -364,7 +366,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   fontWeight: 500
                 }}
               >
-                <span style={{ fontSize: 24 }}>{selectedEmoji}</span>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{selectedEmoji}</span>
                 <span style={{ color: '#666' }}>Выбрать иконку</span>
               </motion.button>
             </div>
@@ -483,7 +485,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   fontWeight: 500
                 }}
               >
-                <span style={{ fontSize: 24 }}>{selectedEmoji}</span>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{selectedEmoji}</span>
                 <span style={{ color: '#666' }}>Выбрать иконку</span>
               </motion.button>
             </div>
@@ -695,7 +697,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   fontWeight: 500
                 }}
               >
-                <span style={{ fontSize: 24 }}>{selectedEmoji}</span>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{selectedEmoji}</span>
                 <span style={{ color: '#666' }}>Выбрать иконку</span>
               </motion.button>
             </div>
