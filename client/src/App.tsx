@@ -223,95 +223,79 @@ function App() {
         
         {activeTab === 'input' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 15, gap: 20 }}>
-              <button onClick={() => toggleTransType('expense')} style={{ background: transType === 'expense' ? '#FFADAD' : '#F0F0F0', border: 'none', borderRadius: 20, padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 6, color: transType === 'expense' ? 'white' : '#A0A0A0', fontWeight: 'bold', transition: '0.3s' }}>
-                <ArrowDownCircle size={18} /> Расход
-              </button>
-              <button onClick={() => toggleTransType('income')} style={{ background: transType === 'income' ? '#4ADE80' : '#F0F0F0', border: 'none', borderRadius: 20, padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 6, color: transType === 'income' ? 'white' : '#A0A0A0', fontWeight: 'bold', transition: '0.3s' }}>
-                <ArrowUpCircle size={18} /> Доход
-              </button>
-            </div>
+            <div className="input-tab-content">
+              <div className="transaction-type-selector">
+                <button onClick={() => toggleTransType('expense')} className={`type-button ${transType === 'expense' ? 'type-button-expense-active' : ''}`}>
+                  <ArrowDownCircle size={18} /> Расход
+                </button>
+                <button onClick={() => toggleTransType('income')} className={`type-button ${transType === 'income' ? 'type-button-income-active' : ''}`}>
+                  <ArrowUpCircle size={18} /> Доход
+                </button>
+              </div>
 
-            {(accounts.length > 0 || goals.length > 0) && (
-              <div style={{ marginBottom: 10, width: '100%' }}>
-                <label style={{ fontSize: 12, fontWeight: 'bold', color: '#6B4C75', display: 'block', marginBottom: 8, paddingLeft: '2px' }}>На счет/копилку:</label>
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }} className="account-scroll">
-                  {accounts.map((acc) => {
-                    const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
-                    console.log('🔄 Rendering account button:', acc.name, 'id:', acc.id, 'selectedAccount:', selectedAccount, 'isSelected:', isSelected);
-                    return (
-                    <motion.button
-                      key={`acc-${acc.id}`}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        console.log('🔘 Clicked account:', acc.id, 'name:', acc.name);
-                        setSelectedAccount({type: 'account', id: acc.id});
-                      }}
-                      style={{
-                        padding: '10px 16px',
-                        borderRadius: 10,
-                        border: isSelected ? '2px solid ' + acc.color : '1px solid #D291BC',
-                        background: isSelected ? acc.color : '#F8F9FA',
-                        color: isSelected ? 'white' : '#6B4C75',
-                        fontWeight: 'bold',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                        transition: '0.2s',
-                        minWidth: '80px',
-                        textAlign: 'center'
-                      }}
-                    >
-                      {acc.name}
+              {(accounts.length > 0 || goals.length > 0) && (
+                <div className="account-selector-section">
+                  <label className="section-label">На счет/копилку:</label>
+                  <div className="account-selector-scroll">
+                    {accounts.map((acc) => {
+                      const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
+                      console.log('🔄 Rendering account button:', acc.name, 'id:', acc.id, 'selectedAccount:', selectedAccount, 'isSelected:', isSelected);
+                      return (
+                      <motion.button
+                        key={`acc-${acc.id}`}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          console.log('🔘 Clicked account:', acc.id, 'name:', acc.name);
+                          setSelectedAccount({type: 'account', id: acc.id});
+                        }}
+                        className={`account-button ${isSelected ? 'account-button-selected' : ''}`}
+                        style={{
+                          borderColor: isSelected ? acc.color : undefined,
+                          backgroundColor: isSelected ? acc.color : undefined,
+                        }}
+                      >
+                        {acc.name}
+                      </motion.button>
+                      );
+                    })}
+                    {goals.map((goal) => {
+                      const isSelected = selectedAccount?.type === 'goal' && selectedAccount?.id === goal.id;
+                      return (
+                      <motion.button
+                        key={`goal-${goal.id}`}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          console.log('🎯 Clicked goal:', goal.id, 'name:', goal.name);
+                          setSelectedAccount({type: 'goal', id: goal.id});
+                        }}
+                        className={`account-button account-button-goal ${isSelected ? 'account-button-goal-selected' : ''}`}
+                        style={{
+                          borderColor: isSelected ? (goal.color || '#FFB6C1') : undefined,
+                          backgroundColor: isSelected ? (goal.color || '#FFB6C1') : undefined,
+                        }}
+                      >
+                        💰 {goal.name}
+                      </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="categories-wrapper">
+                <div className="categories-scroll">
+                  {currentCategories.map((cat) => (
+                    <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+                      <div className="category-icon">{cat.icon}</div>
+                      <span className="category-label">{cat.name}</span>
                     </motion.button>
-                    );
-                  })}
-                  {goals.map((goal) => {
-                    const isSelected = selectedAccount?.type === 'goal' && selectedAccount?.id === goal.id;
-                    return (
-                    <motion.button
-                      key={`goal-${goal.id}`}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        console.log('🎯 Clicked goal:', goal.id, 'name:', goal.name);
-                        setSelectedAccount({type: 'goal', id: goal.id});
-                      }}
-                      style={{
-                        padding: '10px 16px',
-                        borderRadius: 10,
-                        border: isSelected ? '2px solid ' + (goal.color || '#FFB6C1') : '1px solid #D291BC',
-                        background: isSelected ? (goal.color || '#FFB6C1') : '#F8F9FA',
-                        color: isSelected ? 'white' : '#6B4C75',
-                        fontWeight: 'bold',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                        transition: '0.2s',
-                        minWidth: '80px',
-                        textAlign: 'center'
-                      }}
-                    >
-                      💰 {goal.name}
-                    </motion.button>
-                    );
-                  })}
+                  ))}
                 </div>
               </div>
-            )}
-
-            <div className="categories-wrapper">
-              <div className="categories-scroll">
-                {currentCategories.map((cat) => (
-                  <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
-                    <div className="category-icon">{cat.icon}</div>
-                    <span className="category-label">{cat.name}</span>
-                  </motion.button>
-                ))}
-              </div>
             </div>
-            <NumPad onNumberClick={handleNumberClick} onDelete={handleDelete} onConfirm={handleConfirm} />
+            <div className="numpad-container">
+              <NumPad onNumberClick={handleNumberClick} onDelete={handleDelete} onConfirm={handleConfirm} />
+            </div>
           </>
         )}
 
