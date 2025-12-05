@@ -16,6 +16,9 @@ html, body, #root {
   background-color: var(--bg-color);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  position: fixed;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-container {
