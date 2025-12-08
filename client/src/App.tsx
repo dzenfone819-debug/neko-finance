@@ -343,7 +343,7 @@ function App() {
             flex: 1,
             backgroundColor: 'rgba(255, 255, 255, 0.5)',
             borderRadius: 12,
-            padding: '15px 20px',
+            padding: '10px 30px',
             textAlign: 'center'
           }}>
             <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
@@ -358,7 +358,7 @@ function App() {
             flex: 1,
             backgroundColor: 'rgba(200, 255, 200, 0.3)',
             borderRadius: 12,
-            padding: '15px 20px',
+            padding: '10px 30px',
             textAlign: 'center'
           }}>
             <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
