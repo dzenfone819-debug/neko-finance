@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, ArrowRightLeft } from 'lucide-react';
+import { Plus, ArrowRightLeft } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { Modal } from './Modal';
@@ -42,6 +42,14 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [transferFrom, setTransferFrom] = useState<{ type: string; id: number } | null>(null);
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ type: 'account' | 'goal'; id: number; x: number; y: number } | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [editAccountName, setEditAccountName] = useState('');
+  const [editAccountBalance, setEditAccountBalance] = useState('');
+  const [editGoalName, setEditGoalName] = useState('');
+  const [editGoalTarget, setEditGoalTarget] = useState('');
 
   const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'];
   const accountTypes = [
@@ -86,6 +94,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     try {
       await api.deleteAccount(userId, accountId);
       WebApp.HapticFeedback.notificationOccurred('success');
+      setContextMenu(null);
       onRefresh();
     } catch (e) {
       console.error(e);
@@ -97,9 +106,76 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     try {
       await api.deleteGoal(userId, goalId);
       WebApp.HapticFeedback.notificationOccurred('success');
+      setContextMenu(null);
       onRefresh();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleLongPressStart = (type: 'account' | 'goal', id: number, e: React.TouchEvent | React.MouseEvent) => {
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const timer = window.setTimeout(() => {
+      WebApp.HapticFeedback.impactOccurred('medium');
+      setContextMenu({ type, id, x: rect.right - 150, y: rect.bottom });
+    }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      window.clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const openEditAccount = (account: Account) => {
+    setEditingAccount(account);
+    setEditAccountName(account.name);
+    setEditAccountBalance(account.balance.toString());
+    setSelectedColor(account.color);
+    setContextMenu(null);
+  };
+
+  const openEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setEditGoalName(goal.name);
+    setEditGoalTarget(goal.target_amount.toString());
+    setSelectedColor(goal.color);
+    setContextMenu(null);
+  };
+
+  const handleEditAccount = async () => {
+    if (!userId || !editingAccount || !editAccountName) return;
+    try {
+      await api.updateAccount(userId, editingAccount.id, {
+        name: editAccountName,
+        balance: parseFloat(editAccountBalance) || editingAccount.balance,
+        color: selectedColor
+      });
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setEditingAccount(null);
+      onRefresh();
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
+  };
+
+  const handleEditGoal = async () => {
+    if (!userId || !editingGoal || !editGoalName || !editGoalTarget) return;
+    try {
+      await api.updateGoal(userId, editingGoal.id, {
+        name: editGoalName,
+        target_amount: parseFloat(editGoalTarget),
+        color: selectedColor
+      });
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setEditingGoal(null);
+      onRefresh();
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
     }
   };
 
@@ -188,6 +264,11 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   key={acc.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  onTouchStart={(e) => handleLongPressStart('account', acc.id, e)}
+                  onTouchEnd={handleLongPressEnd}
+                  onMouseDown={(e) => handleLongPressStart('account', acc.id, e)}
+                  onMouseUp={handleLongPressEnd}
+                  onMouseLeave={handleLongPressEnd}
                   style={{
                     background: acc.color,
                     padding: '15px',
@@ -196,31 +277,15 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    cursor: 'pointer',
+                    userSelect: 'none'
                   }}
                 >
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>{acc.name}</div>
                     <div style={{ fontSize: 20, fontWeight: 'bold' }}>{acc.balance.toLocaleString()} ₽</div>
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleDeleteAccount(acc.id)}
-                    style={{
-                      background: 'rgba(255,255,255,0.3)',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: 40,
-                      height: 40,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      color: 'white'
-                    }}
-                  >
-                    <Trash2 size={18} />
-                  </motion.button>
                 </motion.div>
               ))}
             </div>
@@ -313,39 +378,26 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     key={goal.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
+                    onTouchStart={(e) => handleLongPressStart('goal', goal.id, e)}
+                    onTouchEnd={handleLongPressEnd}
+                    onMouseDown={(e) => handleLongPressStart('goal', goal.id, e)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
                     style={{
                       background: 'white',
                       padding: '15px',
                       borderRadius: '15px',
                       border: `2px solid ${goal.color}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                      cursor: 'pointer',
+                      userSelect: 'none'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 'bold' }}>{goal.icon} {goal.name}</div>
-                        <div style={{ fontSize: 11, color: '#999', marginTop: 5 }}>
-                          {goal.current_amount.toLocaleString()} / {goal.target_amount.toLocaleString()} ₽
-                        </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 'bold' }}>{goal.icon} {goal.name}</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 5 }}>
+                        {goal.current_amount.toLocaleString()} / {goal.target_amount.toLocaleString()} ₽
                       </div>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDeleteGoal(goal.id)}
-                        style={{
-                          background: '#FFE5E5',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 36,
-                          height: 36,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          color: '#FF6B6B'
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </motion.button>
                     </div>
                     <div style={{ width: '100%', height: 8, background: '#F0F0F0', borderRadius: 4, overflow: 'hidden' }}>
                       <motion.div
@@ -524,6 +576,175 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             style={{ background: '#4ECDC4' }}
           >
             Перевести
+          </motion.button>
+        </div>
+      </Modal>
+
+      {/* CONTEXT MENU */}
+      {contextMenu && (
+        <>
+          <div
+            onClick={() => setContextMenu(null)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 999
+            }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              position: 'fixed',
+              top: contextMenu.y,
+              left: contextMenu.x,
+              background: 'white',
+              borderRadius: 12,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+              padding: 8,
+              zIndex: 1000,
+              minWidth: 150
+            }}
+          >
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                if (contextMenu.type === 'account') {
+                  const account = accounts.find((a) => a.id === contextMenu.id);
+                  if (account) openEditAccount(account);
+                } else {
+                  const goal = goals.find((g) => g.id === contextMenu.id);
+                  if (goal) openEditGoal(goal);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 15px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                fontSize: 14,
+                color: '#333',
+                textAlign: 'left'
+              }}
+            >
+              ✏️ Редактировать
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                if (contextMenu.type === 'account') {
+                  handleDeleteAccount(contextMenu.id);
+                } else {
+                  handleDeleteGoal(contextMenu.id);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 15px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                fontSize: 14,
+                color: '#FF6B6B',
+                textAlign: 'left'
+              }}
+            >
+              🗑️ Удалить
+            </motion.button>
+          </motion.div>
+        </>
+      )}
+
+      {/* MODAL EDIT ACCOUNT */}
+      <Modal isOpen={editingAccount !== null} onClose={() => setEditingAccount(null)} title="Редактировать счет">
+        <div className="modal-body">
+          <input
+            type="text"
+            placeholder="Название счета"
+            value={editAccountName}
+            onChange={(e) => setEditAccountName(e.target.value)}
+            className="modal-input"
+          />
+          <input
+            type="number"
+            placeholder="Баланс"
+            value={editAccountBalance}
+            onChange={(e) => setEditAccountBalance(e.target.value)}
+            className="modal-input"
+          />
+          <div className="color-picker">
+            {colors.map((col) => (
+              <motion.button
+                key={col}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedColor(col)}
+                className="color-option"
+                style={{
+                  background: col,
+                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                }}
+              />
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleEditAccount}
+            className="modal-submit-button"
+          >
+            Сохранить
+          </motion.button>
+        </div>
+      </Modal>
+
+      {/* MODAL EDIT GOAL */}
+      <Modal isOpen={editingGoal !== null} onClose={() => setEditingGoal(null)} title="Редактировать копилку">
+        <div className="modal-body">
+          <input
+            type="text"
+            placeholder="Название копилки"
+            value={editGoalName}
+            onChange={(e) => setEditGoalName(e.target.value)}
+            className="modal-input"
+          />
+          <input
+            type="number"
+            placeholder="Целевая сумма"
+            value={editGoalTarget}
+            onChange={(e) => setEditGoalTarget(e.target.value)}
+            className="modal-input"
+          />
+          <div className="color-picker">
+            {colors.map((col) => (
+              <motion.button
+                key={col}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedColor(col)}
+                className="color-option"
+                style={{
+                  background: col,
+                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                }}
+              />
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleEditGoal}
+            className="modal-submit-button"
+          >
+            Сохранить
           </motion.button>
         </div>
       </Modal>
