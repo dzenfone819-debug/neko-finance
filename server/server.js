@@ -16,6 +16,7 @@ console.log('📁 Используется путь к БД:', dbPath)
 // Раздача фронтенда
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, '../client/dist'),
+  prefix: '/', // Раздавать файлы по корневому пути
 })
 
 fastify.register(cors, { origin: true })
@@ -629,7 +630,17 @@ fastify.get('/total-balance', (request, reply) => {
 })
 
 // Роутинг
-fastify.setNotFoundHandler((req, res) => {
+fastify.setNotFoundHandler(async (req, res) => {
+  // Проверяем, это запрос к API или к файлу
+  const url = req.url.split('?')[0]; // Убираем query параметры
+  
+  // Если это запрос к статическому файлу (есть расширение), возвращаем 404
+  if (url.match(/\.[a-zA-Z0-9]+$/)) {
+    res.code(404).send('Not Found');
+    return;
+  }
+  
+  // Иначе отдаем index.html для SPA роутинга
   res.sendFile('index.html')
 })
 
