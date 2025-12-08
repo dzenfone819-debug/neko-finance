@@ -33,6 +33,7 @@ function App() {
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const [totalSpent, setTotalSpent] = useState(0)
+  const [totalIncome, setTotalIncome] = useState(0)
   const [currentBalance, setCurrentBalance] = useState(0)
   const [budgetLimit, setBudgetLimit] = useState(0)
   const [catLimits, setCatLimits] = useState<Record<string, number>>({})
@@ -100,6 +101,7 @@ function App() {
       ]);
       
       setTotalSpent(balData.total_expense);
+      setTotalIncome(balData.total_income || 0);
       setCurrentBalance(balData.balance);
       setStatsData(stats);
       setTransactions(hist);
@@ -266,21 +268,47 @@ function App() {
       <ModalInput isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleModalSave} title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'} initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)} />
 
       <div className="header-section">
-        {/* ДАТА СВЕРХУ (Компактно) */}
-        <div style={{ marginBottom: 5, zIndex: 10 }}>
-           <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
+        {/* Верхняя строка: Котик и выбор месяца */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          {/* КОТ слева */}
+          <motion.div 
+            animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
+            style={{ flexShrink: 0 }}
+          >
+            <NekoAvatar mood={getNekoMood()} />
+          </motion.div>
+
+          {/* БАР БЮДЖЕТА справа от котика */}
+          <div style={{ flex: 1, marginLeft: 15, marginRight: 10 }}>
+            <BudgetStatus total={totalSpent} limit={budgetLimit} />
+          </div>
+
+          {/* Выбор месяца справа */}
+          <div style={{ flexShrink: 0 }}>
+            <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
+          </div>
         </div>
 
-        {/* КОТ (Резиновый размер) */}
-        <motion.div 
-          animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
-          className="neko-avatar"
-        >
-          <NekoAvatar mood={getNekoMood()} />
-        </motion.div>
-        
-        {/* БАР БЮДЖЕТА */}
-        <BudgetStatus total={totalSpent} limit={budgetLimit} />
+        {/* Строка с доходами/расходами */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-around', 
+          fontSize: 11, 
+          fontWeight: 'bold', 
+          color: '#6B4C75', 
+          marginBottom: 5,
+          opacity: 0.8,
+          padding: '5px 0'
+        }}>
+          <div>
+            <span style={{ color: '#27AE60' }}>↑ </span>
+            Доход: {totalIncome.toLocaleString()} ₽
+          </div>
+          <div>
+            <span style={{ color: '#E74C3C' }}>↓ </span>
+            Расход: {totalSpent.toLocaleString()} ₽
+          </div>
+        </div>
         
         {/* ТЕКСТ ДОСТУПНО */}
         {activeTab === 'input' && (
