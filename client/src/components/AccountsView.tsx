@@ -39,6 +39,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalTarget, setNewGoalTarget] = useState('');
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
+  const [selectedIcon, setSelectedIcon] = useState('🐷');
   const [transferFrom, setTransferFrom] = useState<{ type: string; id: number } | null>(null);
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
@@ -53,6 +54,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [editGoalCurrent, setEditGoalCurrent] = useState('');
 
   const colors = ['#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFA07A'];
+  const goalIcons = ['🐷', '🏠', '✈️', '🚗', '💍', '🎓', '💻', '🎮', '📱', '⌚'];
   const accountTypes = [
     { value: 'cash', label: '💵 Наличные' },
     { value: 'card', label: '💳 Карта' },
@@ -78,10 +80,11 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const handleCreateGoal = async () => {
     if (!userId || !newGoalName || !newGoalTarget) return;
     try {
-      await api.createGoal(userId, newGoalName, parseFloat(newGoalTarget), selectedColor, '🐷');
+      await api.createGoal(userId, newGoalName, parseFloat(newGoalTarget), selectedColor, selectedIcon);
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewGoalName('');
       setNewGoalTarget('');
+      setSelectedIcon('🐷');
       setShowGoalForm(false);
       onRefresh();
     } catch (e) {
@@ -144,6 +147,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     setEditGoalTarget(goal.target_amount.toString());
     setEditGoalCurrent(goal.current_amount.toString());
     setSelectedColor(goal.color);
+    setSelectedIcon(goal.icon);
     setContextMenu(null);
   };
 
@@ -171,7 +175,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
         name: editGoalName,
         target_amount: parseFloat(editGoalTarget),
         current_amount: parseFloat(editGoalCurrent) || 0,
-        color: selectedColor
+        color: selectedColor,
+        icon: selectedIcon
       });
       WebApp.HapticFeedback.notificationOccurred('success');
       setEditingGoal(null);
@@ -465,6 +470,32 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             onChange={(e) => setNewGoalTarget(e.target.value)}
             className="modal-input"
           />
+          <div style={{ marginBottom: 15 }}>
+            <label className="modal-label">Иконка</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {goalIcons.map((icon) => (
+                <motion.button
+                  key={icon}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedIcon(icon)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    fontSize: 20,
+                    border: selectedIcon === icon ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    borderRadius: 8,
+                    background: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {icon}
+                </motion.button>
+              ))}
+            </div>
+          </div>
           <div className="color-picker">
             {colors.map((col) => (
               <motion.button
@@ -735,6 +766,32 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             onChange={(e) => setEditGoalTarget(e.target.value)}
             className="modal-input"
           />
+          <div style={{ marginBottom: 15 }}>
+            <label className="modal-label">Иконка</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {goalIcons.map((icon) => (
+                <motion.button
+                  key={icon}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedIcon(icon)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    fontSize: 20,
+                    border: selectedIcon === icon ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    borderRadius: 8,
+                    background: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {icon}
+                </motion.button>
+              ))}
+            </div>
+          </div>
           <div className="color-picker">
             {colors.map((col) => (
               <motion.button
