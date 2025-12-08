@@ -246,7 +246,7 @@ function App() {
     }
   }
 
-  const getNekoMood = (): 'happy' | 'neutral' | 'sad' | 'worried' | 'angry' | 'error' | 'dead' => {
+  const getNekoMood = (): 'happy' | 'neutral' | 'sad' | 'worried' | 'error' | 'dead' => {
     if (isError) return 'error';
     if (isHappy) return 'happy';
     if (budgetLimit > 0) {

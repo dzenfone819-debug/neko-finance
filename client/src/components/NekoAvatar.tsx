@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface NekoAvatarProps {
-  mood: 'happy' | 'neutral' | 'sad' | 'worried' | 'angry' | 'error' | 'dead';
+  mood: 'happy' | 'neutral' | 'sad' | 'worried' | 'error' | 'dead';
 }
 
 export const NekoAvatar: React.FC<NekoAvatarProps> = ({ mood }) => {
