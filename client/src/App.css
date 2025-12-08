@@ -506,6 +506,7 @@ html, body, #root {
   padding: 10px 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  flex-wrap: nowrap;
 }
 
 .color-picker::-webkit-scrollbar {
@@ -515,10 +516,12 @@ html, body, #root {
 .color-option {
   width: 32px;
   height: 32px;
+  min-width: 32px;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 
 .color-option:hover {
