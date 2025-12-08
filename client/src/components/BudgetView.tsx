@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2 } from 'lucide-react';
-import { CATEGORIES } from '../data/constants';
+import { CATEGORIES, getIconByName } from '../data/constants';
 
 interface CustomCategory {
   id: string;
@@ -108,8 +108,15 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
 
           return (
             <div key={cat.id}>
-              {/* Клик открывает модалку категории */}
-              {renderBar(cat.name, spent, limit, cat.color, () => onEditCategory(cat.id), cat.icon)}
+              {renderBar(
+                cat.name, 
+                spent, 
+                limit, 
+                cat.color, 
+                () => onEditCategory(cat.id), 
+                cat.icon,
+                limit > 0 ? () => onDeleteCategory(cat.id) : undefined
+              )}
             </div>
           )
         })}
@@ -128,7 +135,7 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
                 limit, 
                 cat.color, 
                 () => onEditCategory(cat.id), 
-                <span>{cat.icon}</span>,
+                getIconByName(cat.icon, 20),
                 () => onDeleteCategory(cat.id)
               )}
             </div>

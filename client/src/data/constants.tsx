@@ -1,8 +1,20 @@
 import { 
   Coffee, Car, Gamepad2, Zap, 
   Home, Bus, RefreshCcw, Divide, Armchair, Shirt, PiggyBank, ShoppingBasket,
-  Briefcase, Gift, Percent, Wallet
+  Briefcase, Gift, Percent, Wallet, Package, Plane, Utensils, Film, Smartphone, Pill, GraduationCap
 } from 'lucide-react'
+
+// Функция для получения иконки по имени
+export const getIconByName = (iconName: string, size: number = 20) => {
+  const icons: Record<string, any> = {
+    ShoppingBasket, Coffee, Car, Bus, Home, Zap, RefreshCcw, Divide,
+    Armchair, Shirt, Gamepad2, PiggyBank, Briefcase, Gift, Percent, Wallet,
+    Package, Plane, Utensils, Film, Smartphone, Pill, GraduationCap
+  };
+  
+  const IconComponent = icons[iconName];
+  return IconComponent ? <IconComponent size={size} /> : <Package size={size} />;
+};
 
 // Палитра
 export const COLORS = [

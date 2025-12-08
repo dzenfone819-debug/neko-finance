@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
-import { LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react'
+import { 
+  LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet,
+  Coffee, Car, Gamepad2, Zap, Home, Bus,
+  Shirt, PiggyBank, ShoppingBasket,
+  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package
+} from 'lucide-react'
 import './App.css'
 
 import { NumPad } from './components/NumPad'
@@ -13,7 +18,7 @@ import { ModalInput } from './components/ModalInput'
 import { MonthSelector } from './components/MonthSelector'
 import { AccountsView } from './components/AccountsView'
 import { Modal } from './components/Modal'
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/constants'
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 
 function App() {
@@ -42,7 +47,7 @@ function App() {
   const [customCategories, setCustomCategories] = useState<any[]>([])
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
-  const [newCategoryIcon, setNewCategoryIcon] = useState('📦')
+  const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
   const [newCategoryColor, setNewCategoryColor] = useState('#A0C4FF')
   const [newCategoryLimit, setNewCategoryLimit] = useState('')
 
@@ -188,7 +193,7 @@ function App() {
       WebApp.HapticFeedback.notificationOccurred('success');
       setShowAddCategoryModal(false);
       setNewCategoryName('');
-      setNewCategoryIcon('📦');
+      setNewCategoryIcon('Package');
       setNewCategoryColor('#A0C4FF');
       setNewCategoryLimit('');
       loadData(userId, currentDate);
@@ -202,7 +207,17 @@ function App() {
     if (!userId) return;
     WebApp.HapticFeedback.impactOccurred('medium');
     try {
-      await api.deleteCustomCategory(userId, categoryId);
+      // Проверяем, это кастомная категория или стандартная
+      const isCustom = customCategories.some(cat => cat.id === categoryId);
+      
+      if (isCustom) {
+        // Удаляем кастомную категорию полностью
+        await api.deleteCustomCategory(userId, categoryId);
+      } else {
+        // Для стандартной категории просто удаляем лимит (устанавливаем 0)
+        await api.setCategoryLimit(userId, categoryId, 0);
+      }
+      
       WebApp.HapticFeedback.notificationOccurred('success');
       loadData(userId, currentDate);
     } catch (e) {
@@ -339,6 +354,22 @@ function App() {
                       <span className="category-label">{cat.name}</span>
                     </motion.button>
                   ))}
+                  {/* КАСТОМНЫЕ КАТЕГОРИИ (только для расходов) */}
+                  {transType === 'expense' && customCategories.map((cat) => (
+                    <motion.button 
+                      key={cat.id} 
+                      whileTap={{ scale: 0.95 }} 
+                      onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} 
+                      className="category-btn" 
+                      style={{ 
+                        background: selectedCategory === cat.id ? cat.color : '#F8F9FA', 
+                        boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' 
+                      }}
+                    >
+                      <div className="category-icon">{getIconByName(cat.icon, 20)}</div>
+                      <span className="category-label">{cat.name}</span>
+                    </motion.button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -399,14 +430,30 @@ function App() {
           <div style={{ marginBottom: 15 }}>
             <label className="modal-label">Иконка</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-              {['📦', '🎮', '🏠', '🚗', '✈️', '🍔', '☕', '🎬', '📱', '💊', '👕', '🎓'].map((icon) => (
+              {[
+                { icon: 'Package', component: <Package size={20} /> },
+                { icon: 'Gamepad2', component: <Gamepad2 size={20} /> },
+                { icon: 'Home', component: <Home size={20} /> },
+                { icon: 'Car', component: <Car size={20} /> },
+                { icon: 'Plane', component: <Plane size={20} /> },
+                { icon: 'Utensils', component: <Utensils size={20} /> },
+                { icon: 'Coffee', component: <Coffee size={20} /> },
+                { icon: 'Film', component: <Film size={20} /> },
+                { icon: 'Smartphone', component: <Smartphone size={20} /> },
+                { icon: 'Pill', component: <Pill size={20} /> },
+                { icon: 'Shirt', component: <Shirt size={20} /> },
+                { icon: 'GraduationCap', component: <GraduationCap size={20} /> },
+                { icon: 'ShoppingBasket', component: <ShoppingBasket size={20} /> },
+                { icon: 'Bus', component: <Bus size={20} /> },
+                { icon: 'Zap', component: <Zap size={20} /> },
+                { icon: 'PiggyBank', component: <PiggyBank size={20} /> },
+              ].map((item) => (
                 <motion.button
-                  key={icon}
+                  key={item.icon}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setNewCategoryIcon(icon)}
+                  onClick={() => setNewCategoryIcon(item.icon)}
                   style={{
-                    fontSize: 24,
-                    background: newCategoryIcon === icon ? '#667eea' : '#F0F0F0',
+                    background: newCategoryIcon === item.icon ? '#667eea' : '#F0F0F0',
                     border: 'none',
                     borderRadius: 8,
                     width: 48,
@@ -414,10 +461,11 @@ function App() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    color: newCategoryIcon === item.icon ? 'white' : '#333'
                   }}
                 >
-                  {icon}
+                  {item.component}
                 </motion.button>
               ))}
             </div>
