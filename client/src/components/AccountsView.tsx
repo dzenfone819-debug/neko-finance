@@ -50,6 +50,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [editAccountBalance, setEditAccountBalance] = useState('');
   const [editGoalName, setEditGoalName] = useState('');
   const [editGoalTarget, setEditGoalTarget] = useState('');
+  const [editGoalCurrent, setEditGoalCurrent] = useState('');
 
   const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'];
   const accountTypes = [
@@ -141,6 +142,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     setEditingGoal(goal);
     setEditGoalName(goal.name);
     setEditGoalTarget(goal.target_amount.toString());
+    setEditGoalCurrent(goal.current_amount.toString());
     setSelectedColor(goal.color);
     setContextMenu(null);
   };
@@ -168,6 +170,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       await api.updateGoal(userId, editingGoal.id, {
         name: editGoalName,
         target_amount: parseFloat(editGoalTarget),
+        current_amount: parseFloat(editGoalCurrent) || 0,
         color: selectedColor
       });
       WebApp.HapticFeedback.notificationOccurred('success');
@@ -716,6 +719,13 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             placeholder="Название копилки"
             value={editGoalName}
             onChange={(e) => setEditGoalName(e.target.value)}
+            className="modal-input"
+          />
+          <input
+            type="number"
+            placeholder="Текущая сумма"
+            value={editGoalCurrent}
+            onChange={(e) => setEditGoalCurrent(e.target.value)}
             className="modal-input"
           />
           <input
