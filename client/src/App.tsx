@@ -269,12 +269,21 @@ function App() {
 
       <div className="header-section">
         {/* Верхняя строка: Месяц слева, лого справа */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: 15,
+          width: '100%',
+          paddingLeft: 15,
+          paddingRight: 15,
+          boxSizing: 'border-box'
+        }}>
           <div style={{ marginLeft: 0 }}>
             <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
           </div>
           <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', opacity: 0.8, marginRight: 0 }}>
-            KAWAII FINANCE
+            PURRFINANCE
           </div>
         </div>
 
