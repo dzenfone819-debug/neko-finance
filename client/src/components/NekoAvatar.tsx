@@ -6,9 +6,7 @@ interface NekoAvatarProps {
 
 export const NekoAvatar: React.FC<NekoAvatarProps> = ({ mood }) => {
   const getImagePath = () => {
-    // Для neutral используем happy как fallback
-    const imageName = mood === 'neutral' ? 'happy' : mood;
-    return `/images/${imageName}.png`;
+    return `/images/${mood}.png`;
   };
 
   return (
