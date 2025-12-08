@@ -268,8 +268,8 @@ function App() {
       <ModalInput isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleModalSave} title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'} initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)} />
 
       <div className="header-section">
-        {/* Верхняя строка: Котик и выбор месяца */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        {/* Верхняя строка: Котик слева, выбор месяца справа */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           {/* КОТ слева */}
           <motion.div 
             animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
@@ -278,27 +278,41 @@ function App() {
             <NekoAvatar mood={getNekoMood()} />
           </motion.div>
 
-          {/* БАР БЮДЖЕТА справа от котика */}
-          <div style={{ flex: 1, marginLeft: 15, marginRight: 10 }}>
-            <BudgetStatus total={totalSpent} limit={budgetLimit} />
-          </div>
-
           {/* Выбор месяца справа */}
           <div style={{ flexShrink: 0 }}>
             <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
           </div>
         </div>
 
-        {/* Строка с доходами/расходами */}
+        {/* БАР БЮДЖЕТА - длинный, под котиком и месяцем */}
+        <div style={{ width: '100%', marginBottom: 5 }}>
+          <BudgetStatus total={totalSpent} limit={budgetLimit} />
+        </div>
+
+        {/* ТЕКСТ ДОСТУПНО - справа под баром */}
+        {activeTab === 'input' && (
+          <div style={{ 
+            fontSize: 11, 
+            fontWeight: 'bold', 
+            color: '#6B4C75', 
+            marginBottom: 5, 
+            opacity: 0.7,
+            textAlign: 'right'
+          }}>
+            Доступно: {displayBalance.toLocaleString()} ₽
+          </div>
+        )}
+
+        {/* Строка с доходами/расходами - по центру */}
         <div style={{ 
           display: 'flex', 
-          justifyContent: 'space-around', 
+          justifyContent: 'center', 
+          gap: 30,
           fontSize: 11, 
           fontWeight: 'bold', 
           color: '#6B4C75', 
           marginBottom: 5,
-          opacity: 0.8,
-          padding: '5px 0'
+          opacity: 0.8
         }}>
           <div>
             <span style={{ color: '#27AE60' }}>↑ </span>
@@ -309,13 +323,6 @@ function App() {
             Расход: {totalSpent.toLocaleString()} ₽
           </div>
         </div>
-        
-        {/* ТЕКСТ ДОСТУПНО */}
-        {activeTab === 'input' && (
-          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', marginTop: 2, marginBottom: 2, opacity: 0.7 }}>
-            Доступно: {displayBalance.toLocaleString()} ₽
-          </div>
-        )}
 
         {/* СУММА ИЛИ ЗАГОЛОВОК */}
         {activeTab === 'input' ? (
