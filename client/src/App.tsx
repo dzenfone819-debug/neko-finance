@@ -277,7 +277,16 @@ function App() {
         </div>
 
         {/* Новый блок: Котик слева, справа бюджет/сумма/доступно */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 15, marginBottom: 15 }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          gap: 15, 
+          marginBottom: 15,
+          width: '100%',
+          paddingLeft: 15,
+          paddingRight: 15,
+          boxSizing: 'border-box'
+        }}>
           {/* Котик слева */}
           <motion.div 
             animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
@@ -287,7 +296,7 @@ function App() {
           </motion.div>
 
           {/* Правая колонка: бюджет, сумма, доступно */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
             {/* БАР БЮДЖЕТА */}
             <div style={{ width: '100%' }}>
               <BudgetStatus total={totalSpent} limit={budgetLimit} />
