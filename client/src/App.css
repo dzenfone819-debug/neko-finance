@@ -35,14 +35,14 @@ html, body, #root {
 
 /* --- HEADER --- */
 .header-section {
-  min-height: 100px;
+  min-height: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
   flex-shrink: 0;
-  padding: 12px 20px;
+  padding: 8px 16px;
 }
 
 .neko-avatar {
@@ -52,7 +52,7 @@ html, body, #root {
 }
 
 .amount-display {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--text-main);
   display: flex;
@@ -84,9 +84,9 @@ html, body, #root {
 .input-tab-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
-  padding: 12px 14px 8px 14px;
+  padding: 8px 14px 6px 14px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -110,13 +110,13 @@ html, body, #root {
   background: #F0F0F0;
   border: none;
   border-radius: 18px;
-  padding: 8px 20px;
+  padding: 6px 18px;
   display: flex;
   align-items: center;
   gap: 5px;
   color: #A0A0A0;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -288,22 +288,23 @@ html, body, #root {
 /* --- NUMPAD --- */
 .numpad-container {
   flex-shrink: 0;
-  padding: 8px 14px 12px 14px;
+  padding: 6px 14px;
+  padding-bottom: calc(var(--tab-bar-height) + 8px);
   background: var(--white);
 }
 
 .numpad-grid { 
   display: grid; 
   grid-template-columns: repeat(3, 1fr); 
-  grid-template-rows: repeat(4, minmax(50px, 1fr)) minmax(52px, 60px);
-  gap: 8px;
-  max-height: 280px;
+  grid-template-rows: repeat(4, minmax(45px, 1fr)) minmax(48px, 55px);
+  gap: 6px;
+  max-height: 250px;
 }
 
 .numpad-btn { 
   background: #F4F6F8; 
   border: none; 
-  font-size: 22px; 
+  font-size: 20px; 
   font-weight: 700; 
   color: #2D3436; 
   border-radius: 12px; 
@@ -329,14 +330,14 @@ html, body, #root {
   grid-column: span 3; 
   background: linear-gradient(135deg, var(--primary) 0%, #E891C8 100%);
   color: white; 
-  font-size: 16px; 
+  font-size: 15px; 
   font-weight: 800; 
   border: none; 
   border-radius: 14px; 
   box-shadow: 0 4px 16px rgba(210, 145, 188, 0.4);
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 52px;
+  min-height: 48px;
 }
 
 .numpad-confirm:active {
