@@ -364,18 +364,15 @@ fastify.post('/custom-categories', (request, reply) => {
     function(err) {
       if (err) return reply.code(500).send({ error: err.message })
       
-      // Если указан лимит, создаем запись в category_limits
-      if (limit && limit > 0) {
-        db.run(
-          "INSERT INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)",
-          [userId, categoryId, limit],
-          () => {
-            reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit })
-          }
-        )
-      } else {
-        reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF' })
-      }
+      // Всегда создаем запись в category_limits (даже с лимитом 0)
+      const limitValue = limit !== undefined && limit !== null ? limit : 0
+      db.run(
+        "INSERT INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)",
+        [userId, categoryId, limitValue],
+        () => {
+          reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit: limitValue })
+        }
+      )
     }
   )
 })
