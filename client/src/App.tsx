@@ -50,7 +50,7 @@ function App() {
   const [selectedStandardCategory, setSelectedStandardCategory] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
-  const [newCategoryColor, setNewCategoryColor] = useState('#A0C4FF')
+  const [newCategoryColor, setNewCategoryColor] = useState('#FF6B6B')
   const [newCategoryLimit, setNewCategoryLimit] = useState('')
 
   // Правильная логика отображения "Доступно"
@@ -188,7 +188,7 @@ function App() {
     setSelectedStandardCategory('');
     setNewCategoryName('');
     setNewCategoryIcon('Package');
-    setNewCategoryColor('#A0C4FF');
+    setNewCategoryColor('#FF6B6B');
     setNewCategoryLimit('');
     setShowAddCategoryModal(true);
   }
@@ -561,7 +561,7 @@ function App() {
               <div style={{ marginBottom: 15, overflow: 'hidden' }}>
                 <label className="modal-label">Цвет</label>
                 <div className="color-picker" style={{ paddingBottom: 10 }}>
-                  {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#FDFFB6', '#FFB4D1', '#B4E7CE', '#E7C6FF'].map((col) => (
+                  {['#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFA07A'].map((col) => (
                     <motion.button
                       key={col}
                       whileTap={{ scale: 0.9 }}
