@@ -502,9 +502,14 @@ html, body, #root {
 .color-picker {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
+  overflow-x: auto;
   padding: 10px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.color-picker::-webkit-scrollbar {
+  display: none;
 }
 
 .color-option {

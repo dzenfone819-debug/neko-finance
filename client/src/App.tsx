@@ -561,7 +561,7 @@ function App() {
               <div style={{ marginBottom: 15 }}>
                 <label className="modal-label">Цвет</label>
                 <div className="color-picker">
-                  {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'].map((col) => (
+                  {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#FDFFB6', '#FFB4D1', '#B4E7CE', '#E7C6FF'].map((col) => (
                     <motion.button
                       key={col}
                       whileTap={{ scale: 0.9 }}
