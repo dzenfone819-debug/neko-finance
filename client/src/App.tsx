@@ -267,15 +267,18 @@ function App() {
 
       <div className="header-section">
         {/* Верхняя строка: Месяц слева, лого справа */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
-          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', opacity: 0.8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <div style={{ marginLeft: 0 }}>
+            <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', opacity: 0.8, marginRight: 0 }}>
             KAWAII FINANCE
           </div>
         </div>
 
-        {/* Вторая строка: Котик слева, текст "Лимит не задан" по центру */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 10 }}>
+        {/* Новый блок: Котик слева, справа бюджет/сумма/доступно */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 15, marginBottom: 15 }}>
+          {/* Котик слева */}
           <motion.div 
             animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
             style={{ flexShrink: 0 }}
@@ -283,54 +286,45 @@ function App() {
             <NekoAvatar mood={getNekoMood()} />
           </motion.div>
 
-          <div style={{ 
-            flex: 1,
-            fontSize: 13,
-            color: '#6B4C75',
-            opacity: 0.7,
-            textAlign: 'center'
-          }}>
-            {budgetLimit > 0 ? `Лимит: ${budgetLimit.toLocaleString()} ₽` : 'Лимит не задан'}
+          {/* Правая колонка: бюджет, сумма, доступно */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* БАР БЮДЖЕТА */}
+            <div style={{ width: '100%' }}>
+              <BudgetStatus total={totalSpent} limit={budgetLimit} />
+            </div>
+
+            {/* СУММА ИЛИ ЗАГОЛОВОК */}
+            {activeTab === 'input' ? (
+              <motion.div className="amount-display" style={{ margin: 0 }}>
+                <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>{amount || '0'}</span> 
+                <span className="currency">₽</span>
+              </motion.div>
+            ) : (
+              <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold'}}>
+                {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
+              </div>
+            )}
+
+            {/* ТЕКСТ ДОСТУПНО */}
+            {activeTab === 'input' && (
+              <div style={{ 
+                fontSize: 12, 
+                fontWeight: 'normal', 
+                color: '#6B4C75', 
+                opacity: 0.7,
+                textAlign: 'left'
+              }}>
+                Доступно: {displayBalance.toLocaleString()} ₽
+              </div>
+            )}
           </div>
         </div>
 
-        {/* БАР БЮДЖЕТА на всю ширину */}
-        <div style={{ width: '100%', marginBottom: 10 }}>
-          <BudgetStatus total={totalSpent} limit={budgetLimit} />
-        </div>
-
-        {/* СУММА ИЛИ ЗАГОЛОВОК */}
-        {activeTab === 'input' ? (
-           <motion.div className="amount-display">
-             <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>{amount || '0'}</span> 
-             <span className="currency">₽</span>
-           </motion.div>
-        ) : (
-          <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold', marginTop: 5}}>
-            {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
-          </div>
-        )}
-
-        {/* ТЕКСТ ДОСТУПНО под суммой */}
-        {activeTab === 'input' && (
-          <div style={{ 
-            fontSize: 12, 
-            fontWeight: 'normal', 
-            color: '#6B4C75', 
-            marginTop: 5,
-            opacity: 0.7,
-            textAlign: 'center'
-          }}>
-            Доступно: {displayBalance.toLocaleString()} ₽
-          </div>
-        )}
-
-        {/* Нижняя строка: блоки потрачено, бюджет, баланс */}
+        {/* Нижняя строка: блоки потрачено, лимит, баланс */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between',
-          gap: 10,
-          marginTop: 15
+          gap: 10
         }}>
           <div style={{ 
             flex: 1,
@@ -355,7 +349,7 @@ function App() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
-              БЮДЖЕТ
+              ЛИМИТ
             </div>
             <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
               {budgetLimit > 0 ? `${budgetLimit.toLocaleString()} ₽` : '∞ ₽'}
