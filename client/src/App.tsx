@@ -359,7 +359,7 @@ function App() {
               РАСХОД
             </div>
             <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
-              {totalSpent.toLocaleString()} ₽
+              {totalSpent.toLocaleString()}
             </div>
           </div>
 
@@ -374,7 +374,7 @@ function App() {
               ДОХОД
             </div>
             <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
-              {totalIncome.toLocaleString()} ₽
+              {totalIncome.toLocaleString()}
             </div>
           </div>
         </div>
