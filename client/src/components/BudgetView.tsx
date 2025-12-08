@@ -101,7 +101,7 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
       <h3 style={{ margin: '0 0 15px 5px', color: '#6B4C75', fontSize: 16 }}>Лимиты по категориям</h3>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        {CATEGORIES.map((cat) => {
+        {CATEGORIES.filter(cat => limits[cat.id] > 0).map((cat) => {
           const stat = stats.find(s => s.name === cat.id);
           const spent = stat ? stat.value : 0;
           const limit = limits[cat.id] || 0;
@@ -115,14 +115,14 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
                 cat.color, 
                 () => onEditCategory(cat.id), 
                 cat.icon,
-                limit > 0 ? () => onDeleteCategory(cat.id) : undefined
+                () => onDeleteCategory(cat.id)
               )}
             </div>
           )
         })}
 
         {/* КАСТОМНЫЕ КАТЕГОРИИ */}
-        {customCategories.map((cat) => {
+        {customCategories.filter(cat => limits[cat.id] > 0).map((cat) => {
           const stat = stats.find(s => s.name === cat.id);
           const spent = stat ? stat.value : 0;
           const limit = limits[cat.id] || 0;

@@ -46,6 +46,8 @@ function App() {
   const [goals, setGoals] = useState<any[]>([])
   const [customCategories, setCustomCategories] = useState<any[]>([])
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
+  const [isCustomCategory, setIsCustomCategory] = useState(false)
+  const [selectedStandardCategory, setSelectedStandardCategory] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
   const [newCategoryColor, setNewCategoryColor] = useState('#A0C4FF')
@@ -182,20 +184,35 @@ function App() {
 
   const handleAddCategory = () => {
     WebApp.HapticFeedback.impactOccurred('light');
+    setIsCustomCategory(false);
+    setSelectedStandardCategory('');
+    setNewCategoryName('');
+    setNewCategoryIcon('Package');
+    setNewCategoryColor('#A0C4FF');
+    setNewCategoryLimit('');
     setShowAddCategoryModal(true);
   }
 
   const handleCreateCategory = async () => {
-    if (!userId || !newCategoryName) return;
+    if (!userId) return;
+    
     try {
-      const limit = newCategoryLimit ? parseFloat(newCategoryLimit) : undefined;
-      await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
+      const limit = newCategoryLimit ? parseFloat(newCategoryLimit) : 0;
+      
+      if (isCustomCategory) {
+        // Создаём кастомную категорию
+        if (!newCategoryName) return;
+        await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
+      } else {
+        // Добавляем лимит к стандартной категории
+        if (!selectedStandardCategory) return;
+        if (limit > 0) {
+          await api.setCategoryLimit(userId, selectedStandardCategory, limit);
+        }
+      }
+      
       WebApp.HapticFeedback.notificationOccurred('success');
       setShowAddCategoryModal(false);
-      setNewCategoryName('');
-      setNewCategoryIcon('Package');
-      setNewCategoryColor('#A0C4FF');
-      setNewCategoryLimit('');
       loadData(userId, currentDate);
     } catch (e) {
       console.error(e);
@@ -213,10 +230,10 @@ function App() {
       if (isCustom) {
         // Удаляем кастомную категорию полностью
         await api.deleteCustomCategory(userId, categoryId);
-      } else {
-        // Для стандартной категории просто удаляем лимит (устанавливаем 0)
-        await api.setCategoryLimit(userId, categoryId, 0);
       }
+      
+      // Для всех категорий удаляем лимит
+      await api.setCategoryLimit(userId, categoryId, 0);
       
       WebApp.HapticFeedback.notificationOccurred('success');
       loadData(userId, currentDate);
@@ -419,75 +436,147 @@ function App() {
       {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА */}
       <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title="Новый лимит">
         <div className="modal-body">
-          <input
-            type="text"
-            placeholder="Название лимита"
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            className="modal-input"
-          />
-          
+          {/* Переключатель типа категории */}
           <div style={{ marginBottom: 15 }}>
-            <label className="modal-label">Иконка</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-              {[
-                { icon: 'Package', component: <Package size={20} /> },
-                { icon: 'Gamepad2', component: <Gamepad2 size={20} /> },
-                { icon: 'Home', component: <Home size={20} /> },
-                { icon: 'Car', component: <Car size={20} /> },
-                { icon: 'Plane', component: <Plane size={20} /> },
-                { icon: 'Utensils', component: <Utensils size={20} /> },
-                { icon: 'Coffee', component: <Coffee size={20} /> },
-                { icon: 'Film', component: <Film size={20} /> },
-                { icon: 'Smartphone', component: <Smartphone size={20} /> },
-                { icon: 'Pill', component: <Pill size={20} /> },
-                { icon: 'Shirt', component: <Shirt size={20} /> },
-                { icon: 'GraduationCap', component: <GraduationCap size={20} /> },
-                { icon: 'ShoppingBasket', component: <ShoppingBasket size={20} /> },
-                { icon: 'Bus', component: <Bus size={20} /> },
-                { icon: 'Zap', component: <Zap size={20} /> },
-                { icon: 'PiggyBank', component: <PiggyBank size={20} /> },
-              ].map((item) => (
-                <motion.button
-                  key={item.icon}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setNewCategoryIcon(item.icon)}
-                  style={{
-                    background: newCategoryIcon === item.icon ? '#667eea' : '#F0F0F0',
-                    border: 'none',
-                    borderRadius: 8,
-                    width: 48,
-                    height: 48,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: newCategoryIcon === item.icon ? 'white' : '#333'
-                  }}
-                >
-                  {item.component}
-                </motion.button>
-              ))}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsCustomCategory(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: !isCustomCategory ? '#667eea' : '#F0F0F0',
+                  color: !isCustomCategory ? 'white' : '#333',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Стандартные
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsCustomCategory(true)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: isCustomCategory ? '#667eea' : '#F0F0F0',
+                  color: isCustomCategory ? 'white' : '#333',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Свои
+              </motion.button>
             </div>
           </div>
 
-          <div style={{ marginBottom: 15 }}>
-            <label className="modal-label">Цвет</label>
-            <div className="color-picker">
-              {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'].map((col) => (
-                <motion.button
-                  key={col}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setNewCategoryColor(col)}
-                  className="color-option"
-                  style={{
-                    background: col,
-                    border: newCategoryColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
-                  }}
-                />
-              ))}
+          {!isCustomCategory ? (
+            // СТАНДАРТНЫЕ КАТЕГОРИИ
+            <div style={{ marginBottom: 15 }}>
+              <label className="modal-label">Выберите категорию</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                {EXPENSE_CATEGORIES.filter(cat => !catLimits[cat.id] || catLimits[cat.id] === 0).map((cat) => (
+                  <motion.button
+                    key={cat.id}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSelectedStandardCategory(cat.id)}
+                    style={{
+                      background: selectedStandardCategory === cat.id ? cat.color : '#F0F0F0',
+                      border: selectedStandardCategory === cat.id ? '2px solid #667eea' : '2px solid #E0E0E0',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      cursor: 'pointer',
+                      color: selectedStandardCategory === cat.id ? 'white' : '#333',
+                      fontWeight: selectedStandardCategory === cat.id ? 'bold' : 'normal'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center' }}>{cat.icon}</div>
+                    <span style={{ fontSize: 13 }}>{cat.name}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            // КАСТОМНАЯ КАТЕГОРИЯ
+            <>
+              <input
+                type="text"
+                placeholder="Название лимита"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                className="modal-input"
+              />
+              
+              <div style={{ marginBottom: 15 }}>
+                <label className="modal-label">Иконка</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                  {[
+                    { icon: 'Package', component: <Package size={20} /> },
+                    { icon: 'Gamepad2', component: <Gamepad2 size={20} /> },
+                    { icon: 'Home', component: <Home size={20} /> },
+                    { icon: 'Car', component: <Car size={20} /> },
+                    { icon: 'Plane', component: <Plane size={20} /> },
+                    { icon: 'Utensils', component: <Utensils size={20} /> },
+                    { icon: 'Coffee', component: <Coffee size={20} /> },
+                    { icon: 'Film', component: <Film size={20} /> },
+                    { icon: 'Smartphone', component: <Smartphone size={20} /> },
+                    { icon: 'Pill', component: <Pill size={20} /> },
+                    { icon: 'Shirt', component: <Shirt size={20} /> },
+                    { icon: 'GraduationCap', component: <GraduationCap size={20} /> },
+                    { icon: 'ShoppingBasket', component: <ShoppingBasket size={20} /> },
+                    { icon: 'Bus', component: <Bus size={20} /> },
+                    { icon: 'Zap', component: <Zap size={20} /> },
+                    { icon: 'PiggyBank', component: <PiggyBank size={20} /> },
+                  ].map((item) => (
+                    <motion.button
+                      key={item.icon}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setNewCategoryIcon(item.icon)}
+                      style={{
+                        background: newCategoryIcon === item.icon ? '#667eea' : '#F0F0F0',
+                        border: 'none',
+                        borderRadius: 8,
+                        width: 48,
+                        height: 48,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: newCategoryIcon === item.icon ? 'white' : '#333'
+                      }}
+                    >
+                      {item.component}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 15 }}>
+                <label className="modal-label">Цвет</label>
+                <div className="color-picker">
+                  {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'].map((col) => (
+                    <motion.button
+                      key={col}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setNewCategoryColor(col)}
+                      className="color-option"
+                      style={{
+                        background: col,
+                        border: newCategoryColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           <input
             type="number"
@@ -502,7 +591,7 @@ function App() {
             onClick={handleCreateCategory}
             className="modal-submit-button"
           >
-            Создать лимит
+            {isCustomCategory ? 'Создать лимит' : 'Добавить лимит'}
           </motion.button>
         </div>
       </Modal>
