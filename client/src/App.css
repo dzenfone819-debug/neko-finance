@@ -181,18 +181,20 @@ html, body, #root {
 }
 
 .account-button-selected {
-  border-width: 2px;
+  border-width: 1px;
   color: white;
   outline: none;
 }
 
 .account-button-goal {
   border-color: #D291BC;
+  outline: none;
 }
 
 .account-button-goal-selected {
-  border-width: 2px;
+  border-width: 1px;
   color: white;
+  outline: none;
 }
 
 .account-selector-label {
