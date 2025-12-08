@@ -33,7 +33,6 @@ function App() {
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const [totalSpent, setTotalSpent] = useState(0)
-  const [totalIncome, setTotalIncome] = useState(0)
   const [currentBalance, setCurrentBalance] = useState(0)
   const [budgetLimit, setBudgetLimit] = useState(0)
   const [catLimits, setCatLimits] = useState<Record<string, number>>({})
@@ -101,7 +100,6 @@ function App() {
       ]);
       
       setTotalSpent(balData.total_expense);
-      setTotalIncome(balData.total_income || 0);
       setCurrentBalance(balData.balance);
       setStatsData(stats);
       setTransactions(hist);
@@ -268,9 +266,16 @@ function App() {
       <ModalInput isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleModalSave} title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'} initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)} />
 
       <div className="header-section">
-        {/* Верхняя строка: Котик слева, выбор месяца справа */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          {/* КОТ слева */}
+        {/* Верхняя строка: Месяц слева, лого справа */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
+          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', opacity: 0.8 }}>
+            KAWAII FINANCE
+          </div>
+        </div>
+
+        {/* Вторая строка: Котик слева, текст "Лимит не задан" по центру */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 10 }}>
           <motion.div 
             animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
             style={{ flexShrink: 0 }}
@@ -278,50 +283,20 @@ function App() {
             <NekoAvatar mood={getNekoMood()} />
           </motion.div>
 
-          {/* Выбор месяца справа */}
-          <div style={{ flexShrink: 0 }}>
-            <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
-          </div>
-        </div>
-
-        {/* БАР БЮДЖЕТА - длинный, под котиком и месяцем */}
-        <div style={{ width: '100%', marginBottom: 5 }}>
-          <BudgetStatus total={totalSpent} limit={budgetLimit} />
-        </div>
-
-        {/* ТЕКСТ ДОСТУПНО - справа под баром */}
-        {activeTab === 'input' && (
           <div style={{ 
-            fontSize: 11, 
-            fontWeight: 'bold', 
-            color: '#6B4C75', 
-            marginBottom: 5, 
+            flex: 1,
+            fontSize: 13,
+            color: '#6B4C75',
             opacity: 0.7,
-            textAlign: 'right'
+            textAlign: 'center'
           }}>
-            Доступно: {displayBalance.toLocaleString()} ₽
+            {budgetLimit > 0 ? `Лимит: ${budgetLimit.toLocaleString()} ₽` : 'Лимит не задан'}
           </div>
-        )}
+        </div>
 
-        {/* Строка с доходами/расходами - по центру */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          gap: 30,
-          fontSize: 11, 
-          fontWeight: 'bold', 
-          color: '#6B4C75', 
-          marginBottom: 5,
-          opacity: 0.8
-        }}>
-          <div>
-            <span style={{ color: '#27AE60' }}>↑ </span>
-            Доход: {totalIncome.toLocaleString()} ₽
-          </div>
-          <div>
-            <span style={{ color: '#E74C3C' }}>↓ </span>
-            Расход: {totalSpent.toLocaleString()} ₽
-          </div>
+        {/* БАР БЮДЖЕТА на всю ширину */}
+        <div style={{ width: '100%', marginBottom: 10 }}>
+          <BudgetStatus total={totalSpent} limit={budgetLimit} />
         </div>
 
         {/* СУММА ИЛИ ЗАГОЛОВОК */}
@@ -335,6 +310,73 @@ function App() {
             {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
           </div>
         )}
+
+        {/* ТЕКСТ ДОСТУПНО под суммой */}
+        {activeTab === 'input' && (
+          <div style={{ 
+            fontSize: 12, 
+            fontWeight: 'normal', 
+            color: '#6B4C75', 
+            marginTop: 5,
+            opacity: 0.7,
+            textAlign: 'center'
+          }}>
+            Доступно: {displayBalance.toLocaleString()} ₽
+          </div>
+        )}
+
+        {/* Нижняя строка: блоки потрачено, бюджет, баланс */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          gap: 10,
+          marginTop: 15
+        }}>
+          <div style={{ 
+            flex: 1,
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            borderRadius: 12,
+            padding: '10px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
+              ПОТРАЧЕНО
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
+              {totalSpent.toLocaleString()} ₽
+            </div>
+          </div>
+
+          <div style={{ 
+            flex: 1,
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            borderRadius: 12,
+            padding: '10px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
+              БЮДЖЕТ
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
+              {budgetLimit > 0 ? `${budgetLimit.toLocaleString()} ₽` : '∞ ₽'}
+            </div>
+          </div>
+
+          <div style={{ 
+            flex: 1,
+            backgroundColor: 'rgba(200, 255, 200, 0.3)',
+            borderRadius: 12,
+            padding: '10px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
+              БАЛАНС
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
+              {displayBalance.toLocaleString()} ₽
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className={`content-area ${activeTab !== 'input' ? 'stats-mode' : ''}`}>
