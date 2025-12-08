@@ -326,6 +326,7 @@ function App() {
                         key={`acc-${acc.id}`}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
+                          WebApp.HapticFeedback.impactOccurred('light');
                           console.log('🔘 Clicked account:', acc.id, 'name:', acc.name);
                           setSelectedAccount({type: 'account', id: acc.id});
                         }}
@@ -346,6 +347,7 @@ function App() {
                         key={`goal-${goal.id}`}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
+                          WebApp.HapticFeedback.impactOccurred('light');
                           console.log('🎯 Clicked goal:', goal.id, 'name:', goal.name);
                           setSelectedAccount({type: 'goal', id: goal.id});
                         }}
