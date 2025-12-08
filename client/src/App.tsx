@@ -33,6 +33,7 @@ function App() {
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const [totalSpent, setTotalSpent] = useState(0)
+  const [totalIncome, setTotalIncome] = useState(0)
   const [currentBalance, setCurrentBalance] = useState(0)
   const [budgetLimit, setBudgetLimit] = useState(0)
   const [catLimits, setCatLimits] = useState<Record<string, number>>({})
@@ -100,6 +101,7 @@ function App() {
       ]);
       
       setTotalSpent(balData.total_expense);
+      setTotalIncome(balData.total_income || 0);
       setCurrentBalance(balData.balance);
       setStatsData(stats);
       setTransactions(hist);
@@ -295,12 +297,27 @@ function App() {
             <NekoAvatar mood={getNekoMood()} />
           </motion.div>
 
-          {/* Правая колонка: бюджет, сумма, доступно */}
+          {/* Правая колонка: бюджет, доступно/лимит, сумма */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
             {/* БАР БЮДЖЕТА */}
             <div style={{ width: '100%' }}>
               <BudgetStatus total={totalSpent} limit={budgetLimit} />
             </div>
+
+            {/* ДОСТУПНО И ЛИМИТ */}
+            {activeTab === 'input' && (
+              <div style={{ 
+                display: 'flex',
+                gap: 15,
+                fontSize: 12, 
+                fontWeight: 'normal', 
+                color: '#6B4C75', 
+                opacity: 0.7
+              }}>
+                <div>Доступно: {displayBalance.toLocaleString()} ₽</div>
+                <div>Лимит: {budgetLimit > 0 ? `${budgetLimit.toLocaleString()} ₽` : '∞'}</div>
+              </div>
+            )}
 
             {/* СУММА ИЛИ ЗАГОЛОВОК */}
             {activeTab === 'input' ? (
@@ -313,23 +330,10 @@ function App() {
                 {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
               </div>
             )}
-
-            {/* ТЕКСТ ДОСТУПНО */}
-            {activeTab === 'input' && (
-              <div style={{ 
-                fontSize: 12, 
-                fontWeight: 'normal', 
-                color: '#6B4C75', 
-                opacity: 0.7,
-                textAlign: 'left'
-              }}>
-                Доступно: {displayBalance.toLocaleString()} ₽
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Нижняя строка: блоки потрачено, лимит, баланс */}
+        {/* Нижняя строка: блоки расход и доход */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between',
@@ -343,25 +347,10 @@ function App() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
-              ПОТРАЧЕНО
+              РАСХОД
             </div>
             <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
               {totalSpent.toLocaleString()} ₽
-            </div>
-          </div>
-
-          <div style={{ 
-            flex: 1,
-            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-            borderRadius: 12,
-            padding: '10px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
-              ЛИМИТ
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
-              {budgetLimit > 0 ? `${budgetLimit.toLocaleString()} ₽` : '∞ ₽'}
             </div>
           </div>
 
@@ -373,10 +362,10 @@ function App() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 5 }}>
-              БАЛАНС
+              ДОХОД
             </div>
             <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
-              {displayBalance.toLocaleString()} ₽
+              {totalIncome.toLocaleString()} ₽
             </div>
           </div>
         </div>
