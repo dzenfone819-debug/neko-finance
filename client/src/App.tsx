@@ -558,9 +558,9 @@ function App() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: 15 }}>
+              <div style={{ marginBottom: 15, overflow: 'hidden' }}>
                 <label className="modal-label">Цвет</label>
-                <div className="color-picker">
+                <div className="color-picker" style={{ paddingBottom: 10 }}>
                   {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF', '#FDFFB6', '#FFB4D1', '#B4E7CE', '#E7C6FF'].map((col) => (
                     <motion.button
                       key={col}

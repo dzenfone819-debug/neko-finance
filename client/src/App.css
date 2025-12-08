@@ -502,11 +502,13 @@ html, body, #root {
 .color-picker {
   display: flex;
   gap: 10px;
-  overflow-x: auto;
+  overflow-x: scroll;
+  overflow-y: hidden;
   padding: 10px 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
 }
 
 .color-picker::-webkit-scrollbar {
@@ -517,6 +519,7 @@ html, body, #root {
   width: 32px;
   height: 32px;
   min-width: 32px;
+  min-height: 32px;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
