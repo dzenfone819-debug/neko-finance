@@ -206,9 +206,8 @@ function App() {
       } else {
         // Добавляем лимит к стандартной категории
         if (!selectedStandardCategory) return;
-        if (limit > 0) {
-          await api.setCategoryLimit(userId, selectedStandardCategory, limit);
-        }
+        // Устанавливаем лимит (даже если 0)
+        await api.setCategoryLimit(userId, selectedStandardCategory, limit);
       }
       
       WebApp.HapticFeedback.notificationOccurred('success');
@@ -365,14 +364,14 @@ function App() {
 
               <div className="categories-wrapper">
                 <div className="categories-scroll">
-                  {currentCategories.filter(cat => catLimits[cat.id] > 0).map((cat) => (
+                  {currentCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
                     <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
                       <div className="category-icon">{cat.icon}</div>
                       <span className="category-label">{cat.name}</span>
                     </motion.button>
                   ))}
                   {/* КАСТОМНЫЕ КАТЕГОРИИ (только для расходов) */}
-                  {transType === 'expense' && customCategories.filter(cat => catLimits[cat.id] > 0).map((cat) => (
+                  {transType === 'expense' && customCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
                     <motion.button 
                       key={cat.id} 
                       whileTap={{ scale: 0.95 }} 
