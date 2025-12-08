@@ -18,6 +18,7 @@ import { ModalInput } from './components/ModalInput'
 import { MonthSelector } from './components/MonthSelector'
 import { AccountsView } from './components/AccountsView'
 import { Modal } from './components/Modal'
+import { NekoAvatar } from './components/NekoAvatar'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -243,15 +244,16 @@ function App() {
     }
   }
 
-  const getNekoMood = () => {
-    if (isError) return '🙀'; if (isHappy) return '😻';
+  const getNekoMood = (): 'happy' | 'neutral' | 'sad' | 'worried' | 'angry' | 'error' | 'dead' => {
+    if (isError) return 'error';
+    if (isHappy) return 'happy';
     if (budgetLimit > 0) {
       const percent = totalSpent / budgetLimit;
-      if (percent >= 1.0) return '💀';
-      if (percent > 0.85) return '😿';
-      if (percent > 0.5) return '😾';
+      if (percent >= 1.0) return 'dead';
+      if (percent > 0.85) return 'sad';
+      if (percent > 0.5) return 'worried';
     }
-    return '😺';
+    return 'neutral';
   }
 
   const handleDeleteTransaction = async (id: number) => { if (!userId) return; WebApp.HapticFeedback.impactOccurred('medium'); try { await api.deleteTransaction(userId, id); loadData(userId, currentDate); } catch { triggerError(); } }
@@ -274,7 +276,7 @@ function App() {
           animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
           className="neko-avatar"
         >
-          {getNekoMood()}
+          <NekoAvatar mood={getNekoMood()} />
         </motion.div>
         
         {/* БАР БЮДЖЕТА */}
