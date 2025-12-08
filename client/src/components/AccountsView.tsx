@@ -397,7 +397,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     }}
                   >
                     <div style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 14, fontWeight: 'bold' }}>{goal.icon} {goal.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 'bold', color: '#333' }}>{goal.icon} {goal.name}</div>
                       <div style={{ fontSize: 11, color: '#999', marginTop: 5 }}>
                         {goal.current_amount.toLocaleString()} / {goal.target_amount.toLocaleString()} ₽
                       </div>
