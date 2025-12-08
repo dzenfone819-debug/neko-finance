@@ -404,16 +404,20 @@ fastify.post('/limits', (request, reply) => {
   const userId = request.headers['x-user-id']
   const { category, limit } = request.body
   
-  if (limit === 0 || limit === null) {
-    // Если лимит 0 или null, удаляем запись
-    db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, category], () => {
-      reply.send({ status: 'ok' })
-    })
-  } else {
-    db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit], () => {
-      reply.send({ status: 'ok' })
-    })
-  }
+  // Всегда используем REPLACE для добавления/обновления лимита (даже 0)
+  db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit || 0], () => {
+    reply.send({ status: 'ok' })
+  })
+})
+
+// Удалить лимит категории
+fastify.delete('/limits/:categoryId', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const categoryId = request.params.categoryId
+  
+  db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => {
+    reply.send({ status: 'ok' })
+  })
 })
 
 // ========== API СЧЕТА И КОПИЛКИ ==========

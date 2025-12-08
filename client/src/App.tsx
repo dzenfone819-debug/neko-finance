@@ -232,7 +232,7 @@ function App() {
       }
       
       // Для всех категорий удаляем лимит
-      await api.setCategoryLimit(userId, categoryId, 0);
+      await api.deleteCategoryLimit(userId, categoryId);
       
       WebApp.HapticFeedback.notificationOccurred('success');
       loadData(userId, currentDate);

@@ -76,6 +76,13 @@ export const setCategoryLimit = async (userId: number, category: string, limit: 
   });
 };
 
+export const deleteCategoryLimit = async (userId: number, category: string) => {
+  await fetch(`${API_URL}/limits/${category}`, {
+    method: 'DELETE', 
+    headers: { 'x-user-id': userId.toString() }
+  });
+};
+
 // ========== КАСТОМНЫЕ КАТЕГОРИИ ==========
 
 export const fetchCustomCategories = async (userId: number) => {
