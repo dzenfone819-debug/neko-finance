@@ -251,7 +251,7 @@ function App() {
       if (percent > 0.85) return '😿';
       if (percent > 0.5) return '😾';
     }
-    return '😸';
+    return '😺';
   }
 
   const handleDeleteTransaction = async (id: number) => { if (!userId) return; WebApp.HapticFeedback.impactOccurred('medium'); try { await api.deleteTransaction(userId, id); loadData(userId, currentDate); } catch { triggerError(); } }
