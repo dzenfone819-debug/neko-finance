@@ -59,6 +59,31 @@ function App() {
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
 
   useEffect(() => {
+    // Проверяем, что приложение запущено в Telegram
+    if (!WebApp.initDataUnsafe.user && !WebApp.initDataUnsafe.query_id) {
+      // Если нет данных Telegram, показываем заглушку
+      document.body.innerHTML = `
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          font-family: Arial, sans-serif;
+          color: #6B4C75;
+          text-align: center;
+          padding: 20px;
+          background: linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%);
+        ">
+          <div style="font-size: 64px; margin-bottom: 20px;">🐱</div>
+          <h1 style="font-size: 24px; margin-bottom: 10px;">PurrFinance</h1>
+          <p style="font-size: 16px; opacity: 0.8;">Это приложение доступно только в Telegram</p>
+          <p style="font-size: 14px; margin-top: 20px; opacity: 0.6;">Откройте через Telegram Mini App</p>
+        </div>
+      `;
+      return;
+    }
+
     WebApp.ready(); WebApp.expand(); WebApp.enableClosingConfirmation(); 
     let currentUserId = 777; 
     if (WebApp.initDataUnsafe.user) currentUserId = WebApp.initDataUnsafe.user.id;
