@@ -331,7 +331,9 @@ fastify.post('/settings', (request, reply) => {
 fastify.get('/limits', (request, reply) => {
   const userId = request.headers['x-user-id']
   db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
-    const limits = {}; rows.forEach(r => limits[r.category_id] = r.limit_amount); reply.send(limits)
+    const limits = {};
+    if (rows) rows.forEach(r => limits[r.category_id] = r.limit_amount);
+    reply.send(limits)
   })
 })
 
