@@ -38,7 +38,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [newAccountType, setNewAccountType] = useState('cash');
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalTarget, setNewGoalTarget] = useState('');
-  const [selectedColor, setSelectedColor] = useState('#CAFFBF');
+  const [selectedColor, setSelectedColor] = useState('#FF6B6B');
   const [transferFrom, setTransferFrom] = useState<{ type: string; id: number } | null>(null);
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
@@ -52,7 +52,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [editGoalTarget, setEditGoalTarget] = useState('');
   const [editGoalCurrent, setEditGoalCurrent] = useState('');
 
-  const colors = ['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'];
+  const colors = ['#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFA07A'];
   const accountTypes = [
     { value: 'cash', label: '💵 Наличные' },
     { value: 'card', label: '💳 Карта' },
