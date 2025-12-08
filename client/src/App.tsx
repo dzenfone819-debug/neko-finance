@@ -197,7 +197,8 @@ function App() {
     if (!userId) return;
     
     try {
-      const limit = newCategoryLimit ? parseFloat(newCategoryLimit) : 0;
+      // Если поле пустое или не число, устанавливаем 0
+      const limit = newCategoryLimit && !isNaN(parseFloat(newCategoryLimit)) ? parseFloat(newCategoryLimit) : 0;
       
       if (isCustomCategory) {
         // Создаём кастомную категорию
