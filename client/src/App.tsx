@@ -365,14 +365,14 @@ function App() {
 
               <div className="categories-wrapper">
                 <div className="categories-scroll">
-                  {currentCategories.map((cat) => (
+                  {currentCategories.filter(cat => catLimits[cat.id] > 0).map((cat) => (
                     <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
                       <div className="category-icon">{cat.icon}</div>
                       <span className="category-label">{cat.name}</span>
                     </motion.button>
                   ))}
                   {/* КАСТОМНЫЕ КАТЕГОРИИ (только для расходов) */}
-                  {transType === 'expense' && customCategories.map((cat) => (
+                  {transType === 'expense' && customCategories.filter(cat => catLimits[cat.id] > 0).map((cat) => (
                     <motion.button 
                       key={cat.id} 
                       whileTap={{ scale: 0.95 }} 
