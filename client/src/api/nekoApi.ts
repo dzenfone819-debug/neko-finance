@@ -76,6 +76,32 @@ export const setCategoryLimit = async (userId: number, category: string, limit: 
   });
 };
 
+// ========== КАСТОМНЫЕ КАТЕГОРИИ ==========
+
+export const fetchCustomCategories = async (userId: number) => {
+  const response = await fetch(`${API_URL}/custom-categories`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
+export const createCustomCategory = async (userId: number, name: string, icon: string, color: string, limit?: number) => {
+  const response = await fetch(`${API_URL}/custom-categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ name, icon, color, limit })
+  });
+  return await response.json();
+};
+
+export const deleteCustomCategory = async (userId: number, categoryId: string) => {
+  const response = await fetch(`${API_URL}/custom-categories/${categoryId}`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
 // ========== СЧЕТА ==========
 
 export const fetchAccounts = async (userId: number) => {

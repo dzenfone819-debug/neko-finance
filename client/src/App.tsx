@@ -12,6 +12,7 @@ import { BudgetView } from './components/BudgetView'
 import { ModalInput } from './components/ModalInput'
 import { MonthSelector } from './components/MonthSelector'
 import { AccountsView } from './components/AccountsView'
+import { Modal } from './components/Modal'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -38,6 +39,12 @@ function App() {
   const [editTarget, setEditTarget] = useState<{type: 'total' | 'category', id?: string} | null>(null)
   const [accounts, setAccounts] = useState<any[]>([])
   const [goals, setGoals] = useState<any[]>([])
+  const [customCategories, setCustomCategories] = useState<any[]>([])
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryIcon, setNewCategoryIcon] = useState('📦')
+  const [newCategoryColor, setNewCategoryColor] = useState('#A0C4FF')
+  const [newCategoryLimit, setNewCategoryLimit] = useState('')
 
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
@@ -73,14 +80,15 @@ function App() {
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
 
-      const [balData, stats, hist, bud, lims, accs, gls] = await Promise.all([
+      const [balData, stats, hist, bud, lims, accs, gls, customCats] = await Promise.all([
         api.fetchBalance(uid, month, year),
         api.fetchStats(uid, month, year),
         api.fetchTransactions(uid, month, year),
         api.fetchBudget(uid),
         api.fetchCategoryLimits(uid),
         api.fetchAccounts(uid),
-        api.fetchGoals(uid)
+        api.fetchGoals(uid),
+        api.fetchCustomCategories(uid)
       ]);
       
       setTotalSpent(balData.total_expense);
@@ -91,6 +99,7 @@ function App() {
       setCatLimits(lims);
       setAccounts(accs);
       setGoals(gls);
+      setCustomCategories(customCats);
       // Устанавливаем первый счет по умолчанию, если не выбран
       if (!selectedAccount && accs.length > 0) {
         setSelectedAccount({type: 'account', id: accs[0].id});
@@ -160,6 +169,42 @@ function App() {
         setCatLimits({ ...catLimits, [editTarget.id]: val });
       }
       setModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
+  }
+
+  const handleAddCategory = () => {
+    WebApp.HapticFeedback.impactOccurred('light');
+    setShowAddCategoryModal(true);
+  }
+
+  const handleCreateCategory = async () => {
+    if (!userId || !newCategoryName) return;
+    try {
+      const limit = newCategoryLimit ? parseFloat(newCategoryLimit) : undefined;
+      await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setShowAddCategoryModal(false);
+      setNewCategoryName('');
+      setNewCategoryIcon('📦');
+      setNewCategoryColor('#A0C4FF');
+      setNewCategoryLimit('');
+      loadData(userId, currentDate);
+    } catch (e) {
+      console.error(e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
+  }
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!userId) return;
+    WebApp.HapticFeedback.impactOccurred('medium');
+    try {
+      await api.deleteCustomCategory(userId, categoryId);
+      WebApp.HapticFeedback.notificationOccurred('success');
+      loadData(userId, currentDate);
     } catch (e) {
       console.error(e);
       WebApp.HapticFeedback.notificationOccurred('error');
@@ -318,7 +363,16 @@ function App() {
 
         {activeTab === 'budget' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-            <BudgetView stats={statsData} limits={catLimits} totalLimit={budgetLimit} onEditCategory={openEditCategory} onEditTotal={openEditTotal} />
+            <BudgetView 
+              stats={statsData} 
+              limits={catLimits} 
+              totalLimit={budgetLimit} 
+              customCategories={customCategories}
+              onEditCategory={openEditCategory} 
+              onEditTotal={openEditTotal}
+              onAddCategory={handleAddCategory}
+              onDeleteCategory={handleDeleteCategory}
+            />
             <div style={{ height: 80 }} />
           </div>
         )}
@@ -330,6 +384,80 @@ function App() {
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Target size={24} /></div><span>Бюджет</span></button>
         <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
       </div>
+
+      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА */}
+      <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title="Новый лимит">
+        <div className="modal-body">
+          <input
+            type="text"
+            placeholder="Название лимита"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            className="modal-input"
+          />
+          
+          <div style={{ marginBottom: 15 }}>
+            <label className="modal-label">Иконка</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+              {['📦', '🎮', '🏠', '🚗', '✈️', '🍔', '☕', '🎬', '📱', '💊', '👕', '🎓'].map((icon) => (
+                <motion.button
+                  key={icon}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setNewCategoryIcon(icon)}
+                  style={{
+                    fontSize: 24,
+                    background: newCategoryIcon === icon ? '#667eea' : '#F0F0F0',
+                    border: 'none',
+                    borderRadius: 8,
+                    width: 48,
+                    height: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {icon}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 15 }}>
+            <label className="modal-label">Цвет</label>
+            <div className="color-picker">
+              {['#CAFFBF', '#FFADAD', '#A0C4FF', '#FFD6A5', '#FFC6FF', '#9BF6FF'].map((col) => (
+                <motion.button
+                  key={col}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setNewCategoryColor(col)}
+                  className="color-option"
+                  style={{
+                    background: col,
+                    border: newCategoryColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <input
+            type="number"
+            placeholder="Лимит (опционально)"
+            value={newCategoryLimit}
+            onChange={(e) => setNewCategoryLimit(e.target.value)}
+            className="modal-input"
+          />
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleCreateCategory}
+            className="modal-submit-button"
+          >
+            Создать лимит
+          </motion.button>
+        </div>
+      </Modal>
     </div>
   )
 }

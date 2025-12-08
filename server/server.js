@@ -76,6 +76,18 @@ db.serialize(() => {
     )
   `)
 
+  // Кастомные категории (пользовательские лимиты)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS custom_categories (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER,
+      name TEXT NOT NULL,
+      icon TEXT,
+      color TEXT,
+      created_at TEXT
+    )
+  `)
+
   // СЧЕТА (Accounts) - текущие счета, кредитные карты, кошельки и т.д.
   db.run(`
     CREATE TABLE IF NOT EXISTS accounts (
@@ -323,12 +335,88 @@ fastify.get('/limits', (request, reply) => {
   })
 })
 
+// Получить все кастомные категории пользователя
+fastify.get('/custom-categories', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  db.all("SELECT * FROM custom_categories WHERE user_id = ?", [userId], (err, rows) => {
+    if (err) return reply.code(500).send({ error: err.message })
+    reply.send(rows || [])
+  })
+})
+
+// Создать новую кастомную категорию
+fastify.post('/custom-categories', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  const { name, icon, color, limit } = request.body
+  if (!name) return reply.code(400).send({ error: 'Name is required' })
+  
+  // Генерируем уникальный ID для категории
+  const categoryId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const createdAt = new Date().toISOString()
+  
+  db.run(
+    "INSERT INTO custom_categories (id, user_id, name, icon, color, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    [categoryId, userId, name, icon || '📦', color || '#A0C4FF', createdAt],
+    function(err) {
+      if (err) return reply.code(500).send({ error: err.message })
+      
+      // Если указан лимит, создаем запись в category_limits
+      if (limit && limit > 0) {
+        db.run(
+          "INSERT INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)",
+          [userId, categoryId, limit],
+          () => {
+            reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit })
+          }
+        )
+      } else {
+        reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF' })
+      }
+    }
+  )
+})
+
+// Удалить кастомную категорию
+fastify.delete('/custom-categories/:id', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  const categoryId = request.params.id
+  
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  // Проверяем, что категория принадлежит пользователю
+  db.get("SELECT * FROM custom_categories WHERE id = ? AND user_id = ?", [categoryId, userId], (err, row) => {
+    if (err) return reply.code(500).send({ error: err.message })
+    if (!row) return reply.code(404).send({ error: 'Category not found' })
+    
+    // Удаляем категорию и её лимит
+    db.run("DELETE FROM custom_categories WHERE id = ? AND user_id = ?", [categoryId, userId], (err) => {
+      if (err) return reply.code(500).send({ error: err.message })
+      
+      db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => {
+        reply.send({ status: 'ok' })
+      })
+    })
+  })
+})
+
 fastify.post('/limits', (request, reply) => {
   const userId = request.headers['x-user-id']
   const { category, limit } = request.body
-  db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit], () => {
-    reply.send({ status: 'ok' })
-  })
+  
+  if (limit === 0 || limit === null) {
+    // Если лимит 0 или null, удаляем запись
+    db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, category], () => {
+      reply.send({ status: 'ok' })
+    })
+  } else {
+    db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit], () => {
+      reply.send({ status: 'ok' })
+    })
+  }
 })
 
 // ========== API СЧЕТА И КОПИЛКИ ==========
