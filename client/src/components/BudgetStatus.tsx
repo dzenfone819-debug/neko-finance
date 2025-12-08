@@ -16,7 +16,7 @@ export const BudgetStatus: React.FC<Props> = ({ total, limit }) => {
 
   return (
     // ВЕРНУЛИ 85% ширины
-    <div style={{ width: '85%', marginBottom: 5, marginTop: 5 }}>
+    <div style={{ width: '85%', marginBottom: 5, marginTop: 0 }}>
       {/* Текст */}
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B4C75', marginBottom: 2, fontWeight: 'bold', opacity: 0.8 }}>
         <span>{limit > 0 ? 'Бюджет' : 'Лимит не задан'}</span>

@@ -48,7 +48,7 @@ html, body, #root {
 .neko-avatar {
   font-size: 32px; 
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
   transition: transform 0.2s;
 }
