@@ -431,7 +431,11 @@ function App() {
             }}>
               📅 Выберите дату
             </div>
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ 
+              marginBottom: 20,
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
               <input
                 type="date"
                 value={transactionDate.toISOString().split('T')[0]}
