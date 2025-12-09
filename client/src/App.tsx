@@ -433,9 +433,7 @@ function App() {
               📅 Выберите дату
             </div>
             <div style={{ 
-              marginBottom: 20,
-              width: '100%',
-              boxSizing: 'border-box'
+              marginBottom: 20
             }}>
               <input
                 type="date"
