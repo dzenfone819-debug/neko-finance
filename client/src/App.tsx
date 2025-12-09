@@ -352,9 +352,11 @@ function App() {
               borderRadius: 24,
               padding: 30,
               maxWidth: 320,
-              width: '100%',
+              width: 'calc(100% - 40px)',
               boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
-              border: '2px solid rgba(254, 200, 216, 0.3)'
+              border: '2px solid rgba(254, 200, 216, 0.3)',
+              boxSizing: 'border-box',
+              overflow: 'hidden'
             }}
           >
             <div style={{ 
@@ -368,28 +370,30 @@ function App() {
             }}>
               📅 Выберите дату
             </div>
-            <input
-              type="date"
-              value={transactionDate.toISOString().split('T')[0]}
-              onChange={(e) => setTransactionDate(new Date(e.target.value + 'T12:00:00'))}
-              max={new Date().toISOString().split('T')[0]}
-              style={{
-                width: '100%',
-                padding: '16px 20px',
-                fontSize: 18,
-                borderRadius: 16,
-                border: '2px solid #FEC8D8',
-                marginBottom: 20,
-                fontFamily: 'inherit',
-                color: '#6B4C75',
-                fontWeight: '600',
-                background: 'rgba(254, 200, 216, 0.1)',
-                boxShadow: '0 4px 12px rgba(254, 200, 216, 0.2)',
-                outline: 'none',
-                transition: 'all 0.3s ease',
-                boxSizing: 'border-box'
-              }}
-            />
+            <div style={{ marginBottom: 20 }}>
+              <input
+                type="date"
+                value={transactionDate.toISOString().split('T')[0]}
+                onChange={(e) => setTransactionDate(new Date(e.target.value + 'T12:00:00'))}
+                max={new Date().toISOString().split('T')[0]}
+                style={{
+                  width: '100%',
+                  padding: '16px 12px',
+                  fontSize: 16,
+                  borderRadius: 16,
+                  border: '2px solid #FEC8D8',
+                  fontFamily: 'inherit',
+                  color: '#6B4C75',
+                  fontWeight: '600',
+                  background: 'rgba(254, 200, 216, 0.1)',
+                  boxShadow: '0 4px 12px rgba(254, 200, 216, 0.2)',
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                  boxSizing: 'border-box',
+                  display: 'block'
+                }}
+              />
+            </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => { WebApp.HapticFeedback.notificationOccurred('success'); setShowDatePicker(false); }}
