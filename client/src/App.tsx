@@ -523,7 +523,12 @@ function App() {
 
         {activeTab === 'stats' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
-            <StatsView data={statsData} total={totalSpent} />
+            <StatsView 
+              data={statsData} 
+              total={totalSpent} 
+              transactions={transactions}
+              budgetLimit={budgetLimit}
+            />
             <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
             <TransactionList transactions={transactions} onDelete={handleDeleteTransaction} />
             <div style={{ height: 80 }} /> 
