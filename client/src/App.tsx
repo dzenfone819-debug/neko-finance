@@ -44,6 +44,7 @@ function App() {
   const [catLimits, setCatLimits] = useState<Record<string, number>>({})
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
+  const [allTransactions, setAllTransactions] = useState<any[]>([])
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
@@ -160,6 +161,23 @@ function App() {
     if (userId) loadData(userId, newDate);
   }
 
+  const loadAllTransactions = async (uid: number) => {
+    try {
+      // Загружаем все транзакции без фильтра по месяцу
+      const allTrans = await api.fetchTransactions(uid);
+      setAllTransactions(allTrans);
+    } catch (e) { 
+      console.error('Error loading all transactions:', e); 
+    }
+  }
+
+  useEffect(() => {
+    // Загружаем все транзакции при переходе на таб аналитики
+    if (activeTab === 'analytics' && userId && allTransactions.length === 0) {
+      loadAllTransactions(userId);
+    }
+  }, [activeTab, userId])
+
   const toggleTransType = (type: 'expense' | 'income') => {
     WebApp.HapticFeedback.selectionChanged();
     setTransType(type);
@@ -194,6 +212,10 @@ function App() {
       WebApp.HapticFeedback.notificationOccurred('success');
       setIsHappy(true); setAmount(''); 
       loadData(userId, currentDate);
+      // Обновляем все транзакции для аналитики
+      if (allTransactions.length > 0) {
+        loadAllTransactions(userId);
+      }
       setTimeout(() => setIsHappy(false), 3000);
     } catch (e) { 
       console.error('❌ Transaction error:', e);
@@ -678,7 +700,7 @@ function App() {
         )}
 
         {activeTab === 'analytics' && (
-          <AnalyticsView transactions={transactions} currentMonth={currentDate} />
+          <AnalyticsView transactions={allTransactions} currentMonth={currentDate} />
         )}
       </div>
 
