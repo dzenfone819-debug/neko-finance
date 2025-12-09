@@ -51,8 +51,16 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
 
   // Топ-5 самых дорогих покупок
   const getTop5Expenses = () => {
+    const currentMonthNum = currentMonth.getMonth()
+    const currentYear = currentMonth.getFullYear()
+    
     return transactions
-      .filter(t => t.type === 'expense')
+      .filter(t => {
+        const date = new Date(t.date)
+        return t.type === 'expense' && 
+               date.getMonth() === currentMonthNum && 
+               date.getFullYear() === currentYear
+      })
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5)
   }
