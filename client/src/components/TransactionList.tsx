@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Filter } from 'lucide-react';
 // Импортируем обе константы и функции
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor } from '../data/constants';
 
@@ -15,9 +15,11 @@ interface Transaction {
 interface Props {
   transactions: Transaction[];
   onDelete: (id: number) => void;
+  onFilterClick?: () => void;
+  hasActiveFilters?: boolean;
 }
 
-export const TransactionList: React.FC<Props> = ({ transactions, onDelete }) => {
+export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onFilterClick, hasActiveFilters }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
@@ -25,7 +27,33 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete }) => 
 
   return (
     <div style={{ width: '100%', paddingBottom: 20 }}>
-      <h3 style={{ color: '#6B4C75', marginLeft: 10, marginBottom: 10, fontSize: 18 }}>История операций</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 10, marginRight: 10, marginBottom: 10 }}>
+        <h3 style={{ color: '#6B4C75', margin: 0, fontSize: 18 }}>История операций</h3>
+        {onFilterClick && (
+          <button
+            onClick={onFilterClick}
+            style={{
+              background: hasActiveFilters ? 'linear-gradient(135deg, #D291BC 0%, #E891C8 100%)' : 'white',
+              border: '2px solid #F0F0F0',
+              borderRadius: 12,
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              color: hasActiveFilters ? 'white' : '#6B4C75',
+              fontWeight: 700,
+              fontSize: 14,
+              fontFamily: 'Nunito, sans-serif',
+              boxShadow: hasActiveFilters ? '0 2px 8px rgba(210, 145, 188, 0.3)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Filter size={16} />
+            {hasActiveFilters && 'Активны'}
+          </button>
+        )}
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <AnimatePresence>
           {transactions.map((t) => {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import { CalendarHeatmap } from './CalendarHeatmap'
 
 interface Transaction {
   id: number
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) => {
-  const [activeSection, setActiveSection] = useState<'compare' | 'top5' | 'chart'>('compare')
+  const [activeSection, setActiveSection] = useState<'compare' | 'top5' | 'chart' | 'heatmap'>('compare')
 
   // Сравнение с прошлым месяцем
   const getMonthComparison = () => {
@@ -183,6 +184,25 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
           }}
         >
           📈 График
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setActiveSection('heatmap')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 12,
+            border: 'none',
+            background: activeSection === 'heatmap'
+              ? 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)'
+              : '#F0F0F0',
+            color: activeSection === 'heatmap' ? '#fff' : '#6B4C75',
+            fontWeight: 'bold',
+            fontSize: 14,
+            cursor: 'pointer',
+            flexShrink: 0
+          }}
+        >
+          🔥 Карта
         </motion.button>
       </div>
 
@@ -368,6 +388,32 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Тепловая карта */}
+        {activeSection === 'heatmap' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ marginTop: 20 }}
+          >
+            <div style={{
+              background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
+              borderRadius: 16,
+              padding: 20,
+              border: '2px solid rgba(254, 200, 216, 0.3)',
+              marginBottom: 20
+            }}>
+              <div style={{ fontSize: 16, color: '#6B4C75', marginBottom: 15, fontWeight: 'bold' }}>
+                Тепловая карта расходов
+              </div>
+              <CalendarHeatmap 
+                transactions={transactions}
+                currentMonth={currentMonth.getMonth()}
+                currentYear={currentMonth.getFullYear()}
+              />
             </div>
           </motion.div>
         )}

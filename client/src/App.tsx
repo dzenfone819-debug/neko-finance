@@ -21,6 +21,8 @@ import { LinkedAccountsView } from './components/LinkedAccountsView'
 import { AnalyticsView } from './components/AnalyticsView'
 import { Modal } from './components/Modal'
 import { NekoAvatar } from './components/NekoAvatar'
+import TransactionSearch from './components/TransactionSearch'
+import type { FilterState } from './components/TransactionSearch'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -60,6 +62,14 @@ function App() {
   const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
   const [newCategoryColor, setNewCategoryColor] = useState('#FF6B6B')
   const [newCategoryLimit, setNewCategoryLimit] = useState('')
+
+  // Состояния для поиска и фильтров
+  const [showSearchPanel, setShowSearchPanel] = useState(false)
+  const [filters, setFilters] = useState<FilterState>({
+    searchAmount: '',
+    selectedCategory: '',
+    period: 'all',
+  })
 
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
@@ -322,6 +332,57 @@ function App() {
   const handleNumberClick = (num: string) => { WebApp.HapticFeedback.impactOccurred('light'); if (amount.length >= 9) return; if (num === '.' && amount.includes('.')) return; setAmount(prev => prev + num); setIsError(false); }
   const handleDelete = () => { WebApp.HapticFeedback.impactOccurred('medium'); setAmount(prev => prev.slice(0, -1)); setIsError(false); }
   const triggerError = () => { WebApp.HapticFeedback.notificationOccurred('error'); setIsError(true); setTimeout(() => setIsError(false), 500); }
+
+  // Функция фильтрации транзакций
+  const filterTransactions = (transactionsList: any[]) => {
+    let filtered = [...transactionsList];
+
+    // Фильтр по сумме
+    if (filters.searchAmount) {
+      const searchValue = parseFloat(filters.searchAmount);
+      if (!isNaN(searchValue)) {
+        filtered = filtered.filter(t => Math.abs(t.amount - searchValue) < 0.01);
+      }
+    }
+
+    // Фильтр по категории
+    if (filters.selectedCategory) {
+      filtered = filtered.filter(t => t.category === filters.selectedCategory);
+    }
+
+    // Фильтр по периоду
+    if (filters.period !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      filtered = filtered.filter(t => {
+        const transDate = new Date(t.date);
+        const transDay = new Date(transDate.getFullYear(), transDate.getMonth(), transDate.getDate());
+        
+        if (filters.period === 'day') {
+          return transDay.getTime() === today.getTime();
+        } else if (filters.period === 'week') {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return transDay >= weekAgo;
+        } else if (filters.period === 'month') {
+          return transDate.getMonth() === now.getMonth() && transDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  }
+
+  const handleApplyFilters = (newFilters: FilterState) => {
+    setFilters(newFilters);
+  }
+
+  const hasActiveFilters = filters.searchAmount !== '' || filters.selectedCategory !== '' || filters.period !== 'all';
+
+  // Отфильтрованные транзакции для отображения
+  const filteredTransactions = filterTransactions(transactions);
 
   return (
     <div className="app-container">
@@ -674,7 +735,12 @@ function App() {
               budgetLimit={budgetLimit}
             />
             <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
-            <TransactionList transactions={transactions} onDelete={handleDeleteTransaction} />
+            <TransactionList 
+              transactions={filteredTransactions} 
+              onDelete={handleDeleteTransaction}
+              onFilterClick={() => setShowSearchPanel(true)}
+              hasActiveFilters={hasActiveFilters}
+            />
             <div style={{ height: 80 }} /> 
           </div>
         )}
@@ -879,6 +945,18 @@ function App() {
           </motion.button>
         </div>
       </Modal>
+
+      {/* Панель поиска и фильтров */}
+      <TransactionSearch 
+        isOpen={showSearchPanel}
+        onClose={() => setShowSearchPanel(false)}
+        onApplyFilters={handleApplyFilters}
+        categories={[
+          ...EXPENSE_CATEGORIES.map(c => c.name),
+          ...INCOME_CATEGORIES.map(c => c.name),
+          ...customCategories.map(c => c.name)
+        ]}
+      />
     </div>
   )
 }
