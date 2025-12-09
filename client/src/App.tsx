@@ -400,7 +400,7 @@ function App() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: 20
+            padding: '20px'
           }}
           onClick={() => setShowDatePicker(false)}
         >
@@ -413,7 +413,8 @@ function App() {
               borderRadius: 24,
               padding: 30,
               maxWidth: 320,
-              width: 'calc(100% - 40px)',
+              width: '100%',
+              margin: '0 auto',
               boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
               border: '2px solid rgba(254, 200, 216, 0.3)',
               boxSizing: 'border-box',
