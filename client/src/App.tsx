@@ -59,9 +59,11 @@ function App() {
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
 
   useEffect(() => {
-    // Проверяем, что приложение запущено в Telegram
-    if (!WebApp.initDataUnsafe.user && !WebApp.initDataUnsafe.query_id) {
-      // Если нет данных Telegram, показываем заглушку
+    // В разработке (localhost/127.0.0.1) пропускаем проверку Telegram
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (!isDevelopment && !WebApp.initDataUnsafe.user && !WebApp.initDataUnsafe.query_id) {
+      // В продакшене: если нет данных Telegram, показываем заглушку
       document.body.innerHTML = `
         <div style="
           display: flex;
@@ -84,7 +86,13 @@ function App() {
       return;
     }
 
-    WebApp.ready(); WebApp.expand(); WebApp.enableClosingConfirmation(); 
+    // В Telegram вызываем API
+    if (!isDevelopment) {
+      WebApp.ready(); 
+      WebApp.expand(); 
+      WebApp.enableClosingConfirmation(); 
+    }
+    
     let currentUserId = 777; 
     if (WebApp.initDataUnsafe.user) currentUserId = WebApp.initDataUnsafe.user.id;
     setUserId(currentUserId);
@@ -472,12 +480,21 @@ function App() {
 
               <div className="categories-wrapper">
                 <div className="categories-scroll">
-                  {currentCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
-                    <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
-                      <div className="category-icon">{cat.icon}</div>
-                      <span className="category-label">{cat.name}</span>
-                    </motion.button>
-                  ))}
+                  {/* Для расходов - фильтруем по лимитам, для доходов - показываем все */}
+                  {transType === 'expense' 
+                    ? currentCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
+                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+                          <div className="category-icon">{cat.icon}</div>
+                          <span className="category-label">{cat.name}</span>
+                        </motion.button>
+                      ))
+                    : currentCategories.map((cat) => (
+                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+                          <div className="category-icon">{cat.icon}</div>
+                          <span className="category-label">{cat.name}</span>
+                        </motion.button>
+                      ))
+                  }
                   {/* КАСТОМНЫЕ КАТЕГОРИИ (только для расходов) */}
                   {transType === 'expense' && customCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
                     <motion.button 
