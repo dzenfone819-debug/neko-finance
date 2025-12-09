@@ -49,47 +49,102 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             style={{
               position: 'fixed', top: '35%', left: '10%', right: '10%',
-              background: 'white', padding: 25, borderRadius: 24,
-              zIndex: 1001, boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-              display: 'flex', flexDirection: 'column', gap: 15
+              background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
+              padding: 30, borderRadius: 24,
+              zIndex: 1001, boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
+              display: 'flex', flexDirection: 'column', gap: 20,
+              border: '2px solid rgba(254, 200, 216, 0.3)'
             }}
           >
-            <h3 style={{ margin: 0, color: '#6B4C75', textAlign: 'center' }}>{title}</h3>
+            <h3 style={{ 
+              margin: 0, 
+              background: 'linear-gradient(135deg, #D291BC 0%, #FEC8D8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textAlign: 'center',
+              fontSize: 20,
+              fontWeight: 'bold'
+            }}>{title}</h3>
             
-            <input
-              type="number"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="0 ₽"
-              autoFocus
-              style={{
-                fontSize: 24, padding: 10, borderRadius: 12,
-                border: '2px solid #FEC8D8', outline: 'none',
-                textAlign: 'center', color: '#6B4C75', fontWeight: 'bold'
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="number"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="0"
+                autoFocus
+                style={{
+                  fontSize: 32, 
+                  padding: '16px 20px', 
+                  borderRadius: 16,
+                  border: '2px solid #FEC8D8', 
+                  outline: 'none',
+                  textAlign: 'center', 
+                  color: '#6B4C75', 
+                  fontWeight: 'bold',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: 'rgba(254, 200, 216, 0.1)',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(254, 200, 216, 0.2)'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#D291BC'}
+                onBlur={(e) => e.target.style.borderColor = '#FEC8D8'}
+              />
+              <span style={{
+                position: 'absolute',
+                right: 24,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: 24,
+                color: '#D291BC',
+                fontWeight: 'bold',
+                pointerEvents: 'none'
+              }}>₽</span>
+            </div>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              <button
+            <div style={{ display: 'flex', gap: 12, marginTop: 5 }}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={onClose}
                 style={{
-                  flex: 1, padding: 12, borderRadius: 12, border: 'none',
-                  background: '#F0F0F0', color: '#6B4C75', fontWeight: 'bold',
-                  fontSize: 16
+                  flex: 1, 
+                  padding: 14, 
+                  borderRadius: 14, 
+                  border: '2px solid #E8E8E8',
+                  background: 'white', 
+                  color: '#6B4C75', 
+                  fontWeight: 'bold',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#F8F8F8'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
               >
                 Отмена
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={handleSave}
                 style={{
-                  flex: 1, padding: 12, borderRadius: 12, border: 'none',
-                  background: '#D291BC', color: 'white', fontWeight: 'bold',
-                  fontSize: 16
+                  flex: 1, 
+                  padding: 14, 
+                  borderRadius: 14, 
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)', 
+                  color: 'white', 
+                  fontWeight: 'bold',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(210, 145, 188, 0.4)',
+                  transition: 'all 0.2s ease'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 Сохранить
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         </>

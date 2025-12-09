@@ -34,8 +34,8 @@ export const fetchTransactions = async (userId: number, month?: number, year?: n
 
 // ... Остальные функции (add, delete, settings, limits) без изменений ...
 // (Обязательно оставь их!)
-export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account') => {
-  const payload = { amount, category, type, account_id: accountId, target_type: targetType };
+export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account', date?: string) => {
+  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date };
   console.log('🔵 API addTransaction payload:', payload);
   const response = await fetch(`${API_URL}/add-expense`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },

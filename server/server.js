@@ -183,23 +183,24 @@ fastify.post('/log-client', (request, reply) => {
 
 // Добавить операцию (Расход или Доход)
 fastify.post('/add-expense', (request, reply) => {
-  // Теперь принимаем TYPE, ACCOUNT_ID, и TARGET_TYPE (account или goal)
-  const { amount, category, type, account_id, target_type } = request.body
+  // Теперь принимаем TYPE, ACCOUNT_ID, TARGET_TYPE (account или goal) и DATE
+  const { amount, category, type, account_id, target_type, date } = request.body
   const userId = request.headers['x-primary-user-id']
 
   console.log('📥 /add-expense FULL request.body:', JSON.stringify(request.body, null, 2));
-  console.log('📥 /add-expense request:', { userId, amount, category, type, account_id, target_type });
+  console.log('📥 /add-expense request:', { userId, amount, category, type, account_id, target_type, date });
 
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   // По умолчанию считаем расходом, если тип не передан
   const finalType = type || 'expense'
   const finalTargetType = target_type || 'account'
+  // Используем переданную дату или текущую
+  const finalDate = date || new Date().toISOString()
 
   const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id) VALUES (?, ?, ?, ?, ?, ?)`
-  const now = new Date().toISOString()
   
-  db.run(query, [amount, category || 'general', now, userId, finalType, account_id || null], function(err) {
+  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null], function(err) {
     if (err) {
       console.error('❌ Database error:', err);
       reply.code(500).send({ error: err.message })

@@ -32,6 +32,9 @@ function App() {
   
   // Текущая дата для фильтрации
   const [currentDate, setCurrentDate] = useState(new Date())
+  // Дата для транзакции (по умолчанию сегодня)
+  const [transactionDate, setTransactionDate] = useState(new Date())
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   const [totalSpent, setTotalSpent] = useState(0)
   const [totalIncome, setTotalIncome] = useState(0)
@@ -183,9 +186,9 @@ function App() {
       // Используем тип из selectedAccount
       const targetType = selectedAccount.type;
       const targetId = selectedAccount.id;
-      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, targetId, targetType, accountsCount: accounts.length, goalsCount: goals.length });
-      api.logToServer('📤 BEFORE API.addTransaction', { userId, value, selectedCategory, transType, targetId, targetType, accountsCount: accounts.length, goalsCount: goals.length });
-      const result = await api.addTransaction(userId, value, selectedCategory, transType, targetId, targetType);
+      console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, targetId, targetType, date: transactionDate.toISOString(), accountsCount: accounts.length, goalsCount: goals.length });
+      api.logToServer('📤 BEFORE API.addTransaction', { userId, value, selectedCategory, transType, targetId, targetType, date: transactionDate.toISOString(), accountsCount: accounts.length, goalsCount: goals.length });
+      const result = await api.addTransaction(userId, value, selectedCategory, transType, targetId, targetType, transactionDate.toISOString());
       console.log('✅ Transaction result:', result);
       WebApp.HapticFeedback.notificationOccurred('success');
       setIsHappy(true); setAmount(''); 
@@ -299,6 +302,96 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Модальное окно выбора даты */}
+      {showDatePicker && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}
+          onClick={() => setShowDatePicker(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
+              borderRadius: 24,
+              padding: 30,
+              maxWidth: 320,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
+              border: '2px solid rgba(254, 200, 216, 0.3)'
+            }}
+          >
+            <div style={{ 
+              fontSize: 20, 
+              fontWeight: 'bold', 
+              background: 'linear-gradient(135deg, #D291BC 0%, #FEC8D8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: 20, 
+              textAlign: 'center' 
+            }}>
+              📅 Выберите дату
+            </div>
+            <input
+              type="date"
+              value={transactionDate.toISOString().split('T')[0]}
+              onChange={(e) => setTransactionDate(new Date(e.target.value + 'T12:00:00'))}
+              max={new Date().toISOString().split('T')[0]}
+              style={{
+                width: '100%',
+                padding: '16px 20px',
+                fontSize: 18,
+                borderRadius: 16,
+                border: '2px solid #FEC8D8',
+                marginBottom: 20,
+                fontFamily: 'inherit',
+                color: '#6B4C75',
+                fontWeight: '600',
+                background: 'rgba(254, 200, 216, 0.1)',
+                boxShadow: '0 4px 12px rgba(254, 200, 216, 0.2)',
+                outline: 'none',
+                transition: 'all 0.3s ease',
+                boxSizing: 'border-box'
+              }}
+            />
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { WebApp.HapticFeedback.notificationOccurred('success'); setShowDatePicker(false); }}
+              style={{
+                width: '100%',
+                padding: 14,
+                background: 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)',
+                border: 'none',
+                borderRadius: 14,
+                color: '#fff',
+                fontSize: 16,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(210, 145, 188, 0.4)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              ✓ Готово
+            </motion.button>
+          </motion.div>
+        </div>
+      )}
+      
       <ModalInput isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleModalSave} title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'} initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)} />
 
       <div className="header-section">
@@ -364,10 +457,34 @@ function App() {
 
             {/* СУММА ИЛИ ЗАГОЛОВОК */}
             {activeTab === 'input' ? (
-              <motion.div className="amount-display" style={{ margin: 0 }}>
-                <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>{amount || '0'}</span> 
-                <span className="currency">₽</span>
-              </motion.div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: 0 }}>
+                <motion.div className="amount-display" style={{ margin: 0 }}>
+                  <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>{amount || '0'}</span> 
+                  <span className="currency">₽</span>
+                </motion.div>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setShowDatePicker(true); }}
+                  style={{
+                    background: 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '4px 10px',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    height: 24,
+                    flexShrink: 0
+                  }}
+                >
+                  📅 {transactionDate.getDate()}/{transactionDate.getMonth() + 1}
+                </motion.button>
+              </div>
             ) : (
               <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold'}}>
                 {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
