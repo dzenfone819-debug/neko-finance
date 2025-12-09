@@ -179,6 +179,35 @@ export const deleteGoal = async (userId: number, goalId: number) => {
   return await response.json();
 };
 
+// ========== СВЯЗАННЫЕ АККАУНТЫ ==========
+
+export const linkAccount = async (userId: number, primaryUserId: number) => {
+  const response = await fetch(`${API_URL}/link-account`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ primary_user_id: primaryUserId })
+  });
+  if (!response.ok) throw new Error('Failed to link account');
+  return await response.json();
+};
+
+export const unlinkAccount = async (userId: number) => {
+  const response = await fetch(`${API_URL}/unlink-account`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  if (!response.ok) throw new Error('Failed to unlink account');
+  return await response.json();
+};
+
+export const getLinkedAccounts = async (userId: number) => {
+  const response = await fetch(`${API_URL}/linked-accounts`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  if (!response.ok) throw new Error('Failed to get linked accounts');
+  return await response.json();
+};
+
 // ========== ПЕРЕВОДЫ ==========
 
 export const transfer = async (userId: number, from_type: string, from_id: number, to_type: string, to_id: number, amount: number, description?: string) => {

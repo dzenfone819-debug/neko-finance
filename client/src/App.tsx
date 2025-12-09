@@ -5,7 +5,7 @@ import {
   LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet,
   Coffee, Car, Gamepad2, Zap, Home, Bus,
   Shirt, PiggyBank, ShoppingBasket,
-  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package
+  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package, Users
 } from 'lucide-react'
 import './App.css'
 
@@ -17,13 +17,14 @@ import { BudgetView } from './components/BudgetView'
 import { ModalInput } from './components/ModalInput'
 import { MonthSelector } from './components/MonthSelector'
 import { AccountsView } from './components/AccountsView'
+import { LinkedAccountsView } from './components/LinkedAccountsView'
 import { Modal } from './components/Modal'
 import { NekoAvatar } from './components/NekoAvatar'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'linked'>('input')
   const [transType, setTransType] = useState<'expense' | 'income'>('expense')
   const [selectedCategory, setSelectedCategory] = useState('groceries')
   const [selectedAccount, setSelectedAccount] = useState<{type: 'account' | 'goal', id: number} | null>(null)
@@ -548,6 +549,10 @@ function App() {
             <div style={{ height: 80 }} />
           </div>
         )}
+
+        {activeTab === 'linked' && (
+          <LinkedAccountsView userId={userId} />
+        )}
       </div>
 
       <div className="bottom-tab-bar">
@@ -555,6 +560,7 @@ function App() {
         <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><LayoutGrid size={24} /></div><span>Инфо</span></button>
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Target size={24} /></div><span>Бюджет</span></button>
         <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
+        <button className={`tab-btn ${activeTab === 'linked' ? 'active' : ''}`} onClick={() => { setActiveTab('linked'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Users size={24} /></div><span>Связь</span></button>
       </div>
 
       {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА */}

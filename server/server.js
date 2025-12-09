@@ -40,8 +40,27 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 })
 
+// Функция для получения primary user ID (с поддержкой связанных аккаунтов)
+function getPrimaryUserId(userId) {
+  return new Promise((resolve, reject) => {
+    db.get("SELECT primary_user_id FROM user_links WHERE telegram_id = ?", [userId], (err, row) => {
+      if (err) reject(err);
+      else resolve(row ? row.primary_user_id : userId); // Если нет связи, возвращаем исходный ID
+    });
+  });
+}
+
 // Создание таблиц
 db.serialize(() => {
+  // Таблица связей пользователей (для объединения нескольких Telegram аккаунтов)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_links (
+      telegram_id INTEGER PRIMARY KEY,
+      primary_user_id INTEGER NOT NULL,
+      linked_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+  
   // Транзакции
   db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
@@ -139,6 +158,20 @@ db.serialize(() => {
   `)
 })
 
+// --- MIDDLEWARE для подмены user_id ---
+fastify.addHook('preHandler', async (request, reply) => {
+  const userId = request.headers['x-user-id'];
+  if (userId && userId !== 'undefined') {
+    try {
+      const primaryUserId = await getPrimaryUserId(parseInt(userId));
+      request.headers['x-primary-user-id'] = primaryUserId.toString();
+    } catch (e) {
+      console.error('Error getting primary user ID:', e);
+      request.headers['x-primary-user-id'] = userId;
+    }
+  }
+});
+
 // --- API ---
 
 // Логирование
@@ -152,7 +185,7 @@ fastify.post('/log-client', (request, reply) => {
 fastify.post('/add-expense', (request, reply) => {
   // Теперь принимаем TYPE, ACCOUNT_ID, и TARGET_TYPE (account или goal)
   const { amount, category, type, account_id, target_type } = request.body
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
 
   console.log('📥 /add-expense FULL request.body:', JSON.stringify(request.body, null, 2));
   console.log('📥 /add-expense request:', { userId, amount, category, type, account_id, target_type });
@@ -233,7 +266,7 @@ const getDateFilter = (query) => {
 
 // 1. БАЛАНС (С учетом месяца)
 fastify.get('/balance', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   const filter = getDateFilter(request.query);
@@ -262,7 +295,7 @@ fastify.get('/balance', (request, reply) => {
 
 // 2. СТАТИСТИКА (С учетом месяца)
 fastify.get('/stats', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   const filter = getDateFilter(request.query);
@@ -281,7 +314,7 @@ fastify.get('/stats', (request, reply) => {
 
 // 3. ИСТОРИЯ (С учетом месяца)
 fastify.get('/transactions', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   const filter = getDateFilter(request.query);
@@ -303,7 +336,7 @@ fastify.get('/transactions', (request, reply) => {
 
 // Удаление
 fastify.delete('/transactions/:id', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { id } = request.params
   const sql = `DELETE FROM transactions WHERE id = ? AND user_id = ?`
   db.run(sql, [id, userId], function(err) {
@@ -314,14 +347,14 @@ fastify.delete('/transactions/:id', (request, reply) => {
 
 // Настройки бюджета (Общий)
 fastify.get('/settings', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   db.get("SELECT budget_limit FROM user_settings WHERE user_id = ?", [userId], (err, row) => {
     reply.send({ budget: row ? row.budget_limit : 0 })
   })
 })
 
 fastify.post('/settings', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { budget } = request.body
   db.run("REPLACE INTO user_settings (user_id, budget_limit) VALUES (?, ?)", [userId, budget], () => {
     reply.send({ status: 'ok' })
@@ -330,7 +363,7 @@ fastify.post('/settings', (request, reply) => {
 
 // Лимиты категорий
 fastify.get('/limits', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
     const limits = {};
     if (rows) rows.forEach(r => limits[r.category_id] = r.limit_amount);
@@ -340,7 +373,7 @@ fastify.get('/limits', (request, reply) => {
 
 // Получить все кастомные категории пользователя
 fastify.get('/custom-categories', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.all("SELECT * FROM custom_categories WHERE user_id = ?", [userId], (err, rows) => {
@@ -351,7 +384,7 @@ fastify.get('/custom-categories', (request, reply) => {
 
 // Создать новую кастомную категорию
 fastify.post('/custom-categories', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   const { name, icon, color, limit } = request.body
@@ -382,7 +415,7 @@ fastify.post('/custom-categories', (request, reply) => {
 
 // Удалить кастомную категорию
 fastify.delete('/custom-categories/:id', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const categoryId = request.params.id
   
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
@@ -404,7 +437,7 @@ fastify.delete('/custom-categories/:id', (request, reply) => {
 })
 
 fastify.post('/limits', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { category, limit } = request.body
   
   // Всегда используем REPLACE для добавления/обновления лимита (даже 0)
@@ -415,7 +448,7 @@ fastify.post('/limits', (request, reply) => {
 
 // Удалить лимит категории
 fastify.delete('/limits/:categoryId', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const categoryId = request.params.categoryId
   
   db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => {
@@ -427,7 +460,7 @@ fastify.delete('/limits/:categoryId', (request, reply) => {
 
 // СЧЕТА - Получить все счета пользователя
 fastify.get('/accounts', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.all("SELECT * FROM accounts WHERE user_id = ? ORDER BY created_at ASC", [userId], (err, rows) => {
@@ -438,7 +471,7 @@ fastify.get('/accounts', (request, reply) => {
 
 // СЧЕТА - Создать новый счет
 fastify.post('/accounts', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { name, balance, type, currency, color } = request.body
   
   if (!userId || !name) return reply.code(400).send({ error: 'Missing required fields' })
@@ -456,7 +489,7 @@ fastify.post('/accounts', (request, reply) => {
 
 // СЧЕТА - Обновить счет (баланс, имя и т.д.)
 fastify.put('/accounts/:id', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { id } = request.params
   const { name, balance, type, color } = request.body
   
@@ -486,7 +519,7 @@ fastify.put('/accounts/:id', (request, reply) => {
 
 // СЧЕТА - Удалить счет
 fastify.delete('/accounts/:id', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { id } = request.params
   
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
@@ -499,7 +532,7 @@ fastify.delete('/accounts/:id', (request, reply) => {
 
 // КОПИЛКИ - Получить все копилки пользователя
 fastify.get('/goals', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.all("SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at ASC", [userId], (err, rows) => {
@@ -510,7 +543,7 @@ fastify.get('/goals', (request, reply) => {
 
 // КОПИЛКИ - Создать новую копилку
 fastify.post('/goals', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { name, target_amount, category, icon, color, deadline } = request.body
   
   if (!userId || !name || !target_amount) return reply.code(400).send({ error: 'Missing required fields' })
@@ -528,7 +561,7 @@ fastify.post('/goals', (request, reply) => {
 
 // КОПИЛКИ - Обновить копилку
 fastify.put('/goals/:id', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { id } = request.params
   const { name, target_amount, current_amount, color, deadline } = request.body
   
@@ -559,7 +592,7 @@ fastify.put('/goals/:id', (request, reply) => {
 
 // КОПИЛКИ - Удалить копилку
 fastify.delete('/goals/:id', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { id } = request.params
   
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
@@ -572,7 +605,7 @@ fastify.delete('/goals/:id', (request, reply) => {
 
 // ПЕРЕВОДЫ - Перевод между счетами или в копилку
 fastify.post('/transfer', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   const { from_type, from_id, to_type, to_id, amount, description } = request.body
   
   if (!userId || !from_type || !from_id || !to_type || !to_id || !amount) {
@@ -620,13 +653,85 @@ fastify.post('/transfer', (request, reply) => {
 
 // БАЛАНС - Получить общий баланс со счетов
 fastify.get('/total-balance', (request, reply) => {
-  const userId = request.headers['x-user-id']
+  const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.get("SELECT SUM(balance) as total FROM accounts WHERE user_id = ?", [userId], (err, row) => {
     if (err) reply.code(500).send({ error: err.message })
     else reply.send({ total: row && row.total ? row.total : 0 })
   })
+})
+
+// --- Управление связанными аккаунтами ---
+
+// Связать текущий аккаунт с главным (primary_user_id)
+fastify.post('/link-account', async (request, reply) => {
+  const currentUserId = request.headers['x-user-id'] // Используем оригинальный ID
+  const { primary_user_id } = request.body
+  
+  if (!currentUserId) return reply.code(400).send({ error: 'User ID is required' })
+  if (!primary_user_id) return reply.code(400).send({ error: 'Primary User ID is required' })
+  
+  try {
+    await new Promise((resolve, reject) => {
+      db.run(
+        "INSERT OR REPLACE INTO user_links (telegram_id, primary_user_id) VALUES (?, ?)",
+        [currentUserId, primary_user_id],
+        (err) => err ? reject(err) : resolve()
+      )
+    })
+    
+    console.log(`✅ Linked user ${currentUserId} to primary user ${primary_user_id}`)
+    reply.send({ status: 'linked', telegram_id: currentUserId, primary_user_id })
+  } catch (err) {
+    console.error('❌ Link account error:', err)
+    reply.code(500).send({ error: err.message })
+  }
+})
+
+// Отвязать текущий аккаунт (вернуть его к самостоятельному использованию)
+fastify.delete('/unlink-account', async (request, reply) => {
+  const currentUserId = request.headers['x-user-id'] // Используем оригинальный ID
+  
+  if (!currentUserId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  try {
+    await new Promise((resolve, reject) => {
+      db.run(
+        "DELETE FROM user_links WHERE telegram_id = ?",
+        [currentUserId],
+        (err) => err ? reject(err) : resolve()
+      )
+    })
+    
+    console.log(`✅ Unlinked user ${currentUserId}`)
+    reply.send({ status: 'unlinked', telegram_id: currentUserId })
+  } catch (err) {
+    console.error('❌ Unlink account error:', err)
+    reply.code(500).send({ error: err.message })
+  }
+})
+
+// Получить информацию о связанных аккаунтах (кто к кому привязан)
+fastify.get('/linked-accounts', async (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  try {
+    const links = await new Promise((resolve, reject) => {
+      db.all(
+        "SELECT telegram_id, primary_user_id FROM user_links WHERE primary_user_id = ? OR telegram_id = ?",
+        [userId, userId],
+        (err, rows) => err ? reject(err) : resolve(rows || [])
+      )
+    })
+    
+    reply.send({ primary_user_id: parseInt(userId), linked_accounts: links })
+  } catch (err) {
+    console.error('❌ Get linked accounts error:', err)
+    reply.code(500).send({ error: err.message })
+  }
 })
 
 // Роутинг
