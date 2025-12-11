@@ -122,6 +122,19 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, transactions, cu
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}
       />
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
@@ -131,16 +144,17 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, transactions, cu
           position: 'fixed',
           top: '50%',
           left: '50%',
+          transform: 'translate(-50%, -50%)',
           background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
           borderRadius: 24,
           padding: 30,
           maxWidth: 400,
-          width: '90%',
+          width: 'calc(100% - 40px)',
           zIndex: 1001,
           boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
           border: '2px solid rgba(254, 200, 216, 0.3)',
           boxSizing: 'border-box',
-          transform: 'translate(-50%, -50%)'
+          margin: '0 auto'
         }}
       >
         <h2 style={{
