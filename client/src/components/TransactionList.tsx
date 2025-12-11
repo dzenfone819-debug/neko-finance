@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Filter } from 'lucide-react';
+import type { PanInfo } from 'framer-motion';
+import { Trash2, Filter, Edit2 } from 'lucide-react';
 // Импортируем обе константы и функции
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor } from '../data/constants';
 
@@ -15,14 +16,33 @@ interface Transaction {
 interface Props {
   transactions: Transaction[];
   onDelete: (id: number) => void;
+  onEdit?: (transaction: Transaction) => void;
   onFilterClick?: () => void;
   hasActiveFilters?: boolean;
 }
 
-export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onFilterClick, hasActiveFilters }) => {
+export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdit, onFilterClick, hasActiveFilters }) => {
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
+  };
+
+  const handleDragEnd = (id: number, transaction: Transaction, info: PanInfo) => {
+    const offset = info.offset.x;
+    const velocity = info.velocity.x;
+
+    // Свайп влево - удаление (offset < -100 или быстрый свайп)
+    if (offset < -100 || (velocity < -500 && offset < -50)) {
+      onDelete(id);
+    }
+    // Свайп вправо - редактирование (offset > 100 или быстрый свайп)
+    else if (onEdit && (offset > 100 || (velocity > 500 && offset > 50))) {
+      onEdit(transaction);
+    }
+    
+    setDraggedItem(null);
   };
 
   return (
@@ -58,49 +78,106 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onFil
         <AnimatePresence>
           {transactions.map((t) => {
             const isIncome = t.type === 'income';
+            const isDragging = draggedItem === t.id;
             
             // Ищем иконку в обоих списках
             const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
             const cat = allCats.find(c => c.id === t.category);
             
             return (
-              <motion.div
-                key={t.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -50, height: 0 }}
-                layout
-                style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: '#F8F9FA', padding: '12px 16px', borderRadius: 16,
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ 
-                    background: getCategoryColor(t.category), 
-                    padding: 8, borderRadius: '50%', color: '#6B4C75', display: 'flex'
+              <div key={t.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: 16 }}>
+                {/* Фон с подсказками для свайпа */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0 20px',
+                  borderRadius: 16
+                }}>
+                  {onEdit && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      color: '#3498db',
+                      fontWeight: 'bold',
+                      fontSize: 14
+                    }}>
+                      <Edit2 size={20} />
+                      <span>Редактировать</span>
+                    </div>
+                  )}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    color: '#E74C3C',
+                    fontWeight: 'bold',
+                    fontSize: 14,
+                    marginLeft: 'auto'
                   }}>
-                    {cat?.icon || <div style={{width: 20, height: 20}} />}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 'bold', color: '#2D3436', fontSize: 14 }}>
-                      {getCategoryName(t.category)}
-                    </span>
-                    <span style={{ fontSize: 11, color: '#A0A0A0' }}>{formatDate(t.date)}</span>
+                    <span>Удалить</span>
+                    <Trash2 size={20} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                  {/* Красим сумму: Зеленый (+) или Фиолетовый (-) */}
-                  <span style={{ fontWeight: '800', color: isIncome ? '#27AE60' : '#6B4C75' }}>
-                    {isIncome ? '+' : '-'}{t.amount} ₽
-                  </span>
-                  <button onClick={() => onDelete(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E74C3C', opacity: 0.6, padding: 4 }}>
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </motion.div>
+                {/* Карточка транзакции */}
+                <motion.div
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragStart={() => setDraggedItem(t.id)}
+                  onDragEnd={(_, info) => handleDragEnd(t.id, t, info)}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    scale: isDragging ? 1.02 : 1
+                  }}
+                  exit={{ opacity: 0, x: -50, height: 0 }}
+                  layout
+                  style={{
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: '#F8F9FA', 
+                    padding: '12px 16px', 
+                    borderRadius: 16,
+                    position: 'relative',
+                    zIndex: isDragging ? 10 : 1,
+                    cursor: 'grab',
+                    touchAction: 'pan-y'
+                  }}
+                  whileTap={{ cursor: 'grabbing' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ 
+                      background: getCategoryColor(t.category), 
+                      padding: 8, borderRadius: '50%', color: '#6B4C75', display: 'flex'
+                    }}>
+                      {cat?.icon || <div style={{width: 20, height: 20}} />}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontWeight: 'bold', color: '#2D3436', fontSize: 14 }}>
+                        {getCategoryName(t.category)}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#A0A0A0' }}>{formatDate(t.date)}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                    {/* Красим сумму: Зеленый (+) или Фиолетовый (-) */}
+                    <span style={{ fontWeight: '800', color: isIncome ? '#27AE60' : '#6B4C75' }}>
+                      {isIncome ? '+' : '-'}{t.amount} ₽
+                    </span>
+                  </div>
+                </motion.div>
+              </div>
             );
           })}
         </AnimatePresence>

@@ -55,6 +55,17 @@ export const deleteTransaction = async (userId: number, transactionId: number) =
     method: 'DELETE', headers: { 'x-user-id': userId.toString() }
   }); if (!response.ok) throw new Error('Failed to delete'); return true;
 };
+
+export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income') => {
+  const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ amount, category, date, type })
+  });
+  if (!response.ok) throw new Error('Failed to update');
+  return await response.json();
+};
+
 export const fetchBudget = async (userId: number) => {
   const response = await fetch(`${API_URL}/settings`, { headers: { 'x-user-id': userId.toString() } });
   const data = await response.json(); return data.budget || 0;

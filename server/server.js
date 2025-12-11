@@ -346,6 +346,25 @@ fastify.delete('/transactions/:id', (request, reply) => {
   })
 })
 
+// Обновление транзакции
+fastify.put('/transactions/:id', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { id } = request.params
+  const { amount, category, date, type } = request.body
+  
+  const sql = `UPDATE transactions 
+               SET amount = ?, category = ?, date = ?, type = ?
+               WHERE id = ? AND user_id = ?`
+  
+  db.run(sql, [amount, category, date, type, id, userId], function(err) {
+    if (err) {
+      reply.code(500).send({ error: err.message })
+    } else {
+      reply.send({ status: 'updated', id, changes: this.changes })
+    }
+  })
+})
+
 // Настройки бюджета (Общий)
 fastify.get('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']

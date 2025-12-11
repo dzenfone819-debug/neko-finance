@@ -71,6 +71,13 @@ function App() {
     period: 'all',
   })
 
+  // Состояния для редактирования транзакции
+  const [editingTransaction, setEditingTransaction] = useState<any | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editAmount, setEditAmount] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editDate, setEditDate] = useState(new Date())
+
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
 
@@ -332,6 +339,47 @@ function App() {
   const handleNumberClick = (num: string) => { WebApp.HapticFeedback.impactOccurred('light'); if (amount.length >= 9) return; if (num === '.' && amount.includes('.')) return; setAmount(prev => prev + num); setIsError(false); }
   const handleDelete = () => { WebApp.HapticFeedback.impactOccurred('medium'); setAmount(prev => prev.slice(0, -1)); setIsError(false); }
   const triggerError = () => { WebApp.HapticFeedback.notificationOccurred('error'); setIsError(true); setTimeout(() => setIsError(false), 500); }
+
+  // Функция открытия редактирования
+  const handleEditTransaction = (transaction: any) => {
+    WebApp.HapticFeedback.impactOccurred('light');
+    setEditingTransaction(transaction);
+    setEditAmount(transaction.amount.toString());
+    setEditCategory(transaction.category);
+    setEditDate(new Date(transaction.date));
+    setShowEditModal(true);
+  }
+
+  // Функция сохранения изменений
+  const handleSaveEdit = async () => {
+    if (!userId || !editingTransaction) return;
+    
+    const value = parseFloat(editAmount);
+    if (!editAmount || isNaN(value) || value <= 0) {
+      triggerError();
+      return;
+    }
+
+    try {
+      await api.updateTransaction(
+        userId,
+        editingTransaction.id,
+        value,
+        editCategory,
+        editDate.toISOString(),
+        editingTransaction.type
+      );
+      
+      WebApp.HapticFeedback.notificationOccurred('success');
+      setShowEditModal(false);
+      setEditingTransaction(null);
+      setEditAmount('');
+      loadData(userId, currentDate);
+    } catch (e) {
+      console.error(e);
+      triggerError();
+    }
+  }
 
   // Функция фильтрации транзакций
   const filterTransactions = (transactionsList: any[]) => {
@@ -741,6 +789,7 @@ function App() {
             <TransactionList 
               transactions={filteredTransactions} 
               onDelete={handleDeleteTransaction}
+              onEdit={handleEditTransaction}
               onFilterClick={() => setShowSearchPanel(true)}
               hasActiveFilters={hasActiveFilters}
             />
@@ -945,6 +994,75 @@ function App() {
             className="modal-submit-button"
           >
             {isCustomCategory ? 'Создать лимит' : 'Добавить лимит'}
+          </motion.button>
+        </div>
+      </Modal>
+
+      {/* Модальное окно редактирования транзакции */}
+      <Modal title="" isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div style={{ padding: '0 4px' }}>
+          <h2 style={{
+            textAlign: 'center',
+            marginBottom: 20,
+            background: 'linear-gradient(135deg, #D291BC 0%, #FEC8D8 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontSize: 22
+          }}>
+            ✏️ Редактировать транзакцию
+          </h2>
+
+          <div style={{ marginBottom: 20 }}>
+            <label className="modal-label">Сумма</label>
+            <input
+              type="text"
+              value={editAmount}
+              onChange={(e) => setEditAmount(e.target.value)}
+              placeholder="0"
+              className="modal-input"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label className="modal-label">Категория</label>
+            <select
+              value={editCategory}
+              onChange={(e) => setEditCategory(e.target.value)}
+              className="modal-select"
+            >
+              {editingTransaction?.type === 'expense' 
+                ? EXPENSE_CATEGORIES.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))
+                : INCOME_CATEGORIES.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))
+              }
+              {customCategories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label className="modal-label">Дата</label>
+            <input
+              type="date"
+              value={editDate.toISOString().split('T')[0]}
+              onChange={(e) => setEditDate(new Date(e.target.value + 'T12:00:00'))}
+              max={new Date().toISOString().split('T')[0]}
+              className="modal-input"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSaveEdit}
+            className="modal-submit-button"
+          >
+            💾 Сохранить изменения
           </motion.button>
         </div>
       </Modal>
