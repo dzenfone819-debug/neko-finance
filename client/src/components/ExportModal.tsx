@@ -142,7 +142,7 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, transactions, cu
         exit={{ opacity: 0, y: -20 }}
         style={{
           position: 'fixed',
-          top: '50%',
+          top: '35%',
           left: '20px',
           right: '20px',
           background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
