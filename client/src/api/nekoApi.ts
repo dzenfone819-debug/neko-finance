@@ -255,7 +255,8 @@ export const resetAllData = async (userId: number) => {
     headers: { 
       'Content-Type': 'application/json',
       'x-user-id': userId.toString() 
-    }
+    },
+    body: JSON.stringify({})
   });
   if (!response.ok) {
     throw new Error('Failed to reset data');
