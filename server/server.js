@@ -156,7 +156,51 @@ db.serialize(() => {
       description TEXT
     )
   `)
+
+  // НАСТРОЙКИ БЮДЖЕТНОГО ПЕРИОДА
+  db.run(`
+    CREATE TABLE IF NOT EXISTS budget_period_settings (
+      user_id INTEGER PRIMARY KEY,
+      period_type TEXT DEFAULT 'calendar_month', -- 'calendar_month' или 'custom_period'
+      period_start_day INTEGER DEFAULT 1, -- День начала периода (1-31)
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
 })
+
+// Утилита для расчета бюджетного периода
+function getBudgetPeriod(date, periodType, startDay) {
+  const current = new Date(date)
+  
+  if (periodType === 'calendar_month') {
+    // Обычный календарный месяц
+    const year = current.getFullYear()
+    const month = current.getMonth()
+    const startDate = new Date(year, month, 1)
+    const endDate = new Date(year, month + 1, 0, 23, 59, 59)
+    return { startDate, endDate }
+  } else {
+    // Кастомный период
+    const year = current.getFullYear()
+    const month = current.getMonth()
+    const day = current.getDate()
+    
+    let periodStartDate, periodEndDate
+    
+    if (day >= startDay) {
+      // Текущий период: startDay текущего месяца - (startDay-1) следующего месяца
+      periodStartDate = new Date(year, month, startDay)
+      periodEndDate = new Date(year, month + 1, startDay - 1, 23, 59, 59)
+    } else {
+      // Предыдущий период: startDay прошлого месяца - (startDay-1) текущего месяца
+      periodStartDate = new Date(year, month - 1, startDay)
+      periodEndDate = new Date(year, month, startDay - 1, 23, 59, 59)
+    }
+    
+    return { startDate: periodStartDate, endDate: periodEndDate }
+  }
+}
 
 // --- MIDDLEWARE для подмены user_id ---
 fastify.addHook('preHandler', async (request, reply) => {
@@ -248,29 +292,60 @@ fastify.post('/add-expense', (request, reply) => {
 
 // --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ SQL ---
 // Формирует условие WHERE для фильтрации по месяцу
-const getDateFilter = (query) => {
+// Получение настроек бюджетного периода (промисифицировано)
+const getBudgetPeriodSettings = (userId) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      "SELECT period_type, period_start_day FROM budget_period_settings WHERE user_id = ?",
+      [userId],
+      (err, row) => {
+        if (err) reject(err)
+        else resolve({
+          period_type: row ? row.period_type : 'calendar_month',
+          period_start_day: row ? row.period_start_day : 1
+        })
+      }
+    )
+  })
+}
+
+const getDateFilter = async (query, userId) => {
   const { month, year } = query;
   if (month !== undefined && year !== undefined) {
-    // В JS месяцы 0-11, но мы будем слать 1-12. 
-    // SQLite хранит даты как "YYYY-MM-DD..."
-    // Нам нужно привести 3 к "03"
-    const m = month.toString().padStart(2, '0');
-    const y = year.toString();
-    // Фильтр: дата начинается с "2024-03"
+    // Получаем настройки периода пользователя
+    const settings = await getBudgetPeriodSettings(userId)
+    
+    // Создаем дату для текущего запрашиваемого месяца
+    const requestDate = new Date(year, month - 1, 15) // 15-е число месяца для определения периода
+    
+    // Рассчитываем период
+    const { startDate, endDate } = getBudgetPeriod(requestDate, settings.period_type, settings.period_start_day)
+    
+    // Форматируем даты для SQL
+    const formatDate = (date) => {
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const d = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    }
+    
+    const startDateStr = formatDate(startDate)
+    const endDateStr = formatDate(endDate)
+    
     return {
-      sql: ` AND strftime('%Y-%m', date) = ? `,
-      params: [`${y}-${m}`]
+      sql: ` AND date >= ? AND date <= ? `,
+      params: [startDateStr, endDateStr]
     };
   }
   return { sql: '', params: [] };
 }
 
-// 1. БАЛАНС (С учетом месяца)
-fastify.get('/balance', (request, reply) => {
+// 1. БАЛАНС (С учетом периода)
+fastify.get('/balance', async (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const filter = getDateFilter(request.query);
+  const filter = await getDateFilter(request.query, userId);
 
   const sql = `
     SELECT 
@@ -294,12 +369,12 @@ fastify.get('/balance', (request, reply) => {
   })
 })
 
-// 2. СТАТИСТИКА (С учетом месяца)
-fastify.get('/stats', (request, reply) => {
+// 2. СТАТИСТИКА (С учетом периода)
+fastify.get('/stats', async (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const filter = getDateFilter(request.query);
+  const filter = await getDateFilter(request.query, userId);
 
   const sql = `
     SELECT category, SUM(amount) as value 
@@ -313,12 +388,12 @@ fastify.get('/stats', (request, reply) => {
   })
 })
 
-// 3. ИСТОРИЯ (С учетом месяца)
-fastify.get('/transactions', (request, reply) => {
+// 3. ИСТОРИЯ (С учетом периода)
+fastify.get('/transactions', async (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const filter = getDateFilter(request.query);
+  const filter = await getDateFilter(request.query, userId);
 
   const sql = `
     SELECT id, amount, category, date, type
@@ -389,6 +464,44 @@ fastify.get('/limits', (request, reply) => {
     if (rows) rows.forEach(r => limits[r.category_id] = r.limit_amount);
     reply.send(limits)
   })
+})
+
+// Настройки бюджетного периода - получить
+fastify.get('/budget-period-settings', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  db.get("SELECT period_type, period_start_day FROM budget_period_settings WHERE user_id = ?", [userId], (err, row) => {
+    if (err) {
+      reply.code(500).send({ error: err.message })
+    } else {
+      reply.send({ 
+        period_type: row ? row.period_type : 'calendar_month',
+        period_start_day: row ? row.period_start_day : 1
+      })
+    }
+  })
+})
+
+// Настройки бюджетного периода - сохранить
+fastify.post('/budget-period-settings', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { period_type, period_start_day } = request.body
+  
+  db.run(
+    `INSERT INTO budget_period_settings (user_id, period_type, period_start_day, updated_at) 
+     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(user_id) DO UPDATE SET 
+       period_type = excluded.period_type,
+       period_start_day = excluded.period_start_day,
+       updated_at = CURRENT_TIMESTAMP`,
+    [userId, period_type, period_start_day],
+    (err) => {
+      if (err) {
+        reply.code(500).send({ error: err.message })
+      } else {
+        reply.send({ status: 'ok' })
+      }
+    }
+  )
 })
 
 // Получить все кастомные категории пользователя

@@ -263,3 +263,32 @@ export const resetAllData = async (userId: number) => {
   }
   return await response.json();
 };
+
+export const getBudgetPeriodSettings = async (userId: number) => {
+  const response = await fetch(`${API_URL}/budget-period-settings`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
+export const setBudgetPeriodSettings = async (
+  userId: number,
+  periodType: 'calendar_month' | 'custom_period',
+  periodStartDay: number
+) => {
+  const response = await fetch(`${API_URL}/budget-period-settings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-user-id': userId.toString()
+    },
+    body: JSON.stringify({
+      period_type: periodType,
+      period_start_day: periodStartDay
+    })
+  });
+  if (!response.ok) {
+    throw new Error('Failed to save budget period settings');
+  }
+  return await response.json();
+};

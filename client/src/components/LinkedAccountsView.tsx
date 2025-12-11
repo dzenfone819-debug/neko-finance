@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link2, Unlink, Info, UserPlus, Check, X, Trash2 } from 'lucide-react'
+import { Link2, Unlink, Info, UserPlus, Check, X, Trash2, Calendar } from 'lucide-react'
 import WebApp from '@twa-dev/sdk'
 import * as api from '../api/nekoApi'
 
@@ -19,12 +19,48 @@ export function LinkedAccountsView({ userId }: LinkedAccountsViewProps) {
   const [isLinking, setIsLinking] = useState(false)
   const [linkUserId, setLinkUserId] = useState('')
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  
+  // Настройки бюджетного периода
+  const [periodType, setPeriodType] = useState<'calendar_month' | 'custom_period'>('calendar_month')
+  const [periodStartDay, setPeriodStartDay] = useState(1)
+  const [isLoadingPeriod, setIsLoadingPeriod] = useState(false)
 
   useEffect(() => {
     if (userId) {
       loadLinkedAccounts()
+      loadBudgetPeriodSettings()
     }
   }, [userId])
+
+  const loadBudgetPeriodSettings = async () => {
+    if (!userId) return
+    try {
+      const settings = await api.getBudgetPeriodSettings(userId)
+      setPeriodType(settings.period_type || 'calendar_month')
+      setPeriodStartDay(settings.period_start_day || 1)
+    } catch (error) {
+      console.error('Error loading budget period settings:', error)
+    }
+  }
+
+  const handleSavePeriodSettings = async () => {
+    if (!userId) return
+    try {
+      setIsLoadingPeriod(true)
+      WebApp.HapticFeedback.impactOccurred('medium')
+      await api.setBudgetPeriodSettings(userId, periodType, periodStartDay)
+      showMessage('✅ Настройки периода сохранены!', 'success')
+      WebApp.HapticFeedback.notificationOccurred('success')
+      // Перезагружаем страницу чтобы применить новые периоды
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (error) {
+      console.error('Error saving period settings:', error)
+      showMessage('❌ Ошибка сохранения настроек', 'error')
+      WebApp.HapticFeedback.notificationOccurred('error')
+    } finally {
+      setIsLoadingPeriod(false)
+    }
+  }
 
   const loadLinkedAccounts = async () => {
     if (!userId) return
@@ -459,6 +495,135 @@ export function LinkedAccountsView({ userId }: LinkedAccountsViewProps) {
           Вы не можете отвязаться, так как являетесь главным аккаунтом. Другие пользователи могут отвязаться от вас.
         </motion.div>
       )}
+
+      {/* Настройки бюджетного периода */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          marginTop: 30,
+          paddingTop: 25,
+          borderTop: '2px dashed #E0E0E0'
+        }}
+      >
+        <div style={{
+          fontSize: 14,
+          fontWeight: 'bold',
+          color: '#667eea',
+          marginBottom: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <Calendar size={18} />
+          Настройки бюджетного периода
+        </div>
+        <div style={{
+          fontSize: 12,
+          color: '#999',
+          marginBottom: 15,
+          lineHeight: 1.5
+        }}>
+          Выберите как считать бюджет: по календарным месяцам или укажите свой период (например, с зарплаты до зарплаты).
+        </div>
+
+        {/* Тип периода */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#6B4C75', marginBottom: 8 }}>
+            Тип периода:
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setPeriodType('calendar_month')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: periodType === 'calendar_month' ? '#667eea' : 'white',
+                color: periodType === 'calendar_month' ? 'white' : '#6B4C75',
+                border: periodType === 'calendar_month' ? 'none' : '2px solid #E0E0E0',
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              📅 Календарный месяц
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setPeriodType('custom_period')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: periodType === 'custom_period' ? '#667eea' : 'white',
+                color: periodType === 'custom_period' ? 'white' : '#6B4C75',
+                border: periodType === 'custom_period' ? 'none' : '2px solid #E0E0E0',
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              🔄 Свой период
+            </motion.button>
+          </div>
+        </div>
+
+        {/* День начала периода (только для custom_period) */}
+        {periodType === 'custom_period' && (
+          <div style={{ marginBottom: 15 }}>
+            <div style={{ fontSize: 13, fontWeight: 'bold', color: '#6B4C75', marginBottom: 8 }}>
+              День начала периода:
+            </div>
+            <select
+              value={periodStartDay}
+              onChange={(e) => setPeriodStartDay(parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #E0E0E0',
+                borderRadius: 12,
+                fontSize: 14,
+                background: 'white',
+                color: '#6B4C75'
+              }}
+            >
+              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                <option key={day} value={day}>
+                  {day}-е число каждого месяца
+                </option>
+              ))}
+            </select>
+            <div style={{ fontSize: 11, color: '#999', marginTop: 6, lineHeight: 1.4 }}>
+              Например: если выбрать 10-е число, то период октября будет с 10 октября по 9 ноября.
+            </div>
+          </div>
+        )}
+
+        {/* Кнопка сохранения */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleSavePeriodSettings}
+          disabled={isLoadingPeriod}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: isLoadingPeriod 
+              ? '#ccc' 
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 'bold',
+            cursor: isLoadingPeriod ? 'not-allowed' : 'pointer',
+            opacity: isLoadingPeriod ? 0.6 : 1
+          }}
+        >
+          {isLoadingPeriod ? '⏳ Сохранение...' : '💾 Сохранить настройки'}
+        </motion.button>
+      </motion.div>
 
       {/* Опасная зона - Сброс всех данных */}
       <motion.div
