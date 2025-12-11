@@ -248,3 +248,17 @@ export const fetchTotalBalance = async (userId: number) => {
   });
   return await response.json();
 };
+
+export const resetAllData = async (userId: number) => {
+  const response = await fetch(`${API_URL}/reset-all-data`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-user-id': userId.toString() 
+    }
+  });
+  if (!response.ok) {
+    throw new Error('Failed to reset data');
+  }
+  return await response.json();
+};

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link2, Unlink, Info, UserPlus, Check, X } from 'lucide-react'
+import { Link2, Unlink, Info, UserPlus, Check, X, Trash2 } from 'lucide-react'
 import WebApp from '@twa-dev/sdk'
 import * as api from '../api/nekoApi'
 
@@ -79,6 +79,51 @@ export function LinkedAccountsView({ userId }: LinkedAccountsViewProps) {
     } catch (error) {
       console.error('Error unlinking account:', error)
       showMessage('Ошибка при отвязке', 'error')
+      WebApp.HapticFeedback.notificationOccurred('error')
+    }
+  }
+
+  const handleResetAllData = async () => {
+    if (!userId) return
+    
+    WebApp.HapticFeedback.impactOccurred('heavy')
+    
+    const confirmed = window.confirm(
+      '⚠️ ВНИМАНИЕ!\n\n' +
+      'Вы собираетесь ПОЛНОСТЬЮ УДАЛИТЬ все данные:\n' +
+      '• Все транзакции\n' +
+      '• Все счета\n' +
+      '• Все копилки\n' +
+      '• Бюджет и лимиты\n' +
+      '• Кастомные категории\n' +
+      '• Связанные аккаунты\n\n' +
+      'Это действие НЕВОЗМОЖНО отменить!\n\n' +
+      'Продолжить?'
+    )
+    
+    if (!confirmed) return
+
+    // Двойное подтверждение
+    const doubleConfirmed = window.confirm(
+      '🚨 ПОСЛЕДНЕЕ ПРЕДУПРЕЖДЕНИЕ!\n\n' +
+      'Все данные будут безвозвратно удалены.\n' +
+      'Вы ТОЧНО уверены?'
+    )
+    
+    if (!doubleConfirmed) return
+
+    try {
+      await api.resetAllData(userId)
+      showMessage('✅ Все данные удалены. Перезагрузите приложение.', 'success')
+      WebApp.HapticFeedback.notificationOccurred('success')
+      
+      // Перезагружаем страницу через 2 секунды
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } catch (error) {
+      console.error('Error resetting data:', error)
+      showMessage('❌ Ошибка при сбросе данных', 'error')
       WebApp.HapticFeedback.notificationOccurred('error')
     }
   }
@@ -414,6 +459,61 @@ export function LinkedAccountsView({ userId }: LinkedAccountsViewProps) {
           Вы не можете отвязаться, так как являетесь главным аккаунтом. Другие пользователи могут отвязаться от вас.
         </motion.div>
       )}
+
+      {/* Опасная зона - Сброс всех данных */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          marginTop: 40,
+          paddingTop: 30,
+          borderTop: '2px dashed #E0E0E0'
+        }}
+      >
+        <div style={{
+          fontSize: 14,
+          fontWeight: 'bold',
+          color: '#E74C3C',
+          marginBottom: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          🚨 Опасная зона
+        </div>
+        <div style={{
+          fontSize: 12,
+          color: '#999',
+          marginBottom: 12,
+          lineHeight: 1.5
+        }}>
+          Полностью удалить все данные приложения и вернуться к начальному состоянию. 
+          Это действие невозможно отменить.
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleResetAllData}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #E74C3C 0%, #C0392B 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 14,
+            padding: '16px',
+            fontSize: 15,
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            boxShadow: '0 4px 12px rgba(231, 76, 60, 0.3)'
+          }}
+        >
+          <Trash2 size={20} />
+          Сбросить все данные
+        </motion.button>
+      </motion.div>
     </div>
   )
 }

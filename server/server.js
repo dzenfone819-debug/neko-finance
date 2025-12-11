@@ -754,6 +754,60 @@ fastify.get('/linked-accounts', async (request, reply) => {
   }
 })
 
+// Сброс всех данных пользователя
+fastify.post('/reset-all-data', (request, reply) => {
+  const userId = request.headers['x-user-id']
+  
+  if (!userId) {
+    return reply.code(400).send({ error: 'User ID required' })
+  }
+
+  console.log(`🗑️ Resetting all data for user ${userId}`)
+
+  try {
+    // Удаляем транзакции
+    db.run('DELETE FROM transactions WHERE user_id = ?', [userId], (err) => {
+      if (err) console.error('Error deleting transactions:', err)
+    })
+
+    // Удаляем счета
+    db.run('DELETE FROM accounts WHERE user_id = ?', [userId], (err) => {
+      if (err) console.error('Error deleting accounts:', err)
+    })
+
+    // Удаляем копилки
+    db.run('DELETE FROM goals WHERE user_id = ?', [userId], (err) => {
+      if (err) console.error('Error deleting goals:', err)
+    })
+
+    // Удаляем настройки бюджета
+    db.run('DELETE FROM user_settings WHERE user_id = ?', [userId], (err) => {
+      if (err) console.error('Error deleting settings:', err)
+    })
+
+    // Удаляем лимиты категорий
+    db.run('DELETE FROM category_limits WHERE user_id = ?', [userId], (err) => {
+      if (err) console.error('Error deleting category limits:', err)
+    })
+
+    // Удаляем кастомные категории
+    db.run('DELETE FROM custom_categories WHERE user_id = ?', [userId], (err) => {
+      if (err) console.error('Error deleting custom categories:', err)
+    })
+
+    // Удаляем связи аккаунтов
+    db.run('DELETE FROM linked_accounts WHERE telegram_id = ? OR primary_user_id = ?', [userId, userId], (err) => {
+      if (err) console.error('Error deleting linked accounts:', err)
+    })
+
+    console.log(`✅ All data reset for user ${userId}`)
+    reply.send({ status: 'success', message: 'All data has been reset' })
+  } catch (err) {
+    console.error('❌ Reset data error:', err)
+    reply.code(500).send({ error: err.message })
+  }
+})
+
 // Роутинг
 fastify.setNotFoundHandler(async (req, res) => {
   // Проверяем, это запрос к API или к файлу
