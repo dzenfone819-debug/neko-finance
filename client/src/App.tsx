@@ -5,7 +5,7 @@ import {
   LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet,
   Coffee, Car, Gamepad2, Zap, Home, Bus,
   Shirt, PiggyBank, ShoppingBasket,
-  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package, Users, TrendingUp, Settings
+  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package, TrendingUp, Settings
 } from 'lucide-react'
 import './App.css'
 
@@ -17,7 +17,6 @@ import { BudgetView } from './components/BudgetView'
 import { ModalInput } from './components/ModalInput'
 import { MonthSelector } from './components/MonthSelector'
 import { AccountsView } from './components/AccountsView'
-import { LinkedAccountsView } from './components/LinkedAccountsView'
 import { AnalyticsView } from './components/AnalyticsView'
 import { SettingsView } from './components/SettingsView'
 import { Modal } from './components/Modal'
@@ -29,7 +28,7 @@ import * as api from './api/nekoApi'
 import { cloudStorage } from './utils/cloudStorage'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'linked' | 'analytics' | 'settings'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'analytics' | 'settings'>('input')
   const [transType, setTransType] = useState<'expense' | 'income'>('expense')
   const [selectedCategory, setSelectedCategory] = useState('groceries')
   const [selectedAccount, setSelectedAccount] = useState<{type: 'account' | 'goal', id: number} | null>(null)
@@ -902,10 +901,6 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'linked' && (
-          <LinkedAccountsView userId={userId} />
-        )}
-
         {activeTab === 'analytics' && (
           <AnalyticsView transactions={allTransactions} currentMonth={currentDate} />
         )}
@@ -915,6 +910,7 @@ function App() {
             periodType={periodType}
             periodStartDay={periodStartDay}
             onSave={handleSaveBudgetPeriodSettings}
+            userId={userId}
           />
         )}
       </div>
@@ -924,7 +920,6 @@ function App() {
         <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><LayoutGrid size={24} /></div><span>Инфо</span></button>
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Target size={24} /></div><span>Бюджет</span></button>
         <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
-        <button className={`tab-btn ${activeTab === 'linked' ? 'active' : ''}`} onClick={() => { setActiveTab('linked'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Users size={22} /></div><span>Связь</span></button>
         <button className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveTab('analytics'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><TrendingUp size={24} /></div><span>Анализ</span></button>
         <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Settings size={22} /></div><span>Настройки</span></button>
       </div>
