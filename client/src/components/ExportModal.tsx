@@ -131,7 +131,6 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, transactions, cu
           position: 'fixed',
           top: '50%',
           left: '50%',
-          transform: 'translate(-50%, -50%)',
           background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
           borderRadius: 24,
           padding: 30,
@@ -139,7 +138,9 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, transactions, cu
           width: '90%',
           zIndex: 1001,
           boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
-          border: '2px solid rgba(254, 200, 216, 0.3)'
+          border: '2px solid rgba(254, 200, 216, 0.3)',
+          boxSizing: 'border-box',
+          transform: 'translate(-50%, -50%)'
         }}
       >
         <h2 style={{
