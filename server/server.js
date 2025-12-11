@@ -13,12 +13,7 @@ const GEMINI_KEY = process.env.GEMINI_KEY
 const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'database.db')
 console.log('📁 Используется путь к БД:', dbPath)
 
-// Раздача фронтенда
-fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../client/dist'),
-  prefix: '/', // Раздавать файлы по корневому пути
-})
-
+// CORS должен быть первым
 fastify.register(cors, { origin: true })
 
 // Подключаем бота
@@ -159,48 +154,13 @@ db.serialize(() => {
 
   // НАСТРОЙКИ БЮДЖЕТНОГО ПЕРИОДА
   db.run(`
-    CREATE TABLE IF NOT EXISTS budget_period_settings (
+    CREATE TABLE IF NOT EXISTS user_budget_settings (
       user_id INTEGER PRIMARY KEY,
-      period_type TEXT DEFAULT 'calendar_month', -- 'calendar_month' или 'custom_period'
-      period_start_day INTEGER DEFAULT 1, -- День начала периода (1-31)
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      budget_mode TEXT DEFAULT 'monthly', -- 'monthly' или 'custom'
+      custom_period_day INTEGER DEFAULT 1 -- День начала периода (1-28)
     )
   `)
 })
-
-// Утилита для расчета бюджетного периода
-function getBudgetPeriod(date, periodType, startDay) {
-  const current = new Date(date)
-  
-  if (periodType === 'calendar_month') {
-    // Обычный календарный месяц
-    const year = current.getFullYear()
-    const month = current.getMonth()
-    const startDate = new Date(year, month, 1)
-    const endDate = new Date(year, month + 1, 0, 23, 59, 59)
-    return { startDate, endDate }
-  } else {
-    // Кастомный период
-    const year = current.getFullYear()
-    const month = current.getMonth()
-    const day = current.getDate()
-    
-    let periodStartDate, periodEndDate
-    
-    if (day >= startDay) {
-      // Текущий период: startDay текущего месяца - (startDay-1) следующего месяца
-      periodStartDate = new Date(year, month, startDay)
-      periodEndDate = new Date(year, month + 1, startDay - 1, 23, 59, 59)
-    } else {
-      // Предыдущий период: startDay прошлого месяца - (startDay-1) текущего месяца
-      periodStartDate = new Date(year, month - 1, startDay)
-      periodEndDate = new Date(year, month, startDay - 1, 23, 59, 59)
-    }
-    
-    return { startDate: periodStartDate, endDate: periodEndDate }
-  }
-}
 
 // --- MIDDLEWARE для подмены user_id ---
 fastify.addHook('preHandler', async (request, reply) => {
@@ -222,7 +182,7 @@ fastify.addHook('preHandler', async (request, reply) => {
 fastify.post('/log-client', (request, reply) => {
   const { message, data } = request.body
   console.log('🔵 CLIENT LOG:', message, data)
-  reply.send({ status: 'logged' })
+  return reply.send({ status: 'logged' })
 })
 
 // Добавить операцию (Расход или Доход)
@@ -285,129 +245,151 @@ fastify.post('/add-expense', (request, reply) => {
           }
         }
       }
-      reply.send({ id: this.lastID, status: 'saved', amount, type: finalType, account_id, target_type: finalTargetType })
+      return reply.send({ id: this.lastID, status: 'saved', amount, type: finalType, account_id, target_type: finalTargetType })
     }
   })
 })
 
-// --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ SQL ---
-// Формирует условие WHERE для фильтрации по месяцу
-// Получение настроек бюджетного периода (промисифицировано)
-const getBudgetPeriodSettings = (userId) => {
-  return new Promise((resolve, reject) => {
-    db.get(
-      "SELECT period_type, period_start_day FROM budget_period_settings WHERE user_id = ?",
-      [userId],
-      (err, row) => {
-        if (err) reject(err)
-        else resolve({
-          period_type: row ? row.period_type : 'calendar_month',
-          period_start_day: row ? row.period_start_day : 1
-        })
-      }
-    )
-  })
+// --- ФУНКЦИИ ДЛЯ РАСЧЕТА БЮДЖЕТНЫХ ПЕРИОДОВ ---
+
+// Функция для расчета начала и конца бюджетного периода
+// mode: 'monthly' или 'custom'
+// periodDay: день начала периода (1-28) для custom режима
+// month, year: текущий месяц/год (1-12, 2025)
+function calculateBudgetPeriod(mode, periodDay, month, year) {
+  if (mode === 'monthly') {
+    // Обычный месяц: с 1 числа по последнее
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59); // Последний день месяца
+    return { startDate, endDate };
+  } else if (mode === 'custom') {
+    // Кастомный период: например, с 10 числа текущего месяца по 9 число следующего
+    const day = periodDay || 1;
+    const startDate = new Date(year, month - 1, day);
+    const endDate = new Date(year, month, day - 1, 23, 59, 59); // День до начала следующего периода
+    return { startDate, endDate };
+  }
+  // По умолчанию - месячный режим
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  return { startDate, endDate };
 }
 
+// Функция для получения настроек бюджета пользователя
+function getBudgetSettings(userId) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      "SELECT budget_mode, custom_period_day FROM user_budget_settings WHERE user_id = ?",
+      [userId],
+      (err, row) => {
+        if (err) reject(err);
+        else resolve(row || { budget_mode: 'monthly', custom_period_day: 1 });
+      }
+    );
+  });
+}
+
+// --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ SQL ---
+// Формирует условие WHERE для фильтрации по месяцу
 const getDateFilter = async (query, userId) => {
   const { month, year } = query;
   if (month !== undefined && year !== undefined) {
-    // Получаем настройки периода пользователя
-    const settings = await getBudgetPeriodSettings(userId)
+    // Получаем настройки бюджета пользователя
+    const settings = await getBudgetSettings(userId);
+    const { budget_mode, custom_period_day } = settings;
     
-    // Создаем дату для текущего запрашиваемого месяца
-    const requestDate = new Date(year, month - 1, 15) // 15-е число месяца для определения периода
+    const period = calculateBudgetPeriod(budget_mode, custom_period_day, parseInt(month), parseInt(year));
     
-    // Рассчитываем период
-    const { startDate, endDate } = getBudgetPeriod(requestDate, settings.period_type, settings.period_start_day)
-    
-    // Форматируем даты для SQL
-    const formatDate = (date) => {
-      const y = date.getFullYear()
-      const m = String(date.getMonth() + 1).padStart(2, '0')
-      const d = String(date.getDate()).padStart(2, '0')
-      return `${y}-${m}-${d}`
-    }
-    
-    const startDateStr = formatDate(startDate)
-    const endDateStr = formatDate(endDate)
+    // Форматируем даты в ISO формат для SQLite
+    const startStr = period.startDate.toISOString();
+    const endStr = period.endDate.toISOString();
     
     return {
       sql: ` AND date >= ? AND date <= ? `,
-      params: [startDateStr, endDateStr]
+      params: [startStr, endStr]
     };
   }
   return { sql: '', params: [] };
 }
 
 // 1. БАЛАНС (С учетом периода)
-fastify.get('/balance', async (request, reply) => {
+fastify.get('/balance', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const filter = await getDateFilter(request.query, userId);
+  getDateFilter(request.query, userId)
+    .then(filter => {
+      const sql = `
+        SELECT 
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+          SUM(CASE WHEN type = 'expense' OR type IS NULL THEN amount ELSE 0 END) as total_expense
+        FROM transactions 
+        WHERE user_id = ? ${filter.sql}
+      `
 
-  const sql = `
-    SELECT 
-      SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
-      SUM(CASE WHEN type = 'expense' OR type IS NULL THEN amount ELSE 0 END) as total_expense
-    FROM transactions 
-    WHERE user_id = ? ${filter.sql}
-  `
-
-  db.get(sql, [userId, ...filter.params], (err, row) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else {
-      const income = row.total_income || 0
-      const expense = row.total_expense || 0
-      reply.send({ 
-        balance: income - expense, // Остаток за ЭТОТ месяц
-        total_expense: expense,
-        total_income: income
+      db.get(sql, [userId, ...filter.params], (err, row) => {
+        if (err) return reply.code(500).send({ error: err.message })
+        const income = row.total_income || 0
+        const expense = row.total_expense || 0
+        return reply.send({ 
+          balance: income - expense, // Остаток за ЭТОТ период
+          total_expense: expense,
+          total_income: income
+        })
       })
-    }
-  })
+    })
+    .catch(err => {
+      return reply.code(500).send({ error: err.message })
+    })
 })
 
 // 2. СТАТИСТИКА (С учетом периода)
-fastify.get('/stats', async (request, reply) => {
+fastify.get('/stats', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const filter = await getDateFilter(request.query, userId);
-
-  const sql = `
-    SELECT category, SUM(amount) as value 
-    FROM transactions 
-    WHERE user_id = ? AND (type = 'expense' OR type IS NULL) ${filter.sql}
-    GROUP BY category
-  `
-  db.all(sql, [userId, ...filter.params], (err, rows) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send(rows.map(r => ({ name: r.category, value: r.value })))
-  })
+  getDateFilter(request.query, userId)
+    .then(filter => {
+      const sql = `
+        SELECT category, SUM(amount) as value 
+        FROM transactions 
+        WHERE user_id = ? AND (type = 'expense' OR type IS NULL) ${filter.sql}
+        GROUP BY category
+      `
+      db.all(sql, [userId, ...filter.params], (err, rows) => {
+        if (err) return reply.code(500).send({ error: err.message })
+        return reply.send(rows.map(r => ({ name: r.category, value: r.value })))
+      })
+    })
+    .catch(err => {
+      return reply.code(500).send({ error: err.message })
+    })
 })
 
 // 3. ИСТОРИЯ (С учетом периода)
-fastify.get('/transactions', async (request, reply) => {
+fastify.get('/transactions', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
-  const filter = await getDateFilter(request.query, userId);
-
-  const sql = `
-    SELECT id, amount, category, date, type
-    FROM transactions 
-    WHERE user_id = ? ${filter.sql}
-    ORDER BY date DESC, id DESC 
-    LIMIT 100 
-  `
-  // Увеличили лимит до 100, так как мы теперь смотрим конкретный месяц
-  
-  db.all(sql, [userId, ...filter.params], (err, rows) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send(rows)
-  })
+  getDateFilter(request.query, userId)
+    .then(filter => {
+      const sql = `
+        SELECT id, amount, category, date, type
+        FROM transactions 
+        WHERE user_id = ? ${filter.sql}
+        ORDER BY date DESC, id DESC 
+        LIMIT 100 
+      `
+      // Увеличили лимит до 100, так как мы теперь смотрим конкретный период
+      
+      db.all(sql, [userId, ...filter.params], (err, rows) => {
+        if (err) return reply.code(500).send({ error: err.message })
+        return reply.send(rows)
+      })
+    })
+    .catch(err => {
+      return reply.code(500).send({ error: err.message })
+    })
 })
 
 // Удаление
@@ -416,8 +398,8 @@ fastify.delete('/transactions/:id', (request, reply) => {
   const { id } = request.params
   const sql = `DELETE FROM transactions WHERE id = ? AND user_id = ?`
   db.run(sql, [id, userId], function(err) {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ status: 'deleted', id })
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send({ status: 'deleted', id })
   })
 })
 
@@ -433,9 +415,9 @@ fastify.put('/transactions/:id', (request, reply) => {
   
   db.run(sql, [amount, category, date, type, id, userId], function(err) {
     if (err) {
-      reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: err.message })
     } else {
-      reply.send({ status: 'updated', id, changes: this.changes })
+      return reply.send({ status: 'updated', id, changes: this.changes })
     }
   })
 })
@@ -444,7 +426,7 @@ fastify.put('/transactions/:id', (request, reply) => {
 fastify.get('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   db.get("SELECT budget_limit FROM user_settings WHERE user_id = ?", [userId], (err, row) => {
-    reply.send({ budget: row ? row.budget_limit : 0 })
+    return reply.send({ budget: row ? row.budget_limit : 0 })
   })
 })
 
@@ -452,7 +434,7 @@ fastify.post('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { budget } = request.body
   db.run("REPLACE INTO user_settings (user_id, budget_limit) VALUES (?, ?)", [userId, budget], () => {
-    reply.send({ status: 'ok' })
+    return reply.send({ status: 'ok' })
   })
 })
 
@@ -462,46 +444,8 @@ fastify.get('/limits', (request, reply) => {
   db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
     const limits = {};
     if (rows) rows.forEach(r => limits[r.category_id] = r.limit_amount);
-    reply.send(limits)
+    return reply.send(limits)
   })
-})
-
-// Настройки бюджетного периода - получить
-fastify.get('/budget-period-settings', (request, reply) => {
-  const userId = request.headers['x-primary-user-id']
-  db.get("SELECT period_type, period_start_day FROM budget_period_settings WHERE user_id = ?", [userId], (err, row) => {
-    if (err) {
-      reply.code(500).send({ error: err.message })
-    } else {
-      reply.send({ 
-        period_type: row ? row.period_type : 'calendar_month',
-        period_start_day: row ? row.period_start_day : 1
-      })
-    }
-  })
-})
-
-// Настройки бюджетного периода - сохранить
-fastify.post('/budget-period-settings', (request, reply) => {
-  const userId = request.headers['x-primary-user-id']
-  const { period_type, period_start_day } = request.body
-  
-  db.run(
-    `INSERT INTO budget_period_settings (user_id, period_type, period_start_day, updated_at) 
-     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-     ON CONFLICT(user_id) DO UPDATE SET 
-       period_type = excluded.period_type,
-       period_start_day = excluded.period_start_day,
-       updated_at = CURRENT_TIMESTAMP`,
-    [userId, period_type, period_start_day],
-    (err) => {
-      if (err) {
-        reply.code(500).send({ error: err.message })
-      } else {
-        reply.send({ status: 'ok' })
-      }
-    }
-  )
 })
 
 // Получить все кастомные категории пользователя
@@ -511,7 +455,7 @@ fastify.get('/custom-categories', (request, reply) => {
   
   db.all("SELECT * FROM custom_categories WHERE user_id = ?", [userId], (err, rows) => {
     if (err) return reply.code(500).send({ error: err.message })
-    reply.send(rows || [])
+    return reply.send(rows || [])
   })
 })
 
@@ -539,7 +483,7 @@ fastify.post('/custom-categories', (request, reply) => {
         "INSERT INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)",
         [userId, categoryId, limitValue],
         () => {
-          reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit: limitValue })
+          return reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit: limitValue })
         }
       )
     }
@@ -563,7 +507,7 @@ fastify.delete('/custom-categories/:id', (request, reply) => {
       if (err) return reply.code(500).send({ error: err.message })
       
       db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => {
-        reply.send({ status: 'ok' })
+        return reply.send({ status: 'ok' })
       })
     })
   })
@@ -575,7 +519,7 @@ fastify.post('/limits', (request, reply) => {
   
   // Всегда используем REPLACE для добавления/обновления лимита (даже 0)
   db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit || 0], () => {
-    reply.send({ status: 'ok' })
+    return reply.send({ status: 'ok' })
   })
 })
 
@@ -585,7 +529,7 @@ fastify.delete('/limits/:categoryId', (request, reply) => {
   const categoryId = request.params.categoryId
   
   db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => {
-    reply.send({ status: 'ok' })
+    return reply.send({ status: 'ok' })
   })
 })
 
@@ -597,8 +541,8 @@ fastify.get('/accounts', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.all("SELECT * FROM accounts WHERE user_id = ? ORDER BY created_at ASC", [userId], (err, rows) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send(rows || [])
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send(rows || [])
   })
 })
 
@@ -614,8 +558,8 @@ fastify.post('/accounts', (request, reply) => {
     "INSERT INTO accounts (user_id, name, balance, type, currency, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [userId, name, balance || 0, type || 'cash', currency || 'RUB', color || '#CAFFBF', now, now],
     function(err) {
-      if (err) reply.code(500).send({ error: err.message })
-      else reply.send({ id: this.lastID, status: 'created' })
+      if (err) return reply.code(500).send({ error: err.message })
+      else return reply.send({ id: this.lastID, status: 'created' })
     }
   )
 })
@@ -645,8 +589,8 @@ fastify.put('/accounts/:id', (request, reply) => {
   const sql = `UPDATE accounts SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`
   
   db.run(sql, params, function(err) {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ status: 'updated' })
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send({ status: 'updated' })
   })
 })
 
@@ -658,8 +602,8 @@ fastify.delete('/accounts/:id', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.run("DELETE FROM accounts WHERE id = ? AND user_id = ?", [id, userId], function(err) {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ status: 'deleted' })
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send({ status: 'deleted' })
   })
 })
 
@@ -669,8 +613,8 @@ fastify.get('/goals', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.all("SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at ASC", [userId], (err, rows) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send(rows || [])
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send(rows || [])
   })
 })
 
@@ -686,8 +630,8 @@ fastify.post('/goals', (request, reply) => {
     "INSERT INTO savings_goals (user_id, name, target_amount, current_amount, category, icon, color, deadline, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [userId, name, target_amount, 0, category || 'personal', icon || '🐷', color || '#FFFFFC', deadline || null, now, now],
     function(err) {
-      if (err) reply.code(500).send({ error: err.message })
-      else reply.send({ id: this.lastID, status: 'created' })
+      if (err) return reply.code(500).send({ error: err.message })
+      else return reply.send({ id: this.lastID, status: 'created' })
     }
   )
 })
@@ -718,11 +662,12 @@ fastify.put('/goals/:id', (request, reply) => {
   const sql = `UPDATE savings_goals SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`
   
   db.run(sql, params, function(err) {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ status: 'updated' })
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send({ status: 'updated' })
   })
 })
 
+// КОПИЛКИ - Удалить копилку
 // КОПИЛКИ - Удалить копилку
 fastify.delete('/goals/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
@@ -731,8 +676,8 @@ fastify.delete('/goals/:id', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.run("DELETE FROM savings_goals WHERE id = ? AND user_id = ?", [id, userId], function(err) {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ status: 'deleted' })
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send({ status: 'deleted' })
   })
 })
 
@@ -772,11 +717,11 @@ fastify.post('/transfer', (request, reply) => {
       function(err) {
         if (err) {
           db.run("ROLLBACK", () => {
-            reply.code(500).send({ error: err.message })
+            return reply.code(500).send({ error: err.message })
           })
         } else {
           db.run("COMMIT", () => {
-            reply.send({ id: this.lastID, status: 'transferred' })
+            return reply.send({ id: this.lastID, status: 'transferred' })
           })
         }
       }
@@ -790,9 +735,59 @@ fastify.get('/total-balance', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
   db.get("SELECT SUM(balance) as total FROM accounts WHERE user_id = ?", [userId], (err, row) => {
-    if (err) reply.code(500).send({ error: err.message })
-    else reply.send({ total: row && row.total ? row.total : 0 })
+    if (err) return reply.code(500).send({ error: err.message })
+    else return reply.send({ total: row && row.total ? row.total : 0 })
   })
+})
+
+// --- НАСТРОЙКИ БЮДЖЕТНОГО ПЕРИОДА ---
+
+// Получить настройки бюджетного периода
+fastify.get('/budget-period-settings', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  db.get(
+    "SELECT budget_mode, custom_period_day FROM user_budget_settings WHERE user_id = ?",
+    [userId],
+    (err, row) => {
+      if (err) return reply.code(500).send({ error: err.message })
+      // Преобразуем budget_mode в period_type и custom_period_day в period_start_day
+      const result = row 
+        ? { period_type: row.budget_mode, period_start_day: row.custom_period_day }
+        : { period_type: 'calendar_month', period_start_day: 1 }
+      return reply.send(result)
+    }
+  )
+})
+
+// Установить настройки бюджетного периода
+fastify.post('/budget-period-settings', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { period_type, period_start_day } = request.body
+  
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  if (!period_type || (period_type !== 'calendar_month' && period_type !== 'custom_period')) {
+    return reply.code(400).send({ error: 'Invalid period_type' })
+  }
+  
+  // Валидация period_start_day (должно быть от 1 до 28)
+  const day = period_start_day || 1
+  if (day < 1 || day > 28) {
+    return reply.code(400).send({ error: 'period_start_day must be between 1 and 28' })
+  }
+  
+  // Преобразуем period_type в budget_mode для БД
+  const budget_mode = period_type === 'calendar_month' ? 'monthly' : 'custom'
+  
+  db.run(
+    "INSERT OR REPLACE INTO user_budget_settings (user_id, budget_mode, custom_period_day) VALUES (?, ?, ?)",
+    [userId, budget_mode, day],
+    (err) => {
+      if (err) return reply.code(500).send({ error: err.message })
+      return reply.send({ status: 'ok', period_type, period_start_day: day })
+    }
+  )
 })
 
 // --- Управление связанными аккаунтами ---
@@ -815,10 +810,10 @@ fastify.post('/link-account', async (request, reply) => {
     })
     
     console.log(`✅ Linked user ${currentUserId} to primary user ${primary_user_id}`)
-    reply.send({ status: 'linked', telegram_id: currentUserId, primary_user_id })
+    return reply.send({ status: 'linked', telegram_id: currentUserId, primary_user_id })
   } catch (err) {
     console.error('❌ Link account error:', err)
-    reply.code(500).send({ error: err.message })
+    return reply.code(500).send({ error: err.message })
   }
 })
 
@@ -838,10 +833,10 @@ fastify.delete('/unlink-account', async (request, reply) => {
     })
     
     console.log(`✅ Unlinked user ${currentUserId}`)
-    reply.send({ status: 'unlinked', telegram_id: currentUserId })
+    return reply.send({ status: 'unlinked', telegram_id: currentUserId })
   } catch (err) {
     console.error('❌ Unlink account error:', err)
-    reply.code(500).send({ error: err.message })
+    return reply.code(500).send({ error: err.message })
   }
 })
 
@@ -860,10 +855,10 @@ fastify.get('/linked-accounts', async (request, reply) => {
       )
     })
     
-    reply.send({ primary_user_id: parseInt(userId), linked_accounts: links })
+    return reply.send({ primary_user_id: parseInt(userId), linked_accounts: links })
   } catch (err) {
     console.error('❌ Get linked accounts error:', err)
-    reply.code(500).send({ error: err.message })
+    return reply.code(500).send({ error: err.message })
   }
 })
 
@@ -933,27 +928,58 @@ fastify.post('/reset-all-data', (request, reply) => {
   Promise.all(deletePromises)
     .then(() => {
       console.log(`✅ All data reset for user ${userId}`)
-      reply.send({ status: 'success', message: 'All data has been reset' })
+      return reply.send({ status: 'success', message: 'All data has been reset' })
     })
     .catch((err) => {
       console.error('❌ Reset data error:', err)
-      reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: err.message })
     })
 })
 
-// Роутинг
+// Обслуживание статических файлов и SPA роутинг
 fastify.setNotFoundHandler(async (req, res) => {
-  // Проверяем, это запрос к API или к файлу
-  const url = req.url.split('?')[0]; // Убираем query параметры
+  const url = req.url.split('?')[0]
+  const publicDir = path.join(__dirname, 'public')
   
-  // Если это запрос к статическому файлу (есть расширение), возвращаем 404
-  if (url.match(/\.[a-zA-Z0-9]+$/)) {
-    res.code(404).send('Not Found');
-    return;
+  // Определяем какой файл отдавать
+  let filePath
+  if (url === '/' || url === '') {
+    filePath = path.join(publicDir, 'index.html')
+  } else if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html)$/)) {
+    filePath = path.join(publicDir, url)
+  } else {
+    // Для всех остальных путей (SPA роутинг) отдаем index.html
+    filePath = path.join(publicDir, 'index.html')
   }
   
-  // Иначе отдаем index.html для SPA роутинга
-  res.sendFile('index.html')
+  // Проверяем существование файла и отдаем его
+  try {
+    const fileContent = fs.readFileSync(filePath)
+    
+    // Определяем MIME тип
+    const ext = path.extname(filePath).toLowerCase()
+    const mimeTypes = {
+      '.html': 'text/html',
+      '.js': 'application/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.eot': 'application/vnd.ms-fontobject'
+    }
+    
+    const contentType = mimeTypes[ext] || 'application/octet-stream'
+    return res.type(contentType).send(fileContent)
+  } catch (err) {
+    return res.code(404).send('File not found')
+  }
 })
 
 const start = async () => {
