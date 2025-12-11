@@ -764,48 +764,62 @@ fastify.post('/reset-all-data', (request, reply) => {
 
   console.log(`🗑️ Resetting all data for user ${userId}`)
 
-  try {
-    // Удаляем транзакции
-    db.run('DELETE FROM transactions WHERE user_id = ?', [userId], (err) => {
-      if (err) console.error('Error deleting transactions:', err)
+  // Создаем промисы для всех операций удаления
+  const deletePromises = [
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM transactions WHERE user_id = ?', [userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM accounts WHERE user_id = ?', [userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM goals WHERE user_id = ?', [userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM user_settings WHERE user_id = ?', [userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM category_limits WHERE user_id = ?', [userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM custom_categories WHERE user_id = ?', [userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM linked_accounts WHERE telegram_id = ? OR primary_user_id = ?', [userId, userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
     })
+  ]
 
-    // Удаляем счета
-    db.run('DELETE FROM accounts WHERE user_id = ?', [userId], (err) => {
-      if (err) console.error('Error deleting accounts:', err)
+  // Ждем завершения всех операций
+  Promise.all(deletePromises)
+    .then(() => {
+      console.log(`✅ All data reset for user ${userId}`)
+      reply.send({ status: 'success', message: 'All data has been reset' })
     })
-
-    // Удаляем копилки
-    db.run('DELETE FROM goals WHERE user_id = ?', [userId], (err) => {
-      if (err) console.error('Error deleting goals:', err)
+    .catch((err) => {
+      console.error('❌ Reset data error:', err)
+      reply.code(500).send({ error: err.message })
     })
-
-    // Удаляем настройки бюджета
-    db.run('DELETE FROM user_settings WHERE user_id = ?', [userId], (err) => {
-      if (err) console.error('Error deleting settings:', err)
-    })
-
-    // Удаляем лимиты категорий
-    db.run('DELETE FROM category_limits WHERE user_id = ?', [userId], (err) => {
-      if (err) console.error('Error deleting category limits:', err)
-    })
-
-    // Удаляем кастомные категории
-    db.run('DELETE FROM custom_categories WHERE user_id = ?', [userId], (err) => {
-      if (err) console.error('Error deleting custom categories:', err)
-    })
-
-    // Удаляем связи аккаунтов
-    db.run('DELETE FROM linked_accounts WHERE telegram_id = ? OR primary_user_id = ?', [userId, userId], (err) => {
-      if (err) console.error('Error deleting linked accounts:', err)
-    })
-
-    console.log(`✅ All data reset for user ${userId}`)
-    reply.send({ status: 'success', message: 'All data has been reset' })
-  } catch (err) {
-    console.error('❌ Reset data error:', err)
-    reply.code(500).send({ error: err.message })
-  }
 })
 
 // Роутинг
