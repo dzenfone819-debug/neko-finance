@@ -803,7 +803,13 @@ fastify.post('/reset-all-data', (request, reply) => {
       })
     }),
     new Promise((resolve, reject) => {
-      db.run('DELETE FROM linked_accounts WHERE telegram_id = ? OR primary_user_id = ?', [userId, userId], (err) => {
+      db.run('DELETE FROM user_links WHERE telegram_id = ? OR primary_user_id = ?', [userId, userId], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    }),
+    new Promise((resolve, reject) => {
+      db.run('DELETE FROM transfers WHERE user_id = ?', [userId], (err) => {
         if (err) reject(err)
         else resolve()
       })
