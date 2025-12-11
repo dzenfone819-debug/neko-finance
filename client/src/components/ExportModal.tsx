@@ -143,18 +143,18 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, transactions, cu
         style={{
           position: 'fixed',
           top: '50%',
-          left: '50%',
+          left: '20px',
+          right: '20px',
           background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
           borderRadius: 24,
           padding: 30,
           maxWidth: 400,
-          width: 'calc(100% - 40px)',
           zIndex: 1001,
           boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
           border: '2px solid rgba(254, 200, 216, 0.3)',
           boxSizing: 'border-box',
-          marginLeft: '-50%',
-          marginTop: '-50%'
+          margin: '0 auto',
+          transform: 'translateY(-50%)'
         }}
       >
         <h2 style={{
