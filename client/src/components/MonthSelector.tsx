@@ -17,12 +17,20 @@ export const MonthSelector: React.FC<Props> = ({ currentDate, onChange }) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const userId = WebApp.initDataUnsafe?.user?.id;
+        // В разработке используем тестовый ID 777
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        let userId = WebApp.initDataUnsafe?.user?.id;
+        if (!userId && isDevelopment) {
+          userId = 777;
+        }
+        
         if (userId) {
           const settings = await api.getBudgetPeriodSettings(userId);
+          console.log('📅 MonthSelector loaded settings:', settings);
           if (settings) {
             setPeriodType(settings.period_type);
             setPeriodStartDay(settings.period_start_day);
+            console.log('📅 Period type:', settings.period_type, 'Start day:', settings.period_start_day);
           }
         }
       } catch (error) {

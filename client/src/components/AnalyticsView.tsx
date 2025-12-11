@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { CalendarHeatmap } from './CalendarHeatmap'
+import { getBudgetPeriod } from '../utils/budgetPeriod'
+import * as api from '../api/nekoApi'
+import WebApp from '@twa-dev/sdk'
 
 interface Transaction {
   id: number
@@ -19,28 +22,48 @@ interface Props {
 
 export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) => {
   const [activeSection, setActiveSection] = useState<'compare' | 'top5' | 'chart' | 'heatmap'>('compare')
+  const [periodType, setPeriodType] = useState<'calendar_month' | 'custom_period'>('calendar_month')
+  const [periodStartDay, setPeriodStartDay] = useState<number>(1)
 
-  // Сравнение с прошлым месяцем
+  useEffect(() => {
+    const loadBudgetPeriodSettings = async () => {
+      try {
+        const userId = WebApp.initDataUnsafe?.user?.id || 777
+        const settings = await api.getBudgetPeriodSettings(userId)
+        setPeriodType(settings.period_type)
+        setPeriodStartDay(settings.period_start_day)
+      } catch (error) {
+        console.error('Failed to load budget period settings:', error)
+      }
+    }
+    loadBudgetPeriodSettings()
+  }, [])
+
+  // Получаем границы текущего и предыдущего периодов
+  const currentPeriod = getBudgetPeriod(currentMonth, periodType, periodStartDay)
+  
+  // Для предыдущего периода берем дату на месяц назад от текущей
+  const prevMonthDate = new Date(currentMonth)
+  prevMonthDate.setMonth(prevMonthDate.getMonth() - 1)
+  const prevPeriod = getBudgetPeriod(prevMonthDate, periodType, periodStartDay)
+
+  // Сравнение с прошлым периодом
   const getMonthComparison = () => {
-    const currentMonthNum = currentMonth.getMonth()
-    const currentYear = currentMonth.getFullYear()
-    
     const currentMonthExpenses = transactions
       .filter(t => {
         const date = new Date(t.date)
         return t.type === 'expense' && 
-               date.getMonth() === currentMonthNum && 
-               date.getFullYear() === currentYear
+               date >= currentPeriod.startDate && 
+               date <= currentPeriod.endDate
       })
       .reduce((sum, t) => sum + t.amount, 0)
 
-    const prevMonth = new Date(currentYear, currentMonthNum - 1, 1)
     const prevMonthExpenses = transactions
       .filter(t => {
         const date = new Date(t.date)
         return t.type === 'expense' && 
-               date.getMonth() === prevMonth.getMonth() && 
-               date.getFullYear() === prevMonth.getFullYear()
+               date >= prevPeriod.startDate && 
+               date <= prevPeriod.endDate
       })
       .reduce((sum, t) => sum + t.amount, 0)
 
@@ -52,15 +75,12 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
 
   // Топ-5 самых дорогих покупок
   const getTop5Expenses = () => {
-    const currentMonthNum = currentMonth.getMonth()
-    const currentYear = currentMonth.getFullYear()
-    
     return transactions
       .filter(t => {
         const date = new Date(t.date)
         return t.type === 'expense' && 
-               date.getMonth() === currentMonthNum && 
-               date.getFullYear() === currentYear
+               date >= currentPeriod.startDate && 
+               date <= currentPeriod.endDate
       })
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5)
@@ -68,17 +88,18 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
 
   // График баланса по дням
   const getBalanceChartData = () => {
-    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-    
-    const dailyData: { day: number; balance: number }[] = []
+    const dailyData: { day: string; balance: number }[] = []
     let runningBalance = 0
 
-    for (let d = 1; d <= monthEnd.getDate(); d++) {
+    // Получаем все даты в текущем периоде
+    const currentDate = new Date(currentPeriod.startDate)
+    
+    while (currentDate <= currentPeriod.endDate) {
       const dayTransactions = transactions.filter(t => {
-        const date = new Date(t.date)
-        return date.getMonth() === currentMonth.getMonth() && 
-               date.getFullYear() === currentMonth.getFullYear() &&
-               date.getDate() === d
+        const tDate = new Date(t.date)
+        return tDate.getFullYear() === currentDate.getFullYear() &&
+               tDate.getMonth() === currentDate.getMonth() &&
+               tDate.getDate() === currentDate.getDate()
       })
 
       dayTransactions.forEach(t => {
@@ -86,7 +107,12 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
         else runningBalance -= t.amount
       })
 
-      dailyData.push({ day: d, balance: runningBalance })
+      dailyData.push({ 
+        day: `${currentDate.getDate()}/${currentDate.getMonth() + 1}`, 
+        balance: runningBalance 
+      })
+      
+      currentDate.setDate(currentDate.getDate() + 1)
     }
 
     return dailyData

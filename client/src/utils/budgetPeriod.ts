@@ -70,7 +70,11 @@ export function getPeriodLabel(
                     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
     return `${months[date.getMonth()]} ${date.getFullYear()}`
   } else {
-    // Для кастомного периода показываем даты
-    return `${formatPeriodDate(period.startDate)} - ${formatPeriodDate(period.endDate)}`
+    // Для кастомного периода показываем месяц начала, день и год
+    const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
+    const startMonth = months[period.startDate.getMonth()]
+    const year = period.startDate.getFullYear()
+    return `${startMonth} ${year} с ${startDay}-го`
   }
 }

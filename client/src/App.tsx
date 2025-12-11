@@ -5,7 +5,7 @@ import {
   LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet,
   Coffee, Car, Gamepad2, Zap, Home, Bus,
   Shirt, PiggyBank, ShoppingBasket,
-  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package, Users, TrendingUp
+  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package, Users, TrendingUp, Settings
 } from 'lucide-react'
 import './App.css'
 
@@ -19,6 +19,7 @@ import { MonthSelector } from './components/MonthSelector'
 import { AccountsView } from './components/AccountsView'
 import { LinkedAccountsView } from './components/LinkedAccountsView'
 import { AnalyticsView } from './components/AnalyticsView'
+import { SettingsView } from './components/SettingsView'
 import { Modal } from './components/Modal'
 import { NekoAvatar } from './components/NekoAvatar'
 import TransactionSearch from './components/TransactionSearch'
@@ -28,7 +29,7 @@ import * as api from './api/nekoApi'
 import { cloudStorage } from './utils/cloudStorage'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'linked' | 'analytics'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'linked' | 'analytics' | 'settings'>('input')
   const [transType, setTransType] = useState<'expense' | 'income'>('expense')
   const [selectedCategory, setSelectedCategory] = useState('groceries')
   const [selectedAccount, setSelectedAccount] = useState<{type: 'account' | 'goal', id: number} | null>(null)
@@ -83,6 +84,10 @@ function App() {
   const [lastSyncTime, setLastSyncTime] = useState<number>(0)
   const [isSyncing, setIsSyncing] = useState(false)
 
+  // Состояния для настроек бюджетного периода
+  const [periodType, setPeriodType] = useState<'calendar_month' | 'custom_period'>('calendar_month')
+  const [periodStartDay, setPeriodStartDay] = useState<number>(1)
+
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
 
@@ -125,6 +130,7 @@ function App() {
     if (WebApp.initDataUnsafe.user) currentUserId = WebApp.initDataUnsafe.user.id;
     setUserId(currentUserId);
     loadData(currentUserId, new Date());
+    loadBudgetPeriodSettings(currentUserId);
   }, [])
 
   // Следим за изменениями selectedAccount
@@ -208,6 +214,42 @@ function App() {
       cloudStorage.getLastSyncTime().then(time => setLastSyncTime(time));
     }
   }, []);
+
+  // Загрузка настроек бюджетного периода
+  const loadBudgetPeriodSettings = async (uid: number) => {
+    try {
+      const settings = await api.getBudgetPeriodSettings(uid);
+      if (settings) {
+        setPeriodType(settings.period_type || 'calendar_month');
+        setPeriodStartDay(settings.period_start_day || 1);
+      }
+    } catch (error) {
+      console.error('Failed to load budget period settings:', error);
+    }
+  };
+
+  // Сохранение настроек бюджетного периода
+  const handleSaveBudgetPeriodSettings = async (
+    newPeriodType: 'calendar_month' | 'custom_period',
+    newStartDay: number
+  ) => {
+    if (!userId) return;
+    
+    try {
+      await api.setBudgetPeriodSettings(userId, newPeriodType, newStartDay);
+      setPeriodType(newPeriodType);
+      setPeriodStartDay(newStartDay);
+      
+      // Перезагружаем данные с новыми настройками периода
+      loadData(userId, currentDate);
+      
+      WebApp.HapticFeedback.notificationOccurred('success');
+    } catch (error) {
+      console.error('Failed to save budget period settings:', error);
+      WebApp.HapticFeedback.notificationOccurred('error');
+      throw error;
+    }
+  };
 
   const handleDateChange = (newDate: Date) => {
     setCurrentDate(newDate);
@@ -867,6 +909,14 @@ function App() {
         {activeTab === 'analytics' && (
           <AnalyticsView transactions={allTransactions} currentMonth={currentDate} />
         )}
+
+        {activeTab === 'settings' && (
+          <SettingsView 
+            periodType={periodType}
+            periodStartDay={periodStartDay}
+            onSave={handleSaveBudgetPeriodSettings}
+          />
+        )}
       </div>
 
       <div className="bottom-tab-bar">
@@ -874,8 +924,9 @@ function App() {
         <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => { setActiveTab('stats'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><LayoutGrid size={24} /></div><span>Инфо</span></button>
         <button className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => { setActiveTab('budget'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Target size={24} /></div><span>Бюджет</span></button>
         <button className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`} onClick={() => { setActiveTab('accounts'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Wallet size={24} /></div><span>Счета</span></button>
-        <button className={`tab-btn ${activeTab === 'linked' ? 'active' : ''}`} onClick={() => { setActiveTab('linked'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Users size={24} /></div><span>Связь</span></button>
+        <button className={`tab-btn ${activeTab === 'linked' ? 'active' : ''}`} onClick={() => { setActiveTab('linked'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Users size={22} /></div><span>Связь</span></button>
         <button className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveTab('analytics'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><TrendingUp size={24} /></div><span>Анализ</span></button>
+        <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Settings size={22} /></div><span>Настройки</span></button>
       </div>
 
       {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА */}
