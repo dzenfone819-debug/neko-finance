@@ -779,7 +779,7 @@ fastify.post('/reset-all-data', (request, reply) => {
       })
     }),
     new Promise((resolve, reject) => {
-      db.run('DELETE FROM goals WHERE user_id = ?', [userId], (err) => {
+      db.run('DELETE FROM savings_goals WHERE user_id = ?', [userId], (err) => {
         if (err) reject(err)
         else resolve()
       })
