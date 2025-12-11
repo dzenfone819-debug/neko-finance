@@ -26,6 +26,7 @@ import type { FilterState } from './components/TransactionSearch'
 import { ExportModal } from './components/ExportModal'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
+import { cloudStorage } from './utils/cloudStorage'
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'linked' | 'analytics'>('input')
@@ -81,6 +82,10 @@ function App() {
 
   // Состояние для экспорта
   const [showExportModal, setShowExportModal] = useState(false)
+
+  // Состояния для синхронизации
+  const [lastSyncTime, setLastSyncTime] = useState<number>(0)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
@@ -174,8 +179,39 @@ function App() {
       if (!selectedAccount && accs.length > 0) {
         setSelectedAccount({type: 'account', id: accs[0].id});
       }
+
+      // Автоматическая синхронизация с облаком после загрузки данных
+      syncToCloud(hist, accs, bud, customCats);
     } catch (e) { console.error(e) }
   }
+
+  // Синхронизация с облаком
+  const syncToCloud = async (trans: any[], accs: any[], budget: number, cats: any[]) => {
+    if (!cloudStorage.isAvailable()) return;
+    
+    try {
+      setIsSyncing(true);
+      await cloudStorage.saveToCloud({
+        transactions: trans,
+        accounts: accs,
+        budgetSettings: { budget_limit: budget },
+        categories: cats
+      });
+      const syncTime = Date.now();
+      setLastSyncTime(syncTime);
+    } catch (error) {
+      console.error('Sync error:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  // Загрузка последнего времени синхронизации
+  useEffect(() => {
+    if (cloudStorage.isAvailable()) {
+      cloudStorage.getLastSyncTime().then(time => setLastSyncTime(time));
+    }
+  }, []);
 
   const handleDateChange = (newDate: Date) => {
     setCurrentDate(newDate);
@@ -803,7 +839,14 @@ function App() {
         )}
 
         {activeTab === 'accounts' && (
-          <AccountsView userId={userId} accounts={accounts} goals={goals} onRefresh={() => userId && loadData(userId, currentDate)} />
+          <AccountsView 
+            userId={userId} 
+            accounts={accounts} 
+            goals={goals} 
+            onRefresh={() => userId && loadData(userId, currentDate)}
+            lastSyncTime={lastSyncTime}
+            isSyncing={isSyncing}
+          />
         )}
 
         {activeTab === 'budget' && (
