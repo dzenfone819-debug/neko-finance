@@ -140,15 +140,13 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
           {/* Заголовок с кнопкой экспорта */}
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'center',
             width: '100%',
             marginBottom: 16,
             paddingLeft: 10,
             paddingRight: 10
           }}>
-            <div style={{ flex: 1 }} />
-            
             {/* Переключатель периода */}
             <div style={{
               display: 'flex',
