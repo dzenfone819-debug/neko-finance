@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Wallet, TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { Wallet, TrendingUp, Calendar, DollarSign, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CATEGORIES, COLORS, getCategoryName } from '../data/constants';
 
@@ -9,9 +9,10 @@ interface StatsViewProps {
   total: number;
   transactions?: any[];
   budgetLimit?: number;
+  onExportClick?: () => void;
 }
 
-export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0 }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0, onExportClick }) => {
   const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month'>('month');
 
   // Кастомный Tooltip
@@ -137,35 +138,72 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
       
       {data.length > 0 ? (
         <>
-          {/* Переключатель периода */}
+          {/* Заголовок с кнопкой экспорта */}
           <div style={{
             display: 'flex',
-            gap: 8,
-            marginBottom: 20,
-            background: 'rgba(255, 255, 255, 0.5)',
-            borderRadius: 12,
-            padding: 4
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            marginBottom: 16,
+            paddingLeft: 10,
+            paddingRight: 10
           }}>
-            {(['day', 'week', 'month'] as const).map((period) => (
+            <div style={{ flex: 1 }} />
+            
+            {/* Переключатель периода */}
+            <div style={{
+              display: 'flex',
+              gap: 8,
+              background: 'rgba(255, 255, 255, 0.5)',
+              borderRadius: 12,
+              padding: 4
+            }}>
+              {(['day', 'week', 'month'] as const).map((period) => (
+                <motion.button
+                  key={period}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setTimePeriod(period)}
+                  style={{
+                    padding: '8px 16px',
+                    border: 'none',
+                    borderRadius: 8,
+                    background: timePeriod === period ? '#667eea' : 'transparent',
+                    color: timePeriod === period ? 'white' : '#6B4C75',
+                    fontWeight: 'bold',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {period === 'day' ? 'День' : period === 'week' ? 'Неделя' : 'Месяц'}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Кнопка экспорта */}
+            {onExportClick && (
               <motion.button
-                key={period}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setTimePeriod(period)}
+                onClick={onExportClick}
                 style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: 8,
-                  background: timePeriod === period ? '#667eea' : 'transparent',
-                  color: timePeriod === period ? 'white' : '#6B4C75',
+                  marginLeft: 8,
+                  padding: '8px 12px',
+                  border: '2px solid #F0F0F0',
+                  borderRadius: 12,
+                  background: 'white',
+                  color: '#6B4C75',
                   fontWeight: 'bold',
                   fontSize: 13,
                   cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                   transition: 'all 0.2s'
                 }}
               >
-                {period === 'day' ? 'День' : period === 'week' ? 'Неделя' : 'Месяц'}
+                <Download size={16} />
               </motion.button>
-            ))}
+            )}
           </div>
 
           {/* График */}

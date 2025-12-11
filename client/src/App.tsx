@@ -23,6 +23,7 @@ import { Modal } from './components/Modal'
 import { NekoAvatar } from './components/NekoAvatar'
 import TransactionSearch from './components/TransactionSearch'
 import type { FilterState } from './components/TransactionSearch'
+import { ExportModal } from './components/ExportModal'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 
@@ -77,6 +78,9 @@ function App() {
   const [editAmount, setEditAmount] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editDate, setEditDate] = useState(new Date())
+
+  // Состояние для экспорта
+  const [showExportModal, setShowExportModal] = useState(false)
 
   // Правильная логика отображения "Доступно"
   const displayBalance = budgetLimit > 0 ? budgetLimit - totalSpent : currentBalance;
@@ -784,6 +788,7 @@ function App() {
               total={totalSpent} 
               transactions={transactions}
               budgetLimit={budgetLimit}
+              onExportClick={() => setShowExportModal(true)}
             />
             <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
             <TransactionList 
@@ -1077,6 +1082,14 @@ function App() {
           ...INCOME_CATEGORIES.map(c => c.name),
           ...customCategories.map(c => c.name)
         ]}
+      />
+
+      {/* Модальное окно экспорта */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        transactions={allTransactions.length > 0 ? allTransactions : transactions}
+        currentMonth={currentDate}
       />
     </div>
   )
