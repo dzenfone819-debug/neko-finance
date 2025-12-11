@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Wallet, TrendingUp, Calendar, DollarSign, Download } from 'lucide-react';
+import { Wallet, TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CATEGORIES, COLORS, getCategoryName } from '../data/constants';
 
@@ -9,10 +9,9 @@ interface StatsViewProps {
   total: number;
   transactions?: any[];
   budgetLimit?: number;
-  onExportClick?: () => void;
 }
 
-export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0, onExportClick }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0 }) => {
   const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month'>('month');
 
   // Кастомный Tooltip
@@ -179,31 +178,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
                 </motion.button>
               ))}
             </div>
-
-            {/* Кнопка экспорта */}
-            {onExportClick && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={onExportClick}
-                style={{
-                  marginLeft: 8,
-                  padding: '8px 12px',
-                  border: '2px solid #F0F0F0',
-                  borderRadius: 12,
-                  background: 'white',
-                  color: '#6B4C75',
-                  fontWeight: 'bold',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  transition: 'all 0.2s'
-                }}
-              >
-                <Download size={16} />
-              </motion.button>
-            )}
           </div>
 
           {/* График */}
