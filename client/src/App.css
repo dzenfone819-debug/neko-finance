@@ -380,9 +380,9 @@ html, body, #root {
   font-size: 9px; 
   font-weight: 700; 
   cursor: pointer;
-  padding: 6px 2px;
+  padding: 6px 1px;
   transition: all 0.2s;
-  flex: 1;
+ /* flex: 1; */
   min-width: 0;
   max-width: 70px;
 }
