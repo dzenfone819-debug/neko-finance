@@ -753,10 +753,14 @@ fastify.get('/budget-period-settings', (request, reply) => {
     (err, row) => {
       if (err) return reply.code(500).send({ error: err.message })
       // Преобразуем budget_mode в period_type и custom_period_day в period_start_day
-      const result = row 
-        ? { period_type: row.budget_mode, period_start_day: row.custom_period_day }
-        : { period_type: 'calendar_month', period_start_day: 1 }
-      return reply.send(result)
+      if (row) {
+        const period_type = row.budget_mode === 'monthly' ? 'calendar_month' : 'custom_period'
+        return reply.send({ 
+          period_type: period_type, 
+          period_start_day: row.custom_period_day 
+        })
+      }
+      return reply.send({ period_type: 'calendar_month', period_start_day: 1 })
     }
   )
 })

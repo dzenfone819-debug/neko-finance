@@ -861,6 +861,10 @@ function App() {
               total={totalSpent} 
               transactions={transactions}
               budgetLimit={budgetLimit}
+              customCategories={customCategories}
+              periodType={periodType}
+              periodStartDay={periodStartDay}
+              currentMonth={currentDate}
             />
             <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
             <TransactionList 
@@ -869,6 +873,7 @@ function App() {
               onEdit={handleEditTransaction}
               onFilterClick={() => setShowSearchPanel(true)}
               hasActiveFilters={hasActiveFilters}
+              customCategories={customCategories}
             />
             <div style={{ height: 80 }} /> 
           </div>
@@ -902,7 +907,7 @@ function App() {
         )}
 
         {activeTab === 'analytics' && (
-          <AnalyticsView transactions={allTransactions} currentMonth={currentDate} />
+          <AnalyticsView transactions={allTransactions} currentMonth={currentDate} customCategories={customCategories} />
         )}
 
         {activeTab === 'settings' && (
@@ -911,6 +916,8 @@ function App() {
             periodStartDay={periodStartDay}
             onSave={handleSaveBudgetPeriodSettings}
             userId={userId}
+            accounts={accounts}
+            onRefresh={() => userId && loadData(userId, currentDate)}
           />
         )}
       </div>

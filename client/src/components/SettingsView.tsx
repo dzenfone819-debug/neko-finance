@@ -1,12 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2 } from 'lucide-react';
+import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2, Download, Upload, Cloud } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
+import { exportBackup, importBackup, performFullRestore } from '../utils/backupRestore';
+import { cloudStorage } from '../utils/cloudStorage';
 
 interface LinkedAccount {
   telegram_id: number
   primary_user_id: number
+}
+
+interface Account {
+  id: number;
+  name: string;
+  balance: number;
+  type: string;
+  color: string;
 }
 
 interface Props {
@@ -14,12 +24,16 @@ interface Props {
   periodStartDay: number;
   onSave: (periodType: 'calendar_month' | 'custom_period', startDay: number) => void;
   userId: number | null;
+  accounts?: Account[];
+  onRefresh?: () => void;
 }
 
-export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId }) => {
+export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId, accounts = [], onRefresh }) => {
   const [localPeriodType, setLocalPeriodType] = useState(periodType);
   const [localStartDay, setLocalStartDay] = useState(periodStartDay);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Состояния для связанных аккаунтов
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([])
@@ -137,6 +151,146 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
     setMessage({ text, type })
     setTimeout(() => setMessage(null), 3000)
   }
+
+  // Бэкап и восстановление
+  const handleExportBackup = async () => {
+    if (!userId) return;
+    try {
+      WebApp.HapticFeedback.impactOccurred('light');
+      
+      // Загружаем все данные для экспорта
+      const [allTransactions, budgetData, customCategories, categoryLimits, goals] = await Promise.all([
+        api.fetchTransactions(userId),
+        api.fetchBudget(userId),
+        api.fetchCustomCategories(userId),
+        api.fetchCategoryLimits(userId),
+        api.fetchGoals(userId)
+      ]);
+
+      await exportBackup(allTransactions, accounts || [], goals, { budget_limit: budgetData }, customCategories, categoryLimits);
+      WebApp.HapticFeedback.notificationOccurred('success');
+      showMessage('✅ Бэкап успешно создан!', 'success');
+    } catch (e) {
+      console.error('Export error:', e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+      showMessage('❌ Ошибка создания бэкапа', 'error');
+    }
+  };
+
+  const handleImportBackup = () => {
+    WebApp.HapticFeedback.impactOccurred('light');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+
+    try {
+      setIsRestoring(true);
+      WebApp.HapticFeedback.impactOccurred('medium');
+
+      const backup = await importBackup(file);
+      if (!backup) {
+        WebApp.HapticFeedback.notificationOccurred('error');
+        alert('Ошибка: неверный формат файла');
+        return;
+      }
+
+      const confirmed = confirm(
+        `Восстановить данные из бэкапа?\\n\\n` +
+        `Дата экспорта: ${new Date(backup.exportDate).toLocaleString('ru')}\\n` +
+        `Транзакций: ${backup.data.transactions?.length || 0}\\n` +
+        `Счетов: ${backup.data.accounts?.length || 0}\\n` +
+        `Копилок: ${backup.data.goals?.length || 0}\\n` +
+        `Категорий: ${backup.data.categories?.length || 0}\\n\\n` +
+        `ВНИМАНИЕ: Это добавит новые данные к существующим.`
+      );
+
+      if (!confirmed) {
+        setIsRestoring(false);
+        return;
+      }
+
+      const success = await performFullRestore(String(userId), backup);
+      
+      if (success) {
+        WebApp.HapticFeedback.notificationOccurred('success');
+        showMessage('✅ Данные успешно восстановлены!', 'success');
+        if (onRefresh) onRefresh();
+      } else {
+        WebApp.HapticFeedback.notificationOccurred('error');
+        showMessage('❌ Ошибка восстановления данных', 'error');
+      }
+    } catch (e) {
+      console.error('Import error:', e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+      showMessage('❌ Ошибка импорта', 'error');
+    } finally {
+      setIsRestoring(false);
+      if (event.target) event.target.value = '';
+    }
+  };
+
+  const handleRestoreFromCloud = async () => {
+    if (!userId || !cloudStorage.isAvailable()) {
+      showMessage('☁️ Облачное хранилище недоступно', 'error');
+      return;
+    }
+
+    try {
+      WebApp.HapticFeedback.impactOccurred('medium');
+      setIsRestoring(true);
+
+      const cloudData = await cloudStorage.loadFromCloud();
+      if (!cloudData || cloudData.transactions.length === 0) {
+        showMessage('☁️ В облаке нет сохранённых данных', 'error');
+        return;
+      }
+
+      const confirmed = confirm(
+        `Восстановить данные из облака?\\n\\n` +
+        `Последняя синхронизация: ${new Date(cloudData.lastSyncTime).toLocaleString('ru')}\\n` +
+        `Транзакций: ${cloudData.transactions.length}\\n` +
+        `Счетов: ${cloudData.accounts.length}\\n\\n` +
+        `ВНИМАНИЕ: Это добавит новые данные к существующим.`
+      );
+
+      if (!confirmed) {
+        setIsRestoring(false);
+        return;
+      }
+
+      const backup = {
+        version: '1.0',
+        exportDate: new Date(cloudData.lastSyncTime).toISOString(),
+        data: {
+          transactions: cloudData.transactions,
+          accounts: cloudData.accounts,
+          budgetSettings: cloudData.budgetSettings,
+          categories: cloudData.categories
+        }
+      };
+
+      const success = await performFullRestore(String(userId), backup);
+      
+      if (success) {
+        WebApp.HapticFeedback.notificationOccurred('success');
+        showMessage('✅ Данные из облака восстановлены!', 'success');
+        if (onRefresh) onRefresh();
+      } else {
+        WebApp.HapticFeedback.notificationOccurred('error');
+        showMessage('❌ Ошибка восстановления', 'error');
+      }
+    } catch (e) {
+      console.error('Cloud restore error:', e);
+      WebApp.HapticFeedback.notificationOccurred('error');
+      showMessage('❌ Ошибка восстановления из облака', 'error');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
 
   const handleSave = async () => {
     WebApp.HapticFeedback.impactOccurred('medium');
@@ -705,6 +859,123 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           </motion.div>
         )}
       </div>
+
+      {/* Бэкап и восстановление */}
+      <div style={{ marginTop: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
+          <Download size={24} color="#6B4C75" />
+          <h2 style={{ margin: 0, color: '#6B4C75', fontSize: 20 }}>Бэкап и восстановление</h2>
+        </div>
+
+        <p style={{ 
+          fontSize: 13, 
+          color: '#666', 
+          marginBottom: 15,
+          lineHeight: 1.5
+        }}>
+          Сохраняйте резервные копии данных и восстанавливайте их при необходимости
+        </p>
+
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          <motion.button
+            onClick={handleExportBackup}
+            disabled={isRestoring}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              flex: 1,
+              padding: '14px',
+              background: isRestoring ? '#CCC' : 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 14,
+              fontSize: 15,
+              fontWeight: 'bold',
+              cursor: isRestoring ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: isRestoring ? 'none' : '0 4px 12px rgba(78, 205, 196, 0.3)'
+            }}
+          >
+            <Download size={18} />
+            Экспорт
+          </motion.button>
+
+          <motion.button
+            onClick={handleImportBackup}
+            disabled={isRestoring}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              flex: 1,
+              padding: '14px',
+              background: isRestoring ? '#CCC' : 'linear-gradient(135deg, #F38181 0%, #E74C3C 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 14,
+              fontSize: 15,
+              fontWeight: 'bold',
+              cursor: isRestoring ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: isRestoring ? 'none' : '0 4px 12px rgba(243, 129, 129, 0.3)'
+            }}
+          >
+            <Upload size={18} />
+            Импорт
+          </motion.button>
+        </div>
+
+        {cloudStorage.isAvailable() && (
+          <motion.button
+            onClick={handleRestoreFromCloud}
+            disabled={isRestoring}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: isRestoring ? '#CCC' : 'linear-gradient(135deg, #AA96DA 0%, #8B7AB8 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 14,
+              fontSize: 15,
+              fontWeight: 'bold',
+              cursor: isRestoring ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: isRestoring ? 'none' : '0 4px 12px rgba(170, 150, 218, 0.3)'
+            }}
+          >
+            <Cloud size={18} />
+            Восстановить из облака
+          </motion.button>
+        )}
+
+        <div style={{
+          marginTop: 12,
+          padding: 12,
+          background: '#F0F9FF',
+          borderRadius: 12,
+          fontSize: 12,
+          color: '#0369A1',
+          lineHeight: 1.5
+        }}>
+          <strong>ℹ️ Важно:</strong> Импорт добавляет данные к существующим, не удаляя их. Для полной очистки используйте сброс всех данных ниже.
+        </div>
+      </div>
+
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
+      />
 
       {/* Опасная зона */}
       <motion.div

@@ -15,12 +15,20 @@ interface Transaction {
   type: 'expense' | 'income'
 }
 
+interface CustomCategory {
+  id: string
+  name: string
+  icon: string
+  color: string
+}
+
 interface Props {
   transactions: Transaction[]
   currentMonth: Date
+  customCategories?: CustomCategory[]
 }
 
-export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) => {
+export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, customCategories = [] }) => {
   const [activeSection, setActiveSection] = useState<'compare' | 'top5' | 'chart' | 'heatmap'>('compare')
   const [periodType, setPeriodType] = useState<'calendar_month' | 'custom_period'>('calendar_month')
   const [periodStartDay, setPeriodStartDay] = useState<number>(1)
@@ -123,6 +131,10 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth }) =
   const chartData = getBalanceChartData()
 
   const getCategoryName = (id: string) => {
+    // Проверяем кастомные категории
+    const customCat = customCategories.find(c => c.id === id)
+    if (customCat) return customCat.name
+    
     const categories: Record<string, string> = {
       groceries: 'Продукты', transport: 'Транспорт', entertainment: 'Развлечения',
       utilities: 'Коммуналка', health: 'Здоровье', shopping: 'Покупки',

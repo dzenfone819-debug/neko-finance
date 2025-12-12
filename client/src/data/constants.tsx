@@ -13,7 +13,16 @@ export const getIconByName = (iconName: string, size: number = 20) => {
   };
   
   const IconComponent = icons[iconName];
-  return IconComponent ? <IconComponent size={size} /> : <Package size={size} />;
+  // Если нашли компонент - возвращаем его, если нет - проверяем, может это эмодзи
+  if (IconComponent) {
+    return <IconComponent size={size} />;
+  }
+  // Если это не компонент и длина 1-2 символа (эмодзи), возвращаем как есть
+  if (iconName && iconName.length <= 4) {
+    return iconName;
+  }
+  // В остальных случаях - дефолтная иконка
+  return <Package size={size} />;
 };
 
 // Палитра

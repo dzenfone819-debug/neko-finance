@@ -733,6 +733,7 @@ html, body, #root {
   font-size: 16px;
   font-family: 'Nunito', sans-serif;
   background: white;
+  color: #2D3436;
   box-sizing: border-box;
   transition: border-color 0.2s;
 }
@@ -750,6 +751,7 @@ html, body, #root {
   font-size: 16px;
   font-family: 'Nunito', sans-serif;
   background: white;
+  color: #2D3436;
   cursor: pointer;
   box-sizing: border-box;
   transition: border-color 0.2s;

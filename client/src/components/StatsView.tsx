@@ -3,23 +3,42 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Wallet, TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CATEGORIES, COLORS, getCategoryName } from '../data/constants';
+import { getBudgetPeriod } from '../utils/budgetPeriod';
+
+interface CustomCategory {
+  id: string
+  name: string
+  icon: string
+  color: string
+}
 
 interface StatsViewProps {
   data: { name: string; value: number }[];
   total: number;
   transactions?: any[];
   budgetLimit?: number;
+  customCategories?: CustomCategory[];
+  periodType?: 'calendar_month' | 'custom_period';
+  periodStartDay?: number;
+  currentMonth?: Date;
 }
 
-export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0 }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0, customCategories = [], periodType = 'calendar_month', periodStartDay = 1, currentMonth = new Date() }) => {
   const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month'>('month');
+
+  // Функция для получения названия категории с учетом кастомных
+  const getDisplayCategoryName = (categoryId: string) => {
+    const customCat = customCategories.find(c => c.id === categoryId);
+    if (customCat) return customCat.name;
+    return getCategoryName(categoryId);
+  };
 
   // Кастомный Tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const categoryId = payload[0].name;
       const value = payload[0].value;
-      const categoryName = getCategoryName(categoryId);
+      const categoryName = getDisplayCategoryName(categoryId);
       const currentTotal = periodTotal > 0 ? periodTotal : total;
       const percentage = ((value / currentTotal) * 100).toFixed(1);
       const cat = CATEGORIES.find(c => c.id === categoryId);
@@ -107,23 +126,33 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
 
   // Средние расходы за неделю
   const getWeeklyAverage = () => {
+    const period = getBudgetPeriod(currentMonth, periodType, periodStartDay);
     const now = new Date();
-    const daysInMonth = now.getDate();
-    const weeksElapsed = daysInMonth / 7;
+    
+    // Количество дней с начала периода до сегодня
+    const daysSinceStart = Math.max(1, Math.floor((now.getTime() - period.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    const weeksElapsed = daysSinceStart / 7;
     
     return weeksElapsed > 0 ? Math.round(total / weeksElapsed) : 0;
   };
 
-  // Прогноз до конца месяца
+  // Прогноз до конца периода
   const getForecast = () => {
+    const period = getBudgetPeriod(currentMonth, periodType, periodStartDay);
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const currentDay = now.getDate();
-    const daysRemaining = daysInMonth - currentDay;
     
-    if (currentDay === 0) return total;
+    // Количество дней с начала периода до сегодня
+    const daysSinceStart = Math.max(1, Math.floor((now.getTime() - period.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
     
-    const dailyAverage = total / currentDay;
+    // Общее количество дней в периоде
+    const totalDaysInPeriod = Math.floor((period.endDate.getTime() - period.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Количество дней до конца периода
+    const daysRemaining = totalDaysInPeriod - daysSinceStart;
+    
+    if (daysSinceStart === 0) return total;
+    
+    const dailyAverage = total / daysSinceStart;
     const forecast = total + (dailyAverage * daysRemaining);
     
     return Math.round(forecast);
@@ -234,7 +263,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
               <div style={{ fontSize: 20, fontWeight: 'bold' }}>{weeklyAvg.toLocaleString()} ₽</div>
             </motion.div>
 
-            {/* Прогноз до конца месяца */}
+            {/* Прогноз до конца периода */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               style={{
@@ -246,7 +275,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <TrendingUp size={18} />
-                <span style={{ fontSize: 11, opacity: 0.9 }}>Прогноз месяца</span>
+                <span style={{ fontSize: 11, opacity: 0.9 }}>
+                  {periodType === 'calendar_month' ? 'Прогноз месяца' : 'Прогноз периода'}
+                </span>
               </div>
               <div style={{ fontSize: 20, fontWeight: 'bold' }}>{forecast.toLocaleString()} ₽</div>
             </motion.div>
@@ -286,7 +317,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
                 >
                   <div style={{display: 'flex', alignItems: 'center', gap: 10, flex: 1}}>
                     <div style={{width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0}} />
-                    <span style={{fontWeight: 600, color: '#2D3436', fontSize: 14}}>{getCategoryName(entry.name)}</span>
+                    <span style={{fontWeight: 600, color: '#2D3436', fontSize: 14}}>{getDisplayCategoryName(entry.name)}</span>
                   </div>
                   <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                     <span style={{

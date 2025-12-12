@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 import { Trash2, Filter, Edit2 } from 'lucide-react';
 // Импортируем обе константы и функции
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor } from '../data/constants';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor, getIconByName } from '../data/constants';
 
 interface Transaction {
   id: number;
@@ -13,15 +13,23 @@ interface Transaction {
   type?: 'expense' | 'income'; // Добавили тип
 }
 
+interface CustomCategory {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
 interface Props {
   transactions: Transaction[];
   onDelete: (id: number) => void;
   onEdit?: (transaction: Transaction) => void;
   onFilterClick?: () => void;
   hasActiveFilters?: boolean;
+  customCategories?: CustomCategory[];
 }
 
-export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdit, onFilterClick, hasActiveFilters }) => {
+export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdit, onFilterClick, hasActiveFilters, customCategories = [] }) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   const formatDate = (dateString: string) => {
@@ -80,9 +88,16 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
             const isIncome = t.type === 'income';
             const isDragging = draggedItem === t.id;
             
-            // Ищем иконку в обоих списках
+            // Ищем иконку в обоих списках и в кастомных категориях
             const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
             const cat = allCats.find(c => c.id === t.category);
+            const customCat = customCategories.find(c => c.id === t.category);
+            
+            // Используем кастомную категорию, если найдена
+            const categoryName = customCat ? customCat.name : getCategoryName(t.category);
+            const categoryColor = customCat ? customCat.color : getCategoryColor(t.category);
+            // Для кастомных категорий используем getIconByName (может быть эмодзи или название компонента)
+            const categoryIcon = customCat ? getIconByName(customCat.icon, 20) : (cat?.icon || null);
             
             return (
               <div key={t.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: 16 }}>
@@ -157,14 +172,19 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ 
-                      background: getCategoryColor(t.category), 
-                      padding: 8, borderRadius: '50%', color: '#6B4C75', display: 'flex'
+                      background: categoryColor, 
+                      padding: 8, 
+                      borderRadius: '50%', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: typeof categoryIcon === 'string' ? 18 : undefined
                     }}>
-                      {cat?.icon || <div style={{width: 20, height: 20}} />}
+                      {categoryIcon || <div style={{width: 20, height: 20}} />}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontWeight: 'bold', color: '#2D3436', fontSize: 14 }}>
-                        {getCategoryName(t.category)}
+                        {categoryName}
                       </span>
                       <span style={{ fontSize: 11, color: '#A0A0A0' }}>{formatDate(t.date)}</span>
                     </div>
