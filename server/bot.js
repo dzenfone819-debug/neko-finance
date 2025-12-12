@@ -50,49 +50,9 @@ function startBot(botToken, db, geminiKey) {
   {"amount": 500, "category": "bills", "description": "оплата интернета", "account": "Счет1"}
   `
 
-  // --- ОБРАБОТЧИК ТЕКСТА ---
-  bot.on('text', async (ctx) => {
-    try {
-      const userText = ctx.message.text
-      if (userText.startsWith('/')) return 
-      
-      console.log(`[AI] Текст: "${userText}"`)
-      const result = await processWithAI(model, SYSTEM_PROMPT, userText)
-      await saveTransaction(ctx, db, result)
-      
-    } catch (e) {
-      console.error('[AI Error]', e)
-      ctx.reply('😿 Ошибка. Попробуй перефразировать.')
-    }
-  })
-
-  // --- ОБРАБОТЧИК ГОЛОСА ---
-  bot.on('voice', async (ctx) => {
-    try {
-      ctx.sendChatAction('typing')
-      const fileId = ctx.message.voice.file_id
-      const fileLink = await ctx.telegram.getFileLink(fileId)
-      const response = await axios({ url: fileLink.href, responseType: 'arraybuffer' })
-      const audioBuffer = Buffer.from(response.data)
-
-      const result = await model.generateContent([
-        SYSTEM_PROMPT,
-        {
-          inlineData: {
-            mimeType: "audio/ogg",
-            data: audioBuffer.toString("base64")
-          }
-        }
-      ])
-
-      const jsonData = cleanJson(result.response.text())
-      await saveTransaction(ctx, db, jsonData)
-
-    } catch (e) {
-      console.error('[AI Voice Error]', e)
-      ctx.reply('😿 Не удалось распознать голос. Сервера Google перегружены.')
-    }
-  })
+  // --- AI-обработчики временно отключены ---
+  // bot.on('text', ...)
+  // bot.on('voice', ...)
 
   bot.start((ctx) => ctx.reply('Мяу! Напиши "500 интернет" или "300 такси".'))
   bot.launch()
