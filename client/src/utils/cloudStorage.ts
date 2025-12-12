@@ -6,16 +6,20 @@
 interface CloudStorageData {
   transactions: any[]
   accounts: any[]
+  goals: any[]
   budgetSettings: any
   categories: any[]
+  limits: any
   lastSyncTime: number
 }
 
 const CLOUD_KEYS = {
   TRANSACTIONS: 'neko_transactions',
   ACCOUNTS: 'neko_accounts',
+  GOALS: 'neko_goals',
   BUDGET: 'neko_budget',
   CATEGORIES: 'neko_categories',
+  LIMITS: 'neko_limits',
   LAST_SYNC: 'neko_last_sync'
 }
 
@@ -54,12 +58,20 @@ class CloudStorage {
         promises.push(this.setItem(CLOUD_KEYS.ACCOUNTS, JSON.stringify(data.accounts)))
       }
 
+      if (data.goals) {
+        promises.push(this.setItem(CLOUD_KEYS.GOALS, JSON.stringify(data.goals)))
+      }
+
       if (data.budgetSettings) {
         promises.push(this.setItem(CLOUD_KEYS.BUDGET, JSON.stringify(data.budgetSettings)))
       }
 
       if (data.categories) {
         promises.push(this.setItem(CLOUD_KEYS.CATEGORIES, JSON.stringify(data.categories)))
+      }
+
+      if (data.limits) {
+        promises.push(this.setItem(CLOUD_KEYS.LIMITS, JSON.stringify(data.limits)))
       }
 
       // Save last sync time
@@ -94,12 +106,18 @@ class CloudStorage {
         accounts: values[CLOUD_KEYS.ACCOUNTS] 
           ? JSON.parse(values[CLOUD_KEYS.ACCOUNTS]) 
           : [],
+        goals: values[CLOUD_KEYS.GOALS] 
+          ? JSON.parse(values[CLOUD_KEYS.GOALS]) 
+          : [],
         budgetSettings: values[CLOUD_KEYS.BUDGET] 
           ? JSON.parse(values[CLOUD_KEYS.BUDGET]) 
           : null,
         categories: values[CLOUD_KEYS.CATEGORIES] 
           ? JSON.parse(values[CLOUD_KEYS.CATEGORIES]) 
           : [],
+        limits: values[CLOUD_KEYS.LIMITS] 
+          ? JSON.parse(values[CLOUD_KEYS.LIMITS]) 
+          : {},
         lastSyncTime: values[CLOUD_KEYS.LAST_SYNC] 
           ? parseInt(values[CLOUD_KEYS.LAST_SYNC]) 
           : 0

@@ -42,11 +42,29 @@ export async function exportBackup(
 
   const jsonString = JSON.stringify(backup, null, 2)
   const blob = new Blob([jsonString], { type: 'application/json' })
+  const fileName = `neko-finance-backup-${new Date().toISOString().split('T')[0]}.json`
+
+  // Попытка использовать Web Share API (работает на iOS)
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], fileName)] })) {
+    try {
+      const file = new File([blob], fileName, { type: 'application/json' })
+      await navigator.share({
+        files: [file],
+        title: 'Neko Finance Бэкап',
+        text: 'Резервная копия данных Neko Finance'
+      })
+      console.log('✅ Бэкап экспортирован через Share API')
+      return
+    } catch (error) {
+      console.log('Share API не удалось, используем fallback')
+    }
+  }
+
+  // Fallback для десктопа и старых браузеров
   const url = URL.createObjectURL(blob)
-  
   const link = document.createElement('a')
   link.href = url
-  link.download = `neko-finance-backup-${new Date().toISOString().split('T')[0]}.json`
+  link.download = fileName
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

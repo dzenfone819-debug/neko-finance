@@ -182,12 +182,12 @@ function App() {
       }
 
       // Автоматическая синхронизация с облаком после загрузки данных
-      syncToCloud(hist, accs, bud, customCats);
+      syncToCloud(hist, accs, gls, bud, customCats, lims);
     } catch (e) { console.error(e) }
   }
 
   // Синхронизация с облаком
-  const syncToCloud = async (trans: any[], accs: any[], budget: number, cats: any[]) => {
+  const syncToCloud = async (trans: any[], accs: any[], goals: any[], budget: number, cats: any[], limits: any) => {
     if (!cloudStorage.isAvailable()) return;
     
     try {
@@ -195,8 +195,10 @@ function App() {
       await cloudStorage.saveToCloud({
         transactions: trans,
         accounts: accs,
+        goals: goals,
         budgetSettings: { budget_limit: budget },
-        categories: cats
+        categories: cats,
+        limits: limits
       });
       const syncTime = Date.now();
       setLastSyncTime(syncTime);
@@ -885,8 +887,6 @@ function App() {
             accounts={accounts} 
             goals={goals} 
             onRefresh={() => userId && loadData(userId, currentDate)}
-            lastSyncTime={lastSyncTime}
-            isSyncing={isSyncing}
           />
         )}
 
@@ -918,6 +918,8 @@ function App() {
             userId={userId}
             accounts={accounts}
             onRefresh={() => userId && loadData(userId, currentDate)}
+            lastSyncTime={lastSyncTime}
+            isSyncing={isSyncing}
           />
         )}
       </div>

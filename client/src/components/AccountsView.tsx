@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ArrowRightLeft, Cloud } from 'lucide-react';
+import { Plus, ArrowRightLeft } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { Modal } from './Modal';
-import { cloudStorage } from '../utils/cloudStorage';
 
 interface Account {
   id: number;
@@ -28,11 +27,9 @@ interface Props {
   accounts: Account[];
   goals: Goal[];
   onRefresh: () => void;
-  lastSyncTime?: number;
-  isSyncing?: boolean;
 }
 
-export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefresh, lastSyncTime = 0, isSyncing = false }) => {
+export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefresh }) => {
   const [activeTab, setActiveTab] = useState<'accounts' | 'goals'>('accounts');
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -217,19 +214,6 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
   const totalSavings = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
 
-  const formatLastSync = (timestamp: number) => {
-    if (!timestamp) return 'Не синхронизировано';
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (minutes < 1) return 'Только что';
-    if (minutes < 60) return `${minutes} мин назад`;
-    if (hours < 24) return `${hours} ч назад`;
-    return `${days} дн назад`;
-  };
 
   return (
     <div style={{ padding: '0 0', height: '100%', overflowY: 'auto', paddingBottom: 100 }}>
@@ -238,19 +222,6 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
         <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 5 }}>Общий баланс на счетах</div>
         <div style={{ fontSize: 32, fontWeight: 'bold' }}>{totalBalance.toLocaleString()} ₽</div>
         <div style={{ fontSize: 11, opacity: 0.7, marginTop: 5 }}>В копилках: {totalSavings.toLocaleString()} ₽</div>
-        {cloudStorage.isAvailable() && (
-          <div style={{ 
-            fontSize: 10, 
-            opacity: 0.6, 
-            marginTop: 8, 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 4 
-          }}>
-            <Cloud size={10} />
-            {isSyncing ? 'Синхронизация...' : formatLastSync(lastSyncTime)}
-          </div>
-        )}
       </div>
 
       {/* ТАБЫ */}

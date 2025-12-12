@@ -26,14 +26,30 @@ interface Props {
   userId: number | null;
   accounts?: Account[];
   onRefresh?: () => void;
+  lastSyncTime?: number;
+  isSyncing?: boolean;
 }
 
-export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId, accounts = [], onRefresh }) => {
+export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId, accounts = [], onRefresh, lastSyncTime = 0, isSyncing = false }) => {
   const [localPeriodType, setLocalPeriodType] = useState(periodType);
   const [localStartDay, setLocalStartDay] = useState(periodStartDay);
   const [isSaving, setIsSaving] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Форматирование времени последней синхронизации
+  const formatLastSync = (timestamp: number) => {
+    if (!timestamp) return 'Синхр. не выполнялась';
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (minutes < 1) return 'Синхр. только что';
+    if (minutes < 60) return `Синхр. ${minutes} мин назад`;
+    if (hours < 24) return `Синхр. ${hours} ч назад`;
+    return `Синхр. ${days} дн назад`;
+  };
 
   // Состояния для связанных аккаунтов
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([])
@@ -252,7 +268,9 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         `Восстановить данные из облака?\\n\\n` +
         `Последняя синхронизация: ${new Date(cloudData.lastSyncTime).toLocaleString('ru')}\\n` +
         `Транзакций: ${cloudData.transactions.length}\\n` +
-        `Счетов: ${cloudData.accounts.length}\\n\\n` +
+        `Счетов: ${cloudData.accounts.length}\\n` +
+        `Копилок: ${cloudData.goals?.length || 0}\\n` +
+        `Категорий: ${cloudData.categories?.length || 0}\\n\\n` +
         `ВНИМАНИЕ: Это добавит новые данные к существующим.`
       );
 
@@ -267,8 +285,10 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         data: {
           transactions: cloudData.transactions,
           accounts: cloudData.accounts,
+          goals: cloudData.goals || [],
           budgetSettings: cloudData.budgetSettings,
-          categories: cloudData.categories
+          categories: cloudData.categories,
+          limits: cloudData.limits || {}
         }
       };
 
@@ -875,6 +895,25 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         }}>
           Сохраняйте резервные копии данных и восстанавливайте их при необходимости
         </p>
+
+        {/* Индикатор синхронизации с облаком */}
+        {cloudStorage.isAvailable() && (
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            padding: '12px 16px',
+            borderRadius: 12,
+            marginBottom: 15,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'white'
+          }}>
+            <Cloud size={16} />
+            <span style={{ fontSize: 13, opacity: 0.9 }}>
+              {isSyncing ? 'Синхронизация...' : formatLastSync(lastSyncTime)}
+            </span>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
           <motion.button
