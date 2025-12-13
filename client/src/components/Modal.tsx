@@ -33,9 +33,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
         >
           <motion.div
             className="modal-content"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >

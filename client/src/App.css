@@ -409,29 +409,35 @@ html, body, #root {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-end; /* Align to right */
   z-index: 1000;
   padding: 0;
 }
 
 .modal-content {
-  background: white;
-  border-radius: 24px 24px 0 0;
-  width: 100%;
-  max-width: 500px;
-  max-height: calc(100vh - var(--tab-bar-height) - 20px);
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 85%;
+  max-width: 400px;
+  height: 100vh;
+  background: #ffffff;
+  border-radius: 30px 0 0 30px;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+  padding: 25px;
+  padding-bottom: 120px;
   overflow-y: auto;
-  padding: 20px;
-  padding-bottom: 100px;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .modal-title {
@@ -831,4 +837,295 @@ html, body, #root {
 
 .apply-btn:active {
   transform: scale(0.98);
+}
+/* --- ACCOUNTS VIEW --- */
+.accounts-container {
+  padding: 0 0;
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: 100px;
+}
+
+.accounts-header {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  color: white;
+  margin-bottom: 15px;
+  box-shadow: 0 10px 30px rgba(118, 75, 162, 0.2);
+}
+
+.accounts-header-title {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.accounts-header-balance {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.accounts-header-subtitle {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.accounts-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px;
+  background: #FFFFFF;
+  color: #9CA3AF;
+  border: 2px solid #F3F4F6;
+  border-radius: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+}
+
+.tab-button.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+}
+
+.content-section {
+  padding: 0 20px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #9CA3AF;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.account-card {
+  padding: 20px;
+  border-radius: 24px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.account-card:active {
+  transform: scale(0.98);
+}
+
+.account-card-content {
+  z-index: 1;
+}
+
+.account-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  opacity: 0.95;
+}
+
+.account-balance {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.goal-card {
+  background: white;
+  padding: 20px;
+  border-radius: 24px;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.goal-card:active {
+  transform: scale(0.98);
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.goal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2D3436;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goal-amount {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.progress-container {
+  width: 100%;
+  height: 10px;
+  background: #F3F4F6;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 5px;
+}
+
+.goal-percent {
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 8px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.action-button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+  transition: all 0.2s;
+}
+
+.action-button:active {
+  transform: scale(0.96);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.transfer-button {
+  width: 100%;
+  padding: 16px;
+  background: #4ECDC4;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(78, 205, 196, 0.25);
+  transition: all 0.2s;
+}
+
+.transfer-button:active {
+  transform: scale(0.96);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.2);
+}
+
+/* Context Menu */
+.context-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.1);
+  backdrop-filter: blur(2px);
+}
+
+.context-menu {
+  position: fixed;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  padding: 8px;
+  z-index: 1000;
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.context-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.context-menu-item:hover {
+  background: #F9FAFB;
+}
+
+.context-menu-item.delete {
+  color: #EF4444;
+}
+
+.context-menu-item.delete:hover {
+  background: #FEF2F2;
 }
