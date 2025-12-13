@@ -40,7 +40,7 @@ export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfi
         whileTap={{ scale: 0.95 }}
         onClick={onConfirm}
       >
-        Внести расход 💸
+        Внести💵
       </motion.button>
     </div>
   );

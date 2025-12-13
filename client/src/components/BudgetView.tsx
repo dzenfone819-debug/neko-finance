@@ -33,11 +33,11 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
         <div onClick={onClick} style={{ cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {icon && <div style={{ color: '#6B4C75' }}>{icon}</div>}
-              <span style={{ fontWeight: 'bold', color: '#2D3436' }}>{title}</span>
+              {icon && <div style={{ color: 'var(--text-main)' }}>{icon}</div>}
+              <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{title}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ color: isOver ? '#E74C3C' : '#6B4C75' }}>
+              <div style={{ color: isOver ? 'var(--accent-danger)' : 'var(--text-main)' }}>
                 <span style={{ fontWeight: 'bold' }}>{spent}</span> 
                 <span style={{ opacity: 0.6 }}> / {limit > 0 ? limit : '∞'}</span>
               </div>
@@ -49,8 +49,8 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
                     onDelete();
                   }}
                   style={{
-                    background: '#FFE5E5',
-                    border: 'none',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--accent-danger)',
                     borderRadius: '50%',
                     width: 24,
                     height: 24,
@@ -58,7 +58,7 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    color: '#FF6B6B',
+                    color: 'var(--accent-danger)',
                     padding: 0
                   }}
                 >
@@ -68,14 +68,14 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
             </div>
           </div>
 
-          <div style={{ width: '100%', height: 10, background: '#F0F0F0', borderRadius: 5, overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: 10, background: 'var(--bg-input)', borderRadius: 5, overflow: 'hidden' }}>
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${percentage}%` }}
               transition={{ duration: 0.5 }}
               style={{ 
                 height: '100%', 
-                background: isOver ? '#E74C3C' : color, 
+                background: isOver ? 'var(--accent-danger)' : color, 
                 borderRadius: 5 
               }}
             />
@@ -91,14 +91,14 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
     <div style={{ padding: '0 5px', paddingBottom: 80 }}>
       
       {/* 1. ОБЩИЙ БЮДЖЕТ */}
-      <div style={{ background: '#FFF0F5', padding: 15, borderRadius: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#6B4C75', fontSize: 16 }}>Общий бюджет</h3>
+      <div style={{ background: 'var(--bg-card)', padding: 15, borderRadius: 20, marginBottom: 20, boxShadow: '0 2px 8px var(--shadow-color)' }}>
+        <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-main)', fontSize: 16 }}>Общий бюджет</h3>
         {/* Клик открывает модалку общего бюджета */}
-        {renderBar('Всего', totalSpent, totalLimit, '#D291BC', onEditTotal)}
+        {renderBar('Всего', totalSpent, totalLimit, 'var(--primary)', onEditTotal)}
       </div>
 
       {/* 2. ПО КАТЕГОРИЯМ */}
-      <h3 style={{ margin: '0 0 15px 5px', color: '#6B4C75', fontSize: 16 }}>Лимиты по категориям</h3>
+      <h3 style={{ margin: '0 0 15px 5px', color: 'var(--text-main)', fontSize: 16 }}>Лимиты по категориям</h3>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {CATEGORIES.filter(cat => limits[cat.id] !== undefined && limits[cat.id] >= 0).map((cat) => {
@@ -150,7 +150,7 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
             width: '100%',
             marginTop: 10,
             padding: '12px',
-            background: '#667eea',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
             border: 'none',
             borderRadius: 12,
@@ -159,7 +159,8 @@ export const BudgetView: React.FC<Props> = ({ stats, limits, totalLimit, customC
             alignItems: 'center',
             justifyContent: 'center',
             gap: 8,
-            cursor: 'pointer'
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
           }}
         >
           <Plus size={20} /> Добавить лимит

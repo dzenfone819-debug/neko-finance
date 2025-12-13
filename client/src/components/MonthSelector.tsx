@@ -64,18 +64,18 @@ export const MonthSelector: React.FC<Props> = ({ currentDate, onChange }) => {
     }}>
       <button 
         onClick={() => changeMonth(-1)}
-        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
+        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: 'var(--text-main)', opacity: 0.5 }}
       >
         <ChevronLeft size={18} />
       </button>
 
-      <span style={{ fontSize: 13, fontWeight: '700', color: '#6B4C75', minWidth: 140, textAlign: 'center' }}>
+      <span style={{ fontSize: 13, fontWeight: '700', color: 'var(--text-main)', minWidth: 140, textAlign: 'center' }}>
         {getPeriodDisplay()}
       </span>
 
       <button 
         onClick={() => changeMonth(1)}
-        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#6B4C75', opacity: 0.5 }}
+        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: 'var(--text-main)', opacity: 0.5 }}
       >
         <ChevronRight size={18} />
       </button>
