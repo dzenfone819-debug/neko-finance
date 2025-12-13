@@ -33,6 +33,46 @@
   --modal-overlay: rgba(0, 0, 0, 0.7);
 }
 
+/* Starry Background Animation */
+@keyframes twinkle {
+  0% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.5; transform: scale(1); }
+}
+
+.dark-theme body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 10% 10%, white, transparent),
+    radial-gradient(1px 1px at 20% 30%, white, transparent),
+    radial-gradient(2px 2px at 30% 60%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 40% 15%, white, transparent),
+    radial-gradient(1px 1px at 50% 50%, white, transparent),
+    radial-gradient(2px 2px at 60% 80%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 70% 20%, white, transparent),
+    radial-gradient(1px 1px at 80% 40%, white, transparent),
+    radial-gradient(2px 2px at 90% 10%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 15% 85%, white, transparent),
+    radial-gradient(1px 1px at 55% 5%, white, transparent),
+    radial-gradient(1px 1px at 85% 65%, white, transparent);
+  background-size: 500px 500px;
+  opacity: 0.6;
+  z-index: -1;
+  animation: twinkle 5s infinite ease-in-out alternate;
+}
+
+/* Deep space gradient overlay */
+.dark-theme body {
+  background: radial-gradient(circle at bottom, #1B2735 0%, #090A0F 100%);
+  background-attachment: fixed;
+}
+
 html, body, #root {
   height: 100%;
   width: 100%;
@@ -58,9 +98,15 @@ html, body, #root {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--bg-color);
+  /* Allow background to show through in dark mode */
+  background-color: transparent;
   overflow: hidden;
   transition: background-color 0.3s ease;
+}
+
+/* Only apply solid background in light mode to cover default body */
+:root:not(.dark-theme) .app-container {
+  background-color: var(--bg-color);
 }
 
 /* --- HEADER --- */
@@ -73,6 +119,8 @@ html, body, #root {
   position: relative;
   flex-shrink: 0;
   padding: 8px 16px;
+  /* Ensure header is transparent to show stars */
+  background: transparent;
 }
 
 .neko-avatar {
