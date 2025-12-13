@@ -31,22 +31,22 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
-          <motion.div
+          <motion.aside
             className="modal-content"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2 className="modal-title">{title}</h2>
-              <button className="modal-close" onClick={onClose}>
+              <button className="modal-close" onClick={onClose} aria-label="Close modal">
                 ✖️
               </button>
             </div>
             {children}
-          </motion.div>
+          </motion.aside>
         </motion.div>
       )}
     </AnimatePresence>

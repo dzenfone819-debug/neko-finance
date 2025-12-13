@@ -218,10 +218,10 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   return (
     <div style={{ padding: '0 0', height: '100%', overflowY: 'auto', paddingBottom: 100 }}>
       {/* ОБЩИЙ БАЛАНС */}
-      <div style={{ padding: '15px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '20px 20px 0 0', color: 'white', marginBottom: 5 }}>
-        <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 5 }}>Общий баланс на счетах</div>
-        <div style={{ fontSize: 32, fontWeight: 'bold' }}>{totalBalance.toLocaleString()} ₽</div>
-        <div style={{ fontSize: 11, opacity: 0.7, marginTop: 5 }}>В копилках: {totalSavings.toLocaleString()} ₽</div>
+      <div className="accounts-header">
+        <div className="subtitle">Общий баланс на счетах</div>
+        <div className="total">{totalBalance.toLocaleString()} ₽</div>
+        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 6 }}>В копилках: {totalSavings.toLocaleString()} ₽</div>
       </div>
 
       {/* ТАБЫ */}
@@ -264,7 +264,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
 
       {/* СЧЕТА */}
       {activeTab === 'accounts' && (
-        <div style={{ padding: '15px' }}>
+        <div className="accounts-container">
           {accounts.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#999', padding: '30px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>💳</div>
@@ -282,18 +282,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                   onMouseDown={(e) => handleLongPressStart('account', acc.id, e)}
                   onMouseUp={handleLongPressEnd}
                   onMouseLeave={handleLongPressEnd}
-                  style={{
-                    background: acc.color,
-                    padding: '15px',
-                    borderRadius: '15px',
-                    color: 'white',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    cursor: 'pointer',
-                    userSelect: 'none'
-                  }}
+                  className="account-card"
+                  style={{ background: acc.color, cursor: 'pointer', userSelect: 'none' }}
                 >
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>{acc.name}</div>
@@ -308,21 +298,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowAccountForm(true)}
-            style={{
-              width: '100%',
-              marginTop: 20,
-              padding: '12px',
-              background: '#667eea',
-              color: 'white',
-              border: 'none',
-              borderRadius: 12,
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              cursor: 'pointer'
-            }}
+            className="add-button"
+            style={{ background: '#667eea', color: 'white', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             <Plus size={20} /> Добавить счет
           </motion.button>
@@ -396,15 +373,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     onMouseDown={(e) => handleLongPressStart('goal', goal.id, e)}
                     onMouseUp={handleLongPressEnd}
                     onMouseLeave={handleLongPressEnd}
-                    style={{
-                      background: 'white',
-                      padding: '15px',
-                      borderRadius: '15px',
-                      border: `2px solid ${goal.color}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      cursor: 'pointer',
-                      userSelect: 'none'
-                    }}
+                    className="goal-card"
+                    style={{ border: `2px solid ${goal.color}`, cursor: 'pointer', userSelect: 'none' }}
                   >
                     <div style={{ marginBottom: 10 }}>
                       <div style={{ fontSize: 14, fontWeight: 'bold', color: '#333' }}>{goal.icon} {goal.name}</div>
@@ -437,21 +407,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowGoalForm(true)}
-            style={{
-              width: '100%',
-              marginTop: 20,
-              padding: '12px',
-              background: '#667eea',
-              color: 'white',
-              border: 'none',
-              borderRadius: 12,
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              cursor: 'pointer'
-            }}
+            className="add-button"
+            style={{ background: '#667eea', color: 'white', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             <Plus size={20} /> Новая копилка
           </motion.button>
