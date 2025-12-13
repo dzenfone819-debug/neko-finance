@@ -45,14 +45,21 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
 
   // Получаем цвет ячейки на основе суммы расходов
   const getColor = (amount: number) => {
-    if (amount === 0) return '#F0F0F0';
+    if (amount === 0) return 'var(--bg-input)';
     const intensity = amount / maxExpense;
     
-    if (intensity < 0.2) return '#FFF0F5';
+    // For heatmap colors, we might want to keep the pink scale or adapt it slightly.
+    // Let's keep the pink scale but make the "empty" or "low" values work in dark mode.
+    // The previous implementation used light pinks which might look odd in dark mode.
+    // We'll use CSS variables or a function that respects theme if needed,
+    // but typically heatmaps use a distinct color scale.
+    // For "no expense", 'var(--bg-input)' is good (greyish/dark in dark mode).
+
+    if (intensity < 0.2) return '#FFF0F5'; // Very light pink
     if (intensity < 0.4) return '#FFD1E0';
     if (intensity < 0.6) return '#FFB3CC';
     if (intensity < 0.8) return '#FF94B8';
-    return '#E75480';
+    return '#E75480'; // Strong pink
   };
 
   // Получаем количество дней в месяце
@@ -120,14 +127,14 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
           whileTap={{ scale: 0.9 }}
           onClick={handlePrevMonth}
           style={{
-            background: 'white',
-            border: '2px solid #F0F0F0',
+            background: 'var(--bg-input)',
+            border: '2px solid var(--border-color)',
             borderRadius: 12,
             padding: 8,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            color: '#6B4C75',
+            color: 'var(--text-main)',
           }}
         >
           <ChevronLeft size={20} />
@@ -136,7 +143,7 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
         <div style={{
           fontSize: 16,
           fontWeight: 800,
-          color: '#6B4C75',
+          color: 'var(--text-main)',
         }}>
           {monthNames[viewMonth]} {viewYear}
         </div>
@@ -145,14 +152,14 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
           whileTap={{ scale: 0.9 }}
           onClick={handleNextMonth}
           style={{
-            background: 'white',
-            border: '2px solid #F0F0F0',
+            background: 'var(--bg-input)',
+            border: '2px solid var(--border-color)',
             borderRadius: 12,
             padding: 8,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            color: '#6B4C75',
+            color: 'var(--text-main)',
           }}
         >
           <ChevronRight size={20} />
@@ -173,7 +180,7 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
               textAlign: 'center',
               fontSize: 12,
               fontWeight: 700,
-              color: '#999',
+              color: 'var(--text-secondary)',
             }}
           >
             {day}
@@ -209,8 +216,8 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
                 justifyContent: 'center',
                 fontSize: 13,
                 fontWeight: 700,
-                color: expense > maxExpense * 0.5 ? 'white' : '#6B4C75',
-                boxShadow: expense > 0 ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                color: expense > maxExpense * 0.5 ? 'white' : 'var(--text-main)', // Use text-main for lighter cells
+                boxShadow: expense > 0 ? '0 2px 4px var(--shadow-color)' : 'none',
                 cursor: expense > 0 ? 'pointer' : 'default',
               }}
             >
@@ -229,14 +236,14 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
       <div style={{
         marginTop: 20,
         padding: 16,
-        background: 'white',
+        background: 'var(--bg-card)',
         borderRadius: 16,
-        border: '2px solid #F0F0F0',
+        border: '2px solid var(--border-color)',
       }}>
         <div style={{
           fontSize: 12,
           fontWeight: 700,
-          color: '#6B4C75',
+          color: 'var(--text-main)',
           marginBottom: 10,
         }}>
           🎨 Легенда:
@@ -248,7 +255,7 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
           flexWrap: 'wrap',
         }}>
           {[
-            { color: '#F0F0F0', label: 'Нет' },
+            { color: 'var(--bg-input)', label: 'Нет' },
             { color: '#FFF0F5', label: 'Мало' },
             { color: '#FFD1E0', label: 'Средне' },
             { color: '#FFB3CC', label: 'Выше' },
@@ -271,7 +278,7 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
                   borderRadius: 4,
                 }}
               />
-              <span style={{ fontSize: 11, color: '#999' }}>{item.label}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{item.label}</span>
             </div>
           ))}
         </div>
