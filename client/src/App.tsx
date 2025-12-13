@@ -841,15 +841,15 @@ function App() {
                   {/* Для расходов - фильтруем по лимитам, для доходов - показываем все */}
                   {transType === 'expense' 
                     ? currentCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
-                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none' }}>
-                          <div className="category-icon" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.icon}</div>
-                          <span className="category-label" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.name}</span>
+                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
+                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon}</div>
+                          <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
                         </motion.button>
                       ))
                     : currentCategories.map((cat) => (
-                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none' }}>
-                          <div className="category-icon" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.icon}</div>
-                          <span className="category-label" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.name}</span>
+                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
+                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon}</div>
+                          <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
                         </motion.button>
                       ))
                   }
@@ -862,11 +862,12 @@ function App() {
                       className="category-btn" 
                       style={{ 
                         background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)',
-                        boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none'
+                        boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none',
+                        filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none'
                       }}
                     >
-                      <div className="category-icon" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{getIconByName(cat.icon, 20)}</div>
-                      <span className="category-label" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.name}</span>
+                      <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{getIconByName(cat.icon, 20)}</div>
+                      <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
                     </motion.button>
                   ))}
                 </div>

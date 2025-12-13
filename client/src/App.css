@@ -14,6 +14,9 @@
   --accent-danger: #FFADAD;
   --tab-bar-height: 65px;
   --modal-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Filter for categories in light theme: none (use original colors) */
+  --category-filter: none;
 }
 
 .dark-theme {
@@ -31,6 +34,12 @@
   --accent-success: #34D399;
   --accent-danger: #F87171;
   --modal-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Filter for categories in dark theme: darken and saturate slightly to fit dark mode but keep hue */
+  /* Using brightness to dim it so white text pops, and maybe rotate hue slightly or desaturate if needed. */
+  /* Actually, user wants "similar shade" but good for dark theme.
+     Dimming the brightness of the pastel colors should make them look richer and provide contrast for white text. */
+  --category-filter: brightness(0.6) saturate(1.2);
 }
 
 /* Starry Background Animation */
@@ -105,7 +114,7 @@ html, body, #root {
 }
 
 /* Only apply solid background in light mode to cover default body */
-:root:not(.dark-theme) .app-container {
+body:not(.dark-theme) .app-container {
   background-color: var(--bg-color);
 }
 
