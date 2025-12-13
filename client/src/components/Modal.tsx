@@ -33,10 +33,10 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
         >
           <motion.aside
             className="modal-content"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">

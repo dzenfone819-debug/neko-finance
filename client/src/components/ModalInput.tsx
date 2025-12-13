@@ -37,7 +37,7 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
             onClick={onClose}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+              background: 'var(--modal-overlay)', zIndex: 1000,
               backdropFilter: 'blur(3px)'
             }}
           />
@@ -49,16 +49,16 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             style={{
               position: 'fixed', top: '35%', left: '10%', right: '10%',
-              background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
+              background: 'var(--bg-card)',
               padding: 30, borderRadius: 24,
-              zIndex: 1001, boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
+              zIndex: 1001, boxShadow: '0 20px 60px var(--shadow-color)',
               display: 'flex', flexDirection: 'column', gap: 20,
-              border: '2px solid rgba(254, 200, 216, 0.3)'
+              border: '2px solid var(--border-color)'
             }}
           >
             <h3 style={{ 
               margin: 0, 
-              background: 'linear-gradient(135deg, #D291BC 0%, #FEC8D8 100%)',
+              background: 'linear-gradient(135deg, var(--primary) 0%, #FEC8D8 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               textAlign: 'center',
@@ -77,19 +77,19 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
                   fontSize: 32, 
                   padding: '16px 20px', 
                   borderRadius: 16,
-                  border: '2px solid #FEC8D8', 
+                  border: '2px solid var(--border-color)',
                   outline: 'none',
                   textAlign: 'center', 
-                  color: '#6B4C75', 
+                  color: 'var(--text-main)',
                   fontWeight: 'bold',
                   width: '100%',
                   boxSizing: 'border-box',
-                  background: 'rgba(254, 200, 216, 0.1)',
+                  background: 'var(--bg-input)',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(254, 200, 216, 0.2)'
+                  boxShadow: '0 4px 12px var(--shadow-color)'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#D291BC'}
-                onBlur={(e) => e.target.style.borderColor = '#FEC8D8'}
+                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
               />
               <span style={{
                 position: 'absolute',
@@ -97,7 +97,7 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
                 top: '50%',
                 transform: 'translateY(-50%)',
                 fontSize: 24,
-                color: '#D291BC',
+                color: 'var(--primary)',
                 fontWeight: 'bold',
                 pointerEvents: 'none'
               }}>₽</span>
@@ -111,16 +111,16 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
                   flex: 1, 
                   padding: 14, 
                   borderRadius: 14, 
-                  border: '2px solid #E8E8E8',
-                  background: 'white', 
-                  color: '#6B4C75', 
+                  border: '2px solid var(--border-color)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-main)',
                   fontWeight: 'bold',
                   fontSize: 16,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#F8F8F8'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-card)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-input)'}
               >
                 Отмена
               </motion.button>
@@ -132,12 +132,12 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
                   padding: 14, 
                   borderRadius: 14, 
                   border: 'none',
-                  background: 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)', 
+                  background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
                   color: 'white', 
                   fontWeight: 'bold',
                   fontSize: 16,
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(210, 145, 188, 0.4)',
+                  boxShadow: '0 4px 12px var(--shadow-color)',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}

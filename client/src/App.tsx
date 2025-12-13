@@ -34,6 +34,26 @@ function App() {
   const [selectedAccount, setSelectedAccount] = useState<{type: 'account' | 'goal', id: number} | null>(null)
   const [amount, setAmount] = useState('')
   
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return localStorage.getItem('app-theme') as 'light' | 'dark' || 'light';
+  });
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('app-theme', newTheme);
+    WebApp.HapticFeedback.selectionChanged();
+  };
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }, [theme]);
+
   // Текущая дата для фильтрации
   const [currentDate, setCurrentDate] = useState(new Date())
   // Дата для транзакции (по умолчанию сегодня)
@@ -522,7 +542,7 @@ function App() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'var(--modal-overlay)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -536,14 +556,14 @@ function App() {
             animate={{ scale: 1, opacity: 1 }}
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: 'linear-gradient(135deg, #FFF 0%, #FFF5F8 100%)',
+              background: 'var(--bg-card)',
               borderRadius: 24,
               padding: 30,
               maxWidth: 320,
               width: '100%',
               margin: '0 auto',
-              boxShadow: '0 20px 60px rgba(107, 76, 117, 0.3)',
-              border: '2px solid rgba(254, 200, 216, 0.3)',
+              boxShadow: '0 20px 60px var(--shadow-color)',
+              border: '2px solid var(--border-color)',
               boxSizing: 'border-box',
               overflow: 'hidden'
             }}
@@ -551,7 +571,7 @@ function App() {
             <div style={{ 
               fontSize: 20, 
               fontWeight: 'bold', 
-              background: 'linear-gradient(135deg, #D291BC 0%, #FEC8D8 100%)',
+              background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               marginBottom: 20, 
@@ -572,12 +592,12 @@ function App() {
                   padding: '16px 12px',
                   fontSize: 16,
                   borderRadius: 16,
-                  border: '2px solid #FEC8D8',
+                  border: '2px solid var(--border-color)',
                   fontFamily: 'inherit',
-                  color: '#6B4C75',
+                  color: 'var(--text-main)',
                   fontWeight: '600',
-                  background: 'rgba(254, 200, 216, 0.1)',
-                  boxShadow: '0 4px 12px rgba(254, 200, 216, 0.2)',
+                  background: 'var(--bg-input)',
+                  boxShadow: '0 4px 12px var(--shadow-color)',
                   outline: 'none',
                   transition: 'all 0.3s ease',
                   boxSizing: 'border-box',
@@ -591,14 +611,14 @@ function App() {
               style={{
                 width: '100%',
                 padding: 14,
-                background: 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)',
+                background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
                 border: 'none',
                 borderRadius: 14,
                 color: '#fff',
                 fontSize: 16,
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(210, 145, 188, 0.4)',
+                boxShadow: '0 4px 12px var(--shadow-color)',
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
@@ -627,7 +647,7 @@ function App() {
           <div style={{ marginLeft: 0 }}>
             <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
           </div>
-          <div style={{ fontSize: 11, fontWeight: 'bold', color: '#6B4C75', opacity: 0.8, marginRight: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 'bold', color: 'var(--text-main)', opacity: 0.8, marginRight: 0 }}>
             PURRFINANCE
           </div>
         </div>
@@ -665,7 +685,7 @@ function App() {
                 gap: 15,
                 fontSize: 12, 
                 fontWeight: 'normal', 
-                color: '#6B4C75', 
+                color: 'var(--text-main)',
                 opacity: 0.7
               }}>
                 <div>Доступно: {displayBalance.toLocaleString()} ₽</div>
@@ -677,14 +697,14 @@ function App() {
             {activeTab === 'input' ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: 0 }}>
                 <motion.div className="amount-display" style={{ margin: 0 }}>
-                  <span style={{color: transType === 'income' ? '#27AE60' : '#6B4C75'}}>{amount || '0'}</span> 
+                  <span style={{color: transType === 'income' ? 'var(--accent-success)' : 'var(--text-main)'}}>{amount || '0'}</span>
                   <span className="currency">₽</span>
                 </motion.div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setShowDatePicker(true); }}
                   style={{
-                    background: 'linear-gradient(135deg, #FEC8D8 0%, #D291BC 100%)',
+                    background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
                     border: 'none',
                     borderRadius: 8,
                     padding: '4px 10px',
@@ -704,7 +724,7 @@ function App() {
                 </motion.button>
               </div>
             ) : (
-              <div style={{fontSize: 22, color: '#6B4C75', fontWeight: 'bold'}}>
+              <div style={{fontSize: 22, color: 'var(--text-main)', fontWeight: 'bold'}}>
                 {activeTab === 'stats' ? 'Статистика' : activeTab === 'accounts' ? 'Счета и Копилки' : 'Бюджет'}
               </div>
             )}
@@ -719,30 +739,32 @@ function App() {
         }}>
           <div style={{ 
             flex: 1,
-            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: 12,
             padding: '5px 35px',
-            textAlign: 'center'
+            textAlign: 'center',
+            boxShadow: '0 2px 8px var(--shadow-color)'
           }}>
-            <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 3 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.7, marginBottom: 3 }}>
               РАСХОД
             </div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text-main)' }}>
               {totalSpent.toLocaleString()}
             </div>
           </div>
 
           <div style={{ 
             flex: 1,
-            backgroundColor: 'rgba(200, 255, 200, 0.3)',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: 12,
             padding: '5px 35px',
-            textAlign: 'center'
+            textAlign: 'center',
+            boxShadow: '0 2px 8px var(--shadow-color)'
           }}>
-            <div style={{ fontSize: 10, color: '#6B4C75', opacity: 0.7, marginBottom: 3 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.7, marginBottom: 3 }}>
               ДОХОД
             </div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#6B4C75' }}>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text-main)' }}>
               {totalIncome.toLocaleString()}
             </div>
           </div>
@@ -819,15 +841,15 @@ function App() {
                   {/* Для расходов - фильтруем по лимитам, для доходов - показываем все */}
                   {transType === 'expense' 
                     ? currentCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
-                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
-                          <div className="category-icon">{cat.icon}</div>
-                          <span className="category-label">{cat.name}</span>
+                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none' }}>
+                          <div className="category-icon" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.icon}</div>
+                          <span className="category-label" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.name}</span>
                         </motion.button>
                       ))
                     : currentCategories.map((cat) => (
-                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : '#F8F9FA', boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
-                          <div className="category-icon">{cat.icon}</div>
-                          <span className="category-label">{cat.name}</span>
+                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none' }}>
+                          <div className="category-icon" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.icon}</div>
+                          <span className="category-label" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.name}</span>
                         </motion.button>
                       ))
                   }
@@ -839,12 +861,12 @@ function App() {
                       onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} 
                       className="category-btn" 
                       style={{ 
-                        background: selectedCategory === cat.id ? cat.color : '#F8F9FA', 
-                        boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' 
+                        background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)',
+                        boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none'
                       }}
                     >
-                      <div className="category-icon">{getIconByName(cat.icon, 20)}</div>
-                      <span className="category-label">{cat.name}</span>
+                      <div className="category-icon" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{getIconByName(cat.icon, 20)}</div>
+                      <span className="category-label" style={{color: selectedCategory === cat.id ? '#FFF' : 'var(--text-main)'}}>{cat.name}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -868,7 +890,7 @@ function App() {
               periodStartDay={periodStartDay}
               currentMonth={currentDate}
             />
-            <div style={{ height: 1, background: '#F0F0F0', margin: '20px 0' }} />
+            <div style={{ height: 1, background: 'var(--border-color)', margin: '20px 0' }} />
             <TransactionList 
               transactions={filteredTransactions} 
               onDelete={handleDeleteTransaction}
@@ -920,6 +942,8 @@ function App() {
             onRefresh={() => userId && loadData(userId, currentDate)}
             lastSyncTime={lastSyncTime}
             isSyncing={isSyncing}
+            theme={theme}
+            toggleTheme={toggleTheme}
           />
         )}
       </div>
@@ -945,8 +969,8 @@ function App() {
                 style={{
                   flex: 1,
                   padding: '10px',
-                  background: !isCustomCategory ? '#667eea' : '#F0F0F0',
-                  color: !isCustomCategory ? 'white' : '#333',
+                  background: !isCustomCategory ? '#667eea' : 'var(--bg-input)',
+                  color: !isCustomCategory ? 'white' : 'var(--text-main)',
                   border: 'none',
                   borderRadius: 8,
                   fontWeight: 'bold',
@@ -961,8 +985,8 @@ function App() {
                 style={{
                   flex: 1,
                   padding: '10px',
-                  background: isCustomCategory ? '#667eea' : '#F0F0F0',
-                  color: isCustomCategory ? 'white' : '#333',
+                  background: isCustomCategory ? '#667eea' : 'var(--bg-input)',
+                  color: isCustomCategory ? 'white' : 'var(--text-main)',
                   border: 'none',
                   borderRadius: 8,
                   fontWeight: 'bold',
@@ -985,15 +1009,15 @@ function App() {
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setSelectedStandardCategory(cat.id)}
                     style={{
-                      background: selectedStandardCategory === cat.id ? cat.color : '#F0F0F0',
-                      border: selectedStandardCategory === cat.id ? '2px solid #667eea' : '2px solid #E0E0E0',
+                      background: selectedStandardCategory === cat.id ? cat.color : 'var(--bg-input)',
+                      border: selectedStandardCategory === cat.id ? '2px solid #667eea' : '2px solid var(--border-color)',
                       borderRadius: 8,
                       padding: '8px 12px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
                       cursor: 'pointer',
-                      color: selectedStandardCategory === cat.id ? 'white' : '#333',
+                      color: selectedStandardCategory === cat.id ? 'white' : 'var(--text-main)',
                       fontWeight: selectedStandardCategory === cat.id ? 'bold' : 'normal'
                     }}
                   >
@@ -1040,7 +1064,7 @@ function App() {
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setNewCategoryIcon(item.icon)}
                       style={{
-                        background: newCategoryIcon === item.icon ? '#667eea' : '#F0F0F0',
+                        background: newCategoryIcon === item.icon ? '#667eea' : 'var(--bg-input)',
                         border: 'none',
                         borderRadius: 8,
                         width: 48,
@@ -1049,7 +1073,7 @@ function App() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: newCategoryIcon === item.icon ? 'white' : '#333'
+                        color: newCategoryIcon === item.icon ? 'white' : 'var(--text-main)'
                       }}
                     >
                       {item.component}
@@ -1069,7 +1093,7 @@ function App() {
                       className="color-option"
                       style={{
                         background: col,
-                        border: newCategoryColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                        border: newCategoryColor === col ? '3px solid #667eea' : '2px solid var(--border-color)',
                       }}
                     />
                   ))}
@@ -1102,7 +1126,7 @@ function App() {
           <h2 style={{
             textAlign: 'center',
             marginBottom: 20,
-            background: 'linear-gradient(135deg, #D291BC 0%, #FEC8D8 100%)',
+            background: 'linear-gradient(135deg, var(--primary) 0%, #FEC8D8 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             fontSize: 22

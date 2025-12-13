@@ -225,14 +225,14 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       </div>
 
       {/* ТАБЫ */}
-      <div style={{ display: 'flex', gap: 10, padding: '10px 15px', background: '#F5F5F5', borderBottom: '1px solid #E0E0E0' }}>
+      <div style={{ display: 'flex', gap: 10, padding: '10px 15px', background: 'var(--bg-input)', borderBottom: '1px solid var(--border-color)' }}>
         <button
           onClick={() => setActiveTab('accounts')}
           style={{
             flex: 1,
             padding: '10px',
-            background: activeTab === 'accounts' ? '#667eea' : '#FFF',
-            color: activeTab === 'accounts' ? 'white' : '#666',
+            background: activeTab === 'accounts' ? 'linear-gradient(135deg, var(--primary) 0%, #764ba2 100%)' : 'var(--bg-card)',
+            color: activeTab === 'accounts' ? 'white' : 'var(--text-secondary)',
             border: 'none',
             borderRadius: 10,
             fontWeight: 'bold',
@@ -247,8 +247,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           style={{
             flex: 1,
             padding: '10px',
-            background: activeTab === 'goals' ? '#667eea' : '#FFF',
-            color: activeTab === 'goals' ? 'white' : '#666',
+            background: activeTab === 'goals' ? 'linear-gradient(135deg, var(--primary) 0%, #764ba2 100%)' : 'var(--bg-card)',
+            color: activeTab === 'goals' ? 'white' : 'var(--text-secondary)',
             border: 'none',
             borderRadius: 10,
             fontWeight: 'bold',
@@ -266,7 +266,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       {activeTab === 'accounts' && (
         <div className="accounts-container">
           {accounts.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#999', padding: '30px 0' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '30px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>💳</div>
               <div>Нет счетов. Создай свой первый счет!</div>
             </div>
@@ -299,7 +299,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowAccountForm(true)}
             className="add-button"
-            style={{ background: '#667eea', color: 'white', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #764ba2 100%)', color: 'white', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             <Plus size={20} /> Добавить счет
           </motion.button>
@@ -336,7 +336,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 className="color-option"
                 style={{
                   background: col,
-                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
                 }}
               />
             ))}
@@ -355,7 +355,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       {activeTab === 'goals' && (
         <div style={{ padding: '15px' }}>
           {goals.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#999', padding: '30px 0' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '30px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>🐷</div>
               <div>Нет копилок. Создай свою первую цель!</div>
             </div>
@@ -374,15 +374,15 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     onMouseUp={handleLongPressEnd}
                     onMouseLeave={handleLongPressEnd}
                     className="goal-card"
-                    style={{ border: `2px solid ${goal.color}`, cursor: 'pointer', userSelect: 'none' }}
+                    style={{ border: `2px solid ${goal.color}`, cursor: 'pointer', userSelect: 'none', background: 'var(--bg-card)' }}
                   >
                     <div style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 14, fontWeight: 'bold', color: '#333' }}>{goal.icon} {goal.name}</div>
-                      <div style={{ fontSize: 11, color: '#999', marginTop: 5 }}>
+                      <div style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--text-main)' }}>{goal.icon} {goal.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5 }}>
                         {goal.current_amount.toLocaleString()} / {goal.target_amount.toLocaleString()} ₽
                       </div>
                     </div>
-                    <div style={{ width: '100%', height: 8, background: '#F0F0F0', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: 8, background: 'var(--bg-input)', borderRadius: 4, overflow: 'hidden' }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
@@ -394,7 +394,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                         }}
                       />
                     </div>
-                    <div style={{ fontSize: 11, color: '#666', marginTop: 8, textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 8, textAlign: 'right' }}>
                       {progress.toFixed(1)}%
                     </div>
                   </motion.div>
@@ -408,7 +408,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowGoalForm(true)}
             className="add-button"
-            style={{ background: '#667eea', color: 'white', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #764ba2 100%)', color: 'white', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             <Plus size={20} /> Новая копилка
           </motion.button>
@@ -444,9 +444,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     width: 40,
                     height: 40,
                     fontSize: 20,
-                    border: selectedIcon === icon ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    border: selectedIcon === icon ? '3px solid var(--primary)' : '2px solid var(--border-color)',
                     borderRadius: 8,
-                    background: 'white',
+                    background: 'var(--bg-input)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -467,7 +467,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 className="color-option"
                 style={{
                   background: col,
-                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
                 }}
               />
             ))}
@@ -597,7 +597,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
               position: 'fixed',
               top: contextMenu.y,
               left: contextMenu.x,
-              background: 'white',
+              background: 'var(--bg-card)',
               borderRadius: 12,
               boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
               padding: 8,
@@ -627,7 +627,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 alignItems: 'center',
                 gap: 10,
                 fontSize: 14,
-                color: '#333',
+                color: 'var(--text-main)',
                 textAlign: 'left'
               }}
             >
@@ -653,7 +653,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 alignItems: 'center',
                 gap: 10,
                 fontSize: 14,
-                color: '#FF6B6B',
+                color: 'var(--accent-danger)',
                 textAlign: 'left'
               }}
             >
@@ -689,7 +689,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 className="color-option"
                 style={{
                   background: col,
-                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
                 }}
               />
             ))}
@@ -740,9 +740,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     width: 40,
                     height: 40,
                     fontSize: 20,
-                    border: selectedIcon === icon ? '3px solid #667eea' : '2px solid #E0E0E0',
+                    border: selectedIcon === icon ? '3px solid var(--primary)' : '2px solid var(--border-color)',
                     borderRadius: 8,
-                    background: 'white',
+                    background: 'var(--bg-input)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -763,7 +763,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 className="color-option"
                 style={{
                   background: col,
-                  border: selectedColor === col ? '3px solid #667eea' : '2px solid #E0E0E0',
+                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
                 }}
               />
             ))}
