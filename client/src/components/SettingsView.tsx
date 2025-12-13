@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2, Download, Upload, Cloud } from 'lucide-react';
+import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2, Download, Upload, Cloud, Moon, Sun } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { exportBackup, importBackup, performFullRestore } from '../utils/backupRestore';
@@ -28,9 +28,11 @@ interface Props {
   onRefresh?: () => void;
   lastSyncTime?: number;
   isSyncing?: boolean;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
-export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId, accounts = [], onRefresh, lastSyncTime = 0, isSyncing = false }) => {
+export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId, accounts = [], onRefresh, lastSyncTime = 0, isSyncing = false, theme, toggleTheme }) => {
   const [localPeriodType, setLocalPeriodType] = useState(periodType);
   const [localStartDay, setLocalStartDay] = useState(periodStartDay);
   const [isSaving, setIsSaving] = useState(false);
@@ -348,26 +350,69 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
   return (
     <div style={{ padding: '20px 15px', paddingBottom: 100 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 25 }}>
-        <Settings size={24} color="#6B4C75" />
-        <h2 style={{ margin: 0, color: '#6B4C75', fontSize: 20 }}>Настройки бюджета</h2>
+        <Settings size={24} color="var(--text-main)" />
+        <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: 20 }}>Настройки бюджета</h2>
+      </div>
+
+      {/* Переключатель темы */}
+      <div style={{
+        background: 'var(--bg-card)',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 20,
+        boxShadow: '0 2px 8px var(--shadow-color)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {theme === 'dark' ? <Moon size={20} color="var(--primary)" /> : <Sun size={20} color="var(--primary)" />}
+            <h3 style={{ margin: 0, fontSize: 16, color: 'var(--text-main)' }}>Тема приложения</h3>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleTheme}
+            style={{
+              background: 'var(--bg-input)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 12,
+              padding: '8px 12px',
+              cursor: 'pointer',
+              color: 'var(--text-main)',
+              fontSize: 13,
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            {theme === 'light' ? 'Светлая' : 'Темная (Cosmic)'}
+          </motion.button>
+        </div>
+        <p style={{
+          fontSize: 13,
+          color: 'var(--text-secondary)',
+          margin: 0,
+          lineHeight: 1.5
+        }}>
+          Переключитесь на темную тему для комфортной работы ночью
+        </p>
       </div>
 
       {/* Тип периода */}
       <div style={{ 
-        background: '#FFF', 
+        background: 'var(--bg-card)',
         borderRadius: 20, 
         padding: 20, 
         marginBottom: 20,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        boxShadow: '0 2px 8px var(--shadow-color)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 15 }}>
-          <Calendar size={20} color="#6B4C75" />
-          <h3 style={{ margin: 0, fontSize: 16, color: '#2D3436' }}>Бюджетный период</h3>
+          <Calendar size={20} color="var(--text-main)" />
+          <h3 style={{ margin: 0, fontSize: 16, color: 'var(--text-main)' }}>Бюджетный период</h3>
         </div>
 
         <p style={{ 
           fontSize: 13, 
-          color: '#666', 
+          color: 'var(--text-secondary)',
           marginBottom: 15,
           lineHeight: 1.5
         }}>
@@ -379,8 +424,8 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           whileTap={{ scale: 0.98 }}
           onClick={() => handlePeriodTypeChange('calendar_month')}
           style={{
-            background: localPeriodType === 'calendar_month' ? '#F0E6F6' : '#F8F9FA',
-            border: `2px solid ${localPeriodType === 'calendar_month' ? '#D291BC' : '#E0E0E0'}`,
+            background: localPeriodType === 'calendar_month' ? (theme === 'dark' ? '#2A1A35' : '#F0E6F6') : 'var(--bg-input)',
+            border: `2px solid ${localPeriodType === 'calendar_month' ? 'var(--primary)' : 'var(--border-color)'}`,
             borderRadius: 15,
             padding: 15,
             marginBottom: 12,
@@ -390,10 +435,10 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: 14, color: '#2D3436', marginBottom: 4 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 14, color: 'var(--text-main)', marginBottom: 4 }}>
                 Календарный месяц
               </div>
-              <div style={{ fontSize: 12, color: '#666' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                 С 1-го по последнее число месяца
               </div>
             </div>
@@ -401,8 +446,8 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
               width: 20,
               height: 20,
               borderRadius: '50%',
-              border: `2px solid ${localPeriodType === 'calendar_month' ? '#D291BC' : '#CCC'}`,
-              background: localPeriodType === 'calendar_month' ? '#D291BC' : 'transparent',
+              border: `2px solid ${localPeriodType === 'calendar_month' ? 'var(--primary)' : '#CCC'}`,
+              background: localPeriodType === 'calendar_month' ? 'var(--primary)' : 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -419,8 +464,8 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           whileTap={{ scale: 0.98 }}
           onClick={() => handlePeriodTypeChange('custom_period')}
           style={{
-            background: localPeriodType === 'custom_period' ? '#F0E6F6' : '#F8F9FA',
-            border: `2px solid ${localPeriodType === 'custom_period' ? '#D291BC' : '#E0E0E0'}`,
+            background: localPeriodType === 'custom_period' ? (theme === 'dark' ? '#2A1A35' : '#F0E6F6') : 'var(--bg-input)',
+            border: `2px solid ${localPeriodType === 'custom_period' ? 'var(--primary)' : 'var(--border-color)'}`,
             borderRadius: 15,
             padding: 15,
             cursor: 'pointer',
@@ -429,10 +474,10 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: 14, color: '#2D3436', marginBottom: 4 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 14, color: 'var(--text-main)', marginBottom: 4 }}>
                 Свой бюджетный период
               </div>
-              <div style={{ fontSize: 12, color: '#666' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                 Например, с 10-го по 9-е число
               </div>
             </div>
@@ -440,8 +485,8 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
               width: 20,
               height: 20,
               borderRadius: '50%',
-              border: `2px solid ${localPeriodType === 'custom_period' ? '#D291BC' : '#CCC'}`,
-              background: localPeriodType === 'custom_period' ? '#D291BC' : 'transparent',
+              border: `2px solid ${localPeriodType === 'custom_period' ? 'var(--primary)' : '#CCC'}`,
+              background: localPeriodType === 'custom_period' ? 'var(--primary)' : 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -460,17 +505,17 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            background: '#FFF',
+            background: 'var(--bg-card)',
             borderRadius: 20,
             padding: 20,
             marginBottom: 20,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            boxShadow: '0 2px 8px var(--shadow-color)'
           }}
         >
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 16, color: '#2D3436' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: 16, color: 'var(--text-main)' }}>
             День начала периода
           </h3>
-          <p style={{ fontSize: 13, color: '#666', marginBottom: 15, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 15, lineHeight: 1.5 }}>
             Выберите день, с которого начинается ваш бюджетный период (от 1 до 28)
           </p>
 
@@ -485,8 +530,8 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleDayChange(day)}
                 style={{
-                  background: localStartDay === day ? '#D291BC' : '#F8F9FA',
-                  color: localStartDay === day ? '#FFF' : '#2D3436',
+                  background: localStartDay === day ? 'var(--primary)' : 'var(--bg-input)',
+                  color: localStartDay === day ? '#FFF' : 'var(--text-main)',
                   border: 'none',
                   borderRadius: 10,
                   padding: '12px 8px',
@@ -504,10 +549,10 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           <div style={{
             marginTop: 15,
             padding: 12,
-            background: '#FFF9E6',
+            background: theme === 'dark' ? 'rgba(255, 193, 7, 0.1)' : '#FFF9E6',
             borderRadius: 10,
             fontSize: 12,
-            color: '#8B7500',
+            color: theme === 'dark' ? '#FFD54F' : '#8B7500',
             lineHeight: 1.5
           }}>
             💡 Период будет с <strong>{localStartDay}-го</strong> числа текущего месяца по <strong>{localStartDay - 1}-е</strong> число следующего
@@ -525,7 +570,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           disabled={isSaving}
           style={{
             width: '100%',
-            background: 'linear-gradient(135deg, #D291BC 0%, #957DAD 100%)',
+            background: 'linear-gradient(135deg, var(--primary) 0%, #957DAD 100%)',
             color: '#FFF',
             border: 'none',
             borderRadius: 20,
@@ -545,10 +590,10 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       <div style={{
         marginTop: 20,
         padding: 15,
-        background: '#F0F9FF',
+        background: theme === 'dark' ? 'rgba(3, 105, 161, 0.2)' : '#F0F9FF',
         borderRadius: 15,
         fontSize: 12,
-        color: '#0369A1',
+        color: theme === 'dark' ? '#7DD3FC' : '#0369A1',
         lineHeight: 1.6
       }}>
         <div style={{ fontWeight: 'bold', marginBottom: 8 }}>ℹ️ Как это работает?</div>
@@ -591,7 +636,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       {/* Разделитель */}
       <div style={{
         height: 2,
-        background: '#E0E0E0',
+        background: 'var(--border-color)',
         margin: '40px 0 30px 0',
         borderRadius: 2
       }} />
@@ -599,13 +644,13 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       {/* Связанные аккаунты */}
       <div style={{ marginBottom: 30 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
-          <Link2 size={24} color="#6B4C75" />
-          <h2 style={{ margin: 0, color: '#6B4C75', fontSize: 20 }}>Связанные аккаунты</h2>
+          <Link2 size={24} color="var(--text-main)" />
+          <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: 20 }}>Связанные аккаунты</h2>
         </div>
 
         <p style={{ 
           fontSize: 13, 
-          color: '#666', 
+          color: 'var(--text-secondary)',
           marginBottom: 15,
           lineHeight: 1.5
         }}>
@@ -627,7 +672,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
           }}
         >
           <Info size={20} color="#667eea" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{ fontSize: 13, color: '#6B4C75', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-main)', lineHeight: 1.6 }}>
             <strong>Текущий ID:</strong> {userId}<br/>
             {linkedAccounts.some(acc => acc.telegram_id === userId) && (
               <>
@@ -647,7 +692,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
             <div style={{
               fontSize: 14,
               fontWeight: 'bold',
-              color: '#6B4C75',
+              color: 'var(--text-main)',
               marginBottom: 12,
               display: 'flex',
               alignItems: 'center',
@@ -663,21 +708,21 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 style={{
-                  background: 'white',
+                  background: 'var(--bg-card)',
                   borderRadius: 12,
                   padding: '14px 16px',
                   marginBottom: 10,
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                  boxShadow: '0 2px 8px var(--shadow-color)'
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 'bold', color: '#6B4C75', fontSize: 15 }}>
+                  <div style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 15 }}>
                     ID: {acc.telegram_id}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6B4C75', opacity: 0.6, marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-main)', opacity: 0.6, marginTop: 2 }}>
                     {acc.telegram_id === primaryUserId ? 'Главный аккаунт' : `→ Привязан к ${acc.primary_user_id}`}
                   </div>
                 </div>
@@ -732,17 +777,17 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
-              background: 'white',
+              background: 'var(--bg-card)',
               borderRadius: 16,
               padding: '20px',
               marginBottom: 20,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
+              boxShadow: '0 4px 16px var(--shadow-color)'
             }}
           >
             <div style={{
               fontSize: 16,
               fontWeight: 'bold',
-              color: '#6B4C75',
+              color: 'var(--text-main)',
               marginBottom: 12
             }}>
               Введите ID главного аккаунта
@@ -756,21 +801,23 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
               style={{
                 width: '100%',
                 padding: '14px',
-                border: '2px solid #E0E0E0',
+                border: '2px solid var(--border-color)',
                 borderRadius: 12,
                 fontSize: 15,
                 marginBottom: 15,
                 boxSizing: 'border-box',
                 outline: 'none',
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                background: 'var(--bg-input)',
+                color: 'var(--text-main)'
               }}
               onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#E0E0E0'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
             />
 
             <div style={{
               fontSize: 12,
-              color: '#6B4C75',
+              color: 'var(--text-main)',
               opacity: 0.7,
               marginBottom: 15,
               lineHeight: 1.5
@@ -839,7 +886,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
             onClick={handleUnlinkAccount}
             style={{
               width: '100%',
-              background: 'white',
+              background: 'var(--bg-card)',
               color: '#E74C3C',
               border: '2px solid #E74C3C',
               borderRadius: 14,
@@ -870,7 +917,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
               padding: '14px',
               marginTop: 15,
               fontSize: 13,
-              color: '#6B4C75',
+              color: 'var(--text-main)',
               lineHeight: 1.6
             }}
           >
@@ -883,13 +930,13 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       {/* Бэкап и восстановление */}
       <div style={{ marginTop: 30 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
-          <Download size={24} color="#6B4C75" />
-          <h2 style={{ margin: 0, color: '#6B4C75', fontSize: 20 }}>Бэкап и восстановление</h2>
+          <Download size={24} color="var(--text-main)" />
+          <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: 20 }}>Бэкап и восстановление</h2>
         </div>
 
         <p style={{ 
           fontSize: 13, 
-          color: '#666', 
+          color: 'var(--text-secondary)',
           marginBottom: 15,
           lineHeight: 1.5
         }}>
@@ -997,10 +1044,10 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         <div style={{
           marginTop: 12,
           padding: 12,
-          background: '#F0F9FF',
+          background: theme === 'dark' ? 'rgba(3, 105, 161, 0.2)' : '#F0F9FF',
           borderRadius: 12,
           fontSize: 12,
-          color: '#0369A1',
+          color: theme === 'dark' ? '#7DD3FC' : '#0369A1',
           lineHeight: 1.5
         }}>
           <strong>ℹ️ Важно:</strong> Импорт добавляет данные к существующим, не удаляя их. Для полной очистки используйте сброс всех данных ниже.
@@ -1023,7 +1070,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
         style={{
           marginTop: 30,
           paddingTop: 30,
-          borderTop: '2px dashed #E0E0E0'
+          borderTop: '2px dashed var(--border-color)'
         }}
       >
         <div style={{

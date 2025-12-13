@@ -46,7 +46,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
 
       return (
         <div style={{
-          background: 'rgba(255, 255, 255, 0.98)',
+          background: 'var(--bg-content)',
           border: `3px solid ${color}`,
           borderRadius: 12,
           padding: '12px 16px',
@@ -55,7 +55,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
         }}>
           <div style={{
             fontWeight: 'bold',
-            color: '#6B4C75',
+            color: 'var(--text-main)',
             fontSize: 14,
             marginBottom: 6
           }}>
@@ -180,7 +180,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
             <div style={{
               display: 'flex',
               gap: 8,
-              background: 'rgba(255, 255, 255, 0.5)',
+              background: 'var(--bg-card)',
               borderRadius: 12,
               padding: 4
             }}>
@@ -194,7 +194,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
                     border: 'none',
                     borderRadius: 8,
                     background: timePeriod === period ? '#667eea' : 'transparent',
-                    color: timePeriod === period ? 'white' : '#6B4C75',
+                    color: timePeriod === period ? 'white' : 'var(--text-main)',
                     fontWeight: 'bold',
                     fontSize: 13,
                     cursor: 'pointer',
@@ -230,8 +230,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
             
             <div style={{ 
                   position: 'absolute', top: '90px', left: '0', right: '0', 
-                  textAlign: 'center', pointerEvents: 'none', color: '#6B4C75', fontWeight: 'bold',
-                  zIndex: -1
+                  textAlign: 'center', pointerEvents: 'none', color: 'var(--text-main)', fontWeight: 'bold',
+                  zIndex: 0
             }}>
               Всего:<br/>{periodTotal > 0 ? periodTotal : total} ₽
             </div>
@@ -288,7 +288,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
             <div style={{
               fontSize: 14,
               fontWeight: 'bold',
-              color: '#6B4C75',
+              color: 'var(--text-main)',
               marginBottom: 12,
               display: 'flex',
               alignItems: 'center',
@@ -312,17 +312,17 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 0',
-                    borderBottom: '1px solid #F0F0F0'
+                    borderBottom: '1px solid var(--border-color)'
                   }}
                 >
                   <div style={{display: 'flex', alignItems: 'center', gap: 10, flex: 1}}>
                     <div style={{width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0}} />
-                    <span style={{fontWeight: 600, color: '#2D3436', fontSize: 14}}>{getDisplayCategoryName(entry.name)}</span>
+                    <span style={{fontWeight: 600, color: 'var(--text-main)', fontSize: 14}}>{getDisplayCategoryName(entry.name)}</span>
                   </div>
                   <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                     <span style={{
                       fontWeight: 700,
-                      color: '#6B4C75',
+                      color: 'var(--text-main)',
                       fontSize: 14
                     }}>
                       {entry.value.toLocaleString()} ₽
@@ -346,7 +346,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
           </div>
         </>
       ) : (
-        <div style={{textAlign: 'center', marginTop: 50, color: '#9E9E9E'}}>
+        <div style={{textAlign: 'center', marginTop: 50, color: 'var(--text-secondary)'}}>
           <Wallet size={48} style={{opacity: 0.3, marginBottom: 10}} />
           <p>Трат пока нет. <br/>Добавьте первый расход!</p>
         </div>

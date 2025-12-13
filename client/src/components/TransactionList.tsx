@@ -56,20 +56,20 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
   return (
     <div style={{ width: '100%', paddingBottom: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 10, marginRight: 10, marginBottom: 10 }}>
-        <h3 style={{ color: '#6B4C75', margin: 0, fontSize: 18 }}>История операций</h3>
+        <h3 style={{ color: 'var(--text-main)', margin: 0, fontSize: 18 }}>История операций</h3>
         {onFilterClick && (
           <button
             onClick={onFilterClick}
             style={{
-              background: hasActiveFilters ? 'linear-gradient(135deg, #D291BC 0%, #E891C8 100%)' : 'white',
-              border: '2px solid #F0F0F0',
+              background: hasActiveFilters ? 'linear-gradient(135deg, var(--primary) 0%, #E891C8 100%)' : 'var(--bg-input)',
+              border: '2px solid var(--border-color)',
               borderRadius: 12,
               padding: '8px 12px',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               cursor: 'pointer',
-              color: hasActiveFilters ? 'white' : '#6B4C75',
+              color: hasActiveFilters ? 'white' : 'var(--text-main)',
               fontWeight: 700,
               fontSize: 14,
               fontFamily: 'Nunito, sans-serif',
@@ -131,7 +131,7 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    color: '#E74C3C',
+                    color: 'var(--accent-danger)',
                     fontWeight: 'bold',
                     fontSize: 14,
                     marginLeft: 'auto'
@@ -160,7 +160,7 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    background: '#F8F9FA', 
+                    background: 'var(--bg-input)',
                     padding: '12px 16px', 
                     borderRadius: 16,
                     position: 'relative',
@@ -178,21 +178,22 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      color: '#FFF',
                       fontSize: typeof categoryIcon === 'string' ? 18 : undefined
                     }}>
                       {categoryIcon || <div style={{width: 20, height: 20}} />}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 'bold', color: '#2D3436', fontSize: 14 }}>
+                      <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 14 }}>
                         {categoryName}
                       </span>
-                      <span style={{ fontSize: 11, color: '#A0A0A0' }}>{formatDate(t.date)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
                     {/* Красим сумму: Зеленый (+) или Фиолетовый (-) */}
-                    <span style={{ fontWeight: '800', color: isIncome ? '#27AE60' : '#6B4C75' }}>
+                    <span style={{ fontWeight: '800', color: isIncome ? 'var(--accent-success)' : 'var(--text-main)' }}>
                       {isIncome ? '+' : '-'}{t.amount} ₽
                     </span>
                   </div>
@@ -201,7 +202,7 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
             );
           })}
         </AnimatePresence>
-        {transactions.length === 0 && <div style={{ textAlign: 'center', color: '#ccc', fontSize: 14, marginTop: 10 }}>История пуста 🕸️</div>}
+        {transactions.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14, marginTop: 10 }}>История пуста 🕸️</div>}
       </div>
     </div>
   );
