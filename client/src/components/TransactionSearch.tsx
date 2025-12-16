@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search } from 'lucide-react';
 
+interface CategoryItem { id: string; name: string }
+
 interface TransactionSearchProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyFilters: (filters: FilterState) => void;
-  categories: string[];
+  categories: CategoryItem[];
 }
 
 export interface FilterState {
@@ -87,8 +89,8 @@ const TransactionSearch = ({ isOpen, onClose, onApplyFilters, categories }: Tran
                 >
                   <option value="">Все категории</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>

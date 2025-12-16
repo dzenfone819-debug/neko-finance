@@ -1191,14 +1191,14 @@ function App() {
       </Modal>
 
       {/* Панель поиска и фильтров */}
-      <TransactionSearch 
+      <TransactionSearch
         isOpen={showSearchPanel}
         onClose={() => setShowSearchPanel(false)}
         onApplyFilters={handleApplyFilters}
         categories={[
-          ...EXPENSE_CATEGORIES.map(c => c.name),
-          ...INCOME_CATEGORIES.map(c => c.name),
-          ...customCategories.map(c => c.name)
+          ...EXPENSE_CATEGORIES.map(c => ({ id: c.id, name: c.name })),
+          ...INCOME_CATEGORIES.map(c => ({ id: c.id, name: c.name })),
+          ...customCategories.map(c => ({ id: c.id, name: c.name }))
         ]}
       />
     </div>
