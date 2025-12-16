@@ -54,70 +54,11 @@ function App() {
     }
   }, [theme]);
 
-  // Sync Telegram Mini App header color with app theme
+  // Sync Telegram Mini App header color with app theme using fixed bot colors
   useEffect(() => {
-    const parseHex = (v: string | null) => {
-      if (!v) return null;
-      const s = String(v).trim();
-      const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s);
-      if (m) {
-        if (m[1].length === 3) return '#' + m[1].split('').map(c => c + c).join('');
-        return '#' + m[1].toLowerCase();
-      }
-      return null;
-    };
-
-    const darkenHex = (hex: string, amount = 0.2) => {
-      try {
-        const h = hex.replace('#', '');
-        const r = parseInt(h.substring(0, 2), 16);
-        const g = parseInt(h.substring(2, 4), 16);
-        const b = parseInt(h.substring(4, 6), 16);
-        const nr = Math.max(0, Math.min(255, Math.round(r * (1 - amount))));
-        const ng = Math.max(0, Math.min(255, Math.round(g * (1 - amount))));
-        const nb = Math.max(0, Math.min(255, Math.round(b * (1 - amount))));
-        return '#' + [nr, ng, nb].map(x => x.toString(16).padStart(2, '0')).join('');
-      } catch (e) {
-        return hex;
-      }
-    };
-
-    let lightHeader: string | null = null;
-    let darkHeader: string | null = null;
-
-    try {
-      const raw = (WebApp as any)?.initDataUnsafe?.tgWebAppDefaultColors || (window as any)?.Telegram?.WebApp?.initData?.tgWebAppDefaultColors;
-      if (raw) {
-        let parsed: any = raw;
-        if (typeof raw === 'string') {
-          try { parsed = JSON.parse(raw); } catch { parsed = raw; }
-        }
-        if (parsed && typeof parsed === 'object') {
-          const keys = Object.keys(parsed).reduce((acc: any, k) => { acc[k.toLowerCase()] = parsed[k]; return acc; }, {});
-          // common header keys
-          lightHeader = parseHex(keys['header_color_light'] || keys['header_light'] || keys['header_color'] || keys['header'] || keys['light'] || keys['bg_color'] || keys['bgcolor'] || keys['background']);
-          darkHeader = parseHex(keys['header_color_dark'] || keys['header_dark'] || keys['dark'] || keys['secondary_bg_color'] || keys['secondarybgcolor']);
-        }
-      }
-
-      const themeParams = (WebApp as any)?.themeParams || (window as any)?.Telegram?.WebApp?.themeParams;
-      if ((!lightHeader || !darkHeader) && themeParams) {
-        const tp = Object.keys(themeParams).reduce((acc: any, k) => { acc[k.toLowerCase()] = (themeParams as any)[k]; return acc; }, {} as any);
-        lightHeader = lightHeader || parseHex(tp['bg_color'] || tp['bgcolor'] || tp['background']);
-        darkHeader = darkHeader || parseHex(tp['secondary_bg_color'] || tp['secondarybgcolor'] || tp['bg_color']);
-      }
-    } catch (e) {
-      console.warn('Error reading Telegram default colors', e);
-    }
-
-    const fallbackLight = '#FFFFFF';
-    const fallbackDark = '#1E1E1E';
-
-    // If only one color is available, derive the other by darkening
-    if (!lightHeader && darkHeader) lightHeader = darkHeader;
-    if (!darkHeader && lightHeader) darkHeader = darkenHex(lightHeader, 0.28);
-
-    const color = theme === 'dark' ? (darkHeader || fallbackDark) : (lightHeader || fallbackLight);
+    const lightHeader = '#FEC8D8';
+    const darkHeader = '#0B0E14';
+    const color = theme === 'dark' ? darkHeader : lightHeader;
 
     try {
       if (typeof WebApp !== 'undefined' && typeof (WebApp as any).setHeaderColor === 'function') {
