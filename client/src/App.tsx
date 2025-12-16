@@ -53,6 +53,66 @@ function App() {
       document.body.classList.remove('dark-theme');
     }
   }, [theme]);
+
+  // Sync Telegram Mini App header color with app theme
+  useEffect(() => {
+    // Try to get colors from bot settings passed by Telegram (BotFather)
+    let lightHeader: string | null = null;
+    let darkHeader: string | null = null;
+
+    try {
+      // tgWebAppDefaultColors may be provided in init data as JSON
+      const raw = (WebApp as any)?.initDataUnsafe?.tgWebAppDefaultColors;
+      if (raw) {
+        try {
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          // Common shapes: { light: '#fff', dark: '#000' } or keys like 'bg_color'
+          if (parsed.light && parsed.dark) {
+            lightHeader = parsed.light;
+            darkHeader = parsed.dark;
+          } else if (parsed.header_color_light && parsed.header_color_dark) {
+            lightHeader = parsed.header_color_light;
+            darkHeader = parsed.header_color_dark;
+          } else if (parsed.bg_color || parsed.secondary_bg_color) {
+            // fallback to bg colors
+            lightHeader = parsed.bg_color || parsed.secondary_bg_color || null;
+            darkHeader = parsed.bg_color || parsed.secondary_bg_color || null;
+          }
+          console.debug('tgWebAppDefaultColors parsed:', parsed);
+        } catch (e) {
+          console.debug('tgWebAppDefaultColors is not JSON:', raw);
+        }
+      }
+
+      // If not available, try WebApp.themeParams (current Telegram theme params)
+      const themeParams = (WebApp as any)?.themeParams || (window as any)?.Telegram?.WebApp?.themeParams;
+      if ((!lightHeader || !darkHeader) && themeParams) {
+        // Use bg_color and secondary_bg_color as reasonable defaults
+        const bg = themeParams.bg_color || themeParams.bgColor || null;
+        const sec = themeParams.secondary_bg_color || themeParams.secondaryBgColor || null;
+        lightHeader = lightHeader || bg || sec || lightHeader;
+        darkHeader = darkHeader || bg || sec || darkHeader;
+      }
+    } catch (e) {
+      console.warn('Error reading Telegram default colors', e);
+    }
+
+    // Final fallback
+    const fallbackLight = '#FFFFFF';
+    const fallbackDark = '#1E1E1E';
+
+    const color = theme === 'dark' ? (darkHeader || fallbackDark) : (lightHeader || fallbackLight);
+
+    try {
+      if (typeof WebApp !== 'undefined' && typeof (WebApp as any).setHeaderColor === 'function') {
+        (WebApp as any).setHeaderColor(color);
+      } else if ((window as any).Telegram && (window as any).Telegram.WebApp && typeof (window as any).Telegram.WebApp.setHeaderColor === 'function') {
+        (window as any).Telegram.WebApp.setHeaderColor(color);
+      }
+    } catch (e) {
+      console.warn('Failed to set Telegram header color', e);
+    }
+  }, [theme]);
   
   // Текущая дата для фильтрации
   const [currentDate, setCurrentDate] = useState(new Date())
