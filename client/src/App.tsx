@@ -3,9 +3,7 @@ import { motion } from 'framer-motion'
 import WebApp from '@twa-dev/sdk'
 import { 
   LayoutGrid, Plus, Target, ArrowUpCircle, ArrowDownCircle, Wallet,
-  Coffee, Car, Gamepad2, Zap, Home, Bus,
-  Shirt, PiggyBank, ShoppingBasket,
-  Smartphone, Plane, Utensils, Film, Pill, GraduationCap, Package, TrendingUp, Settings
+  TrendingUp, Settings
 } from 'lucide-react'
 import './App.css'
 
@@ -23,6 +21,8 @@ import { Modal } from './components/Modal'
 import { NekoAvatar } from './components/NekoAvatar'
 import TransactionSearch from './components/TransactionSearch'
 import { ConfirmModal } from './components/ConfirmModal'
+import { ColorPicker } from './components/ColorPicker'
+import { IconPicker } from './components/IconPicker'
 import type { FilterState } from './components/TransactionSearch'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
@@ -1082,67 +1082,8 @@ function App() {
                 className="modal-input"
               />
               
-              <div style={{ marginBottom: 15 }}>
-                <label className="modal-label">Иконка</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-                  {[
-                    { icon: 'Package', component: <Package size={20} /> },
-                    { icon: 'Gamepad2', component: <Gamepad2 size={20} /> },
-                    { icon: 'Home', component: <Home size={20} /> },
-                    { icon: 'Car', component: <Car size={20} /> },
-                    { icon: 'Plane', component: <Plane size={20} /> },
-                    { icon: 'Utensils', component: <Utensils size={20} /> },
-                    { icon: 'Coffee', component: <Coffee size={20} /> },
-                    { icon: 'Film', component: <Film size={20} /> },
-                    { icon: 'Smartphone', component: <Smartphone size={20} /> },
-                    { icon: 'Pill', component: <Pill size={20} /> },
-                    { icon: 'Shirt', component: <Shirt size={20} /> },
-                    { icon: 'GraduationCap', component: <GraduationCap size={20} /> },
-                    { icon: 'ShoppingBasket', component: <ShoppingBasket size={20} /> },
-                    { icon: 'Bus', component: <Bus size={20} /> },
-                    { icon: 'Zap', component: <Zap size={20} /> },
-                    { icon: 'PiggyBank', component: <PiggyBank size={20} /> },
-                  ].map((item) => (
-                    <motion.button
-                      key={item.icon}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setNewCategoryIcon(item.icon)}
-                      style={{
-                        background: newCategoryIcon === item.icon ? '#667eea' : 'var(--bg-input)',
-                        border: 'none',
-                        borderRadius: 8,
-                        width: 48,
-                        height: 48,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: newCategoryIcon === item.icon ? 'white' : 'var(--text-main)'
-                      }}
-                    >
-                      {item.component}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 15, overflow: 'hidden' }}>
-                <label className="modal-label">Цвет</label>
-                <div className="color-picker" style={{ paddingBottom: 10 }}>
-                  {['#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFA07A'].map((col) => (
-                    <motion.button
-                      key={col}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setNewCategoryColor(col)}
-                      className="color-option"
-                      style={{
-                        background: col,
-                        border: newCategoryColor === col ? '3px solid #667eea' : '2px solid var(--border-color)',
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+              <IconPicker selectedIcon={newCategoryIcon} onSelectIcon={setNewCategoryIcon} />
+              <ColorPicker selectedColor={newCategoryColor} onSelectColor={setNewCategoryColor} />
             </>
           )}
 
