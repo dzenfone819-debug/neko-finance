@@ -448,7 +448,7 @@ body:not(.dark-theme) .app-container {
   left: 20px; 
   right: 20px;
   width: auto; 
-  height: 60px; 
+  height: 55px; 
   background: var(--tab-bar-bg); 
   backdrop-filter: blur(12px); 
   border-radius: 20px;
