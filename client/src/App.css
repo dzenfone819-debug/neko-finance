@@ -1056,3 +1056,65 @@ body:not(.dark-theme) .app-container {
 .apply-btn:active {
   transform: scale(0.98);
 }
+
+/* --- PICKERS (Color & Icon) --- */
+.picker-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-bottom: 15px;
+  background: var(--bg-input);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.picker-item {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 20px;
+  color: var(--text-main);
+  background: var(--bg-card);
+}
+
+.picker-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.picker-item.selected {
+  border-color: var(--primary);
+  transform: scale(0.95);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Custom scrollbar for pickers */
+.picker-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.picker-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.picker-grid::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
