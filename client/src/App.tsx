@@ -682,12 +682,12 @@ function App() {
           boxSizing: 'border-box'
         }}>
           {/* Котик слева */}
-          <motion.div 
-            animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
-            style={{ flexShrink: 0 }}
-          >
-            <NekoAvatar mood={getNekoMood()} />
-          </motion.div>
+            <motion.div 
+              animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
+              style={{ flexShrink: 0 }}
+            >
+              <NekoAvatar mood={getNekoMood()} theme={theme} />
+            </motion.div>
 
           {/* Правая колонка: бюджет, доступно/лимит, сумма */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
