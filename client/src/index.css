@@ -13,6 +13,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Self-hosted Nunito */
+@font-face {
+  font-family: 'Nunito';
+  src: url('/fonts/Nunito-400.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Nunito';
+  src: url('/fonts/Nunito-700.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Nunito';
+  src: url('/fonts/Nunito-800.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 a {
   font-weight: 500;
   color: #646cff;
