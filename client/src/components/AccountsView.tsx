@@ -5,6 +5,9 @@ import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { Modal } from './Modal';
 import { ConfirmModal } from './ConfirmModal';
+import { ColorPicker } from './ColorPicker';
+import { IconPicker } from './IconPicker';
+import { getIconByName } from '../data/constants';
 
 interface Account {
   id: number;
@@ -40,7 +43,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalTarget, setNewGoalTarget] = useState('');
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
-  const [selectedIcon, setSelectedIcon] = useState('🐷');
+  const [selectedIcon, setSelectedIcon] = useState('PiggyBank'); // Default icon name
   const [transferFrom, setTransferFrom] = useState<{ type: string; id: number } | null>(null);
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
@@ -54,8 +57,6 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [editGoalTarget, setEditGoalTarget] = useState('');
   const [editGoalCurrent, setEditGoalCurrent] = useState('');
 
-  const colors = ['#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFA07A'];
-  const goalIcons = ['🐷', '🏠', '✈️', '🚗', '💍', '🎓', '💻', '🎮', '📱', '⌚'];
   const accountTypes = [
     { value: 'cash', label: '💵 Наличные' },
     { value: 'card', label: '💳 Карта' },
@@ -85,7 +86,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       WebApp.HapticFeedback.notificationOccurred('success');
       setNewGoalName('');
       setNewGoalTarget('');
-      setSelectedIcon('🐷');
+      setSelectedIcon('PiggyBank');
       setShowGoalForm(false);
       onRefresh();
     } catch (e) {
@@ -171,7 +172,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
     setEditGoalTarget(goal.target_amount.toString());
     setEditGoalCurrent(goal.current_amount.toString());
     setSelectedColor(goal.color);
-    setSelectedIcon(goal.icon);
+    setSelectedIcon(goal.icon || 'PiggyBank');
     setContextMenu(null);
   };
 
@@ -351,20 +352,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
               </option>
             ))}
           </select>
-          <div className="color-picker">
-            {colors.map((col) => (
-              <motion.button
-                key={col}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSelectedColor(col)}
-                className="color-option"
-                style={{
-                  background: col,
-                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
-                }}
-              />
-            ))}
-          </div>
+          <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateAccount}
@@ -401,7 +389,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                     style={{ border: `2px solid ${goal.color}`, cursor: 'pointer', userSelect: 'none', background: 'var(--bg-card)' }}
                   >
                     <div style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--text-main)' }}>{goal.icon} {goal.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--text-main)' }}>
+                        {getIconByName(goal.icon)} {goal.name}
+                      </div>
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5 }}>
                         {goal.current_amount.toLocaleString()} / {goal.target_amount.toLocaleString()} ₽
                       </div>
@@ -456,46 +446,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             onChange={(e) => setNewGoalTarget(e.target.value)}
             className="modal-input"
           />
-          <div style={{ marginBottom: 15 }}>
-            <label className="modal-label">Иконка</label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {goalIcons.map((icon) => (
-                <motion.button
-                  key={icon}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setSelectedIcon(icon)}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    fontSize: 20,
-                    border: selectedIcon === icon ? '3px solid var(--primary)' : '2px solid var(--border-color)',
-                    borderRadius: 8,
-                    background: 'var(--bg-input)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {icon}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-          <div className="color-picker">
-            {colors.map((col) => (
-              <motion.button
-                key={col}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSelectedColor(col)}
-                className="color-option"
-                style={{
-                  background: col,
-                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
-                }}
-              />
-            ))}
-          </div>
+          <IconPicker selectedIcon={selectedIcon} onSelectIcon={setSelectedIcon} />
+          <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateGoal}
@@ -706,20 +658,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             onChange={(e) => setEditAccountBalance(e.target.value)}
             className="modal-input"
           />
-          <div className="color-picker">
-            {colors.map((col) => (
-              <motion.button
-                key={col}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSelectedColor(col)}
-                className="color-option"
-                style={{
-                  background: col,
-                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
-                }}
-              />
-            ))}
-          </div>
+          <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleEditAccount}
@@ -754,46 +693,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             onChange={(e) => setEditGoalTarget(e.target.value)}
             className="modal-input"
           />
-          <div style={{ marginBottom: 15 }}>
-            <label className="modal-label">Иконка</label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {goalIcons.map((icon) => (
-                <motion.button
-                  key={icon}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setSelectedIcon(icon)}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    fontSize: 20,
-                    border: selectedIcon === icon ? '3px solid var(--primary)' : '2px solid var(--border-color)',
-                    borderRadius: 8,
-                    background: 'var(--bg-input)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {icon}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-          <div className="color-picker">
-            {colors.map((col) => (
-              <motion.button
-                key={col}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSelectedColor(col)}
-                className="color-option"
-                style={{
-                  background: col,
-                  border: selectedColor === col ? '3px solid var(--primary)' : '2px solid var(--border-color)',
-                }}
-              />
-            ))}
-          </div>
+          <IconPicker selectedIcon={selectedIcon} onSelectIcon={setSelectedIcon} />
+          <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleEditGoal}
