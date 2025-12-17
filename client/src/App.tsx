@@ -22,6 +22,7 @@ import { SettingsView } from './components/SettingsView'
 import { Modal } from './components/Modal'
 import { NekoAvatar } from './components/NekoAvatar'
 import TransactionSearch from './components/TransactionSearch'
+import { ConfirmModal } from './components/ConfirmModal'
 import type { FilterState } from './components/TransactionSearch'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
@@ -116,6 +117,11 @@ function App() {
   const [editAmount, setEditAmount] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editDate, setEditDate] = useState(new Date())
+
+  // Confirmation modal state (centralized)
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState<(() => Promise<void>) | null>(null);
 
   // Состояния для синхронизации
   const [lastSyncTime, setLastSyncTime] = useState<number>(0)
@@ -418,26 +424,18 @@ function App() {
   }
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!userId) return;
-    WebApp.HapticFeedback.impactOccurred('medium');
-    try {
-      // Проверяем, это кастомная категория или стандартная
-      const isCustom = customCategories.some(cat => cat.id === categoryId);
-      
-      if (isCustom) {
-        // Удаляем кастомную категорию полностью
-        await api.deleteCustomCategory(userId, categoryId);
-      }
-      
-      // Для всех категорий удаляем лимит
-      await api.deleteCategoryLimit(userId, categoryId);
-      
-      WebApp.HapticFeedback.notificationOccurred('success');
-      loadData(userId, currentDate);
-    } catch (e) {
-      console.error(e);
-      WebApp.HapticFeedback.notificationOccurred('error');
-    }
+    // Open confirm modal instead of immediate deletion
+    openConfirm('Вы уверены, что хотите удалить лимит/категорию? Действие необратимо.', async () => {
+      if (!userId) return;
+      WebApp.HapticFeedback.impactOccurred('medium');
+      try {
+        const isCustom = customCategories.some(cat => cat.id === categoryId);
+        if (isCustom) await api.deleteCustomCategory(userId, categoryId);
+        await api.deleteCategoryLimit(userId, categoryId);
+        WebApp.HapticFeedback.notificationOccurred('success');
+        await loadData(userId, currentDate);
+      } catch (e) { console.error(e); WebApp.HapticFeedback.notificationOccurred('error'); }
+    });
   }
 
   const getNekoMood = (): 'happy' | 'neutral' | 'sad' | 'worried' | 'error' | 'dead' => {
@@ -538,6 +536,31 @@ function App() {
     }
 
     return filtered;
+  }
+
+  // Open centralized confirm modal
+  const openConfirm = (message: string, action: () => Promise<void>) => {
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
+    WebApp.HapticFeedback.impactOccurred('medium');
+  }
+
+  const handleConfirmModalCancel = () => {
+    setConfirmOpen(false);
+    setConfirmAction(null);
+  }
+
+  const handleConfirmModalConfirm = async () => {
+    if (confirmAction) {
+      try {
+        await confirmAction();
+      } catch (e) {
+        console.error('Confirm action failed', e);
+      }
+    }
+    setConfirmOpen(false);
+    setConfirmAction(null);
   }
 
   const handleApplyFilters = (newFilters: FilterState) => {
@@ -912,7 +935,9 @@ function App() {
             <div style={{ height: 1, background: 'var(--border-color)', margin: '20px 0' }} />
             <TransactionList 
               transactions={filteredTransactions} 
-              onDelete={handleDeleteTransaction}
+              onDelete={(id: number) => openConfirm('Удалить транзакцию? Действие необратимо.', async () => {
+                await handleDeleteTransaction(id);
+              })}
               onEdit={handleEditTransaction}
               onFilterClick={() => setShowSearchPanel(true)}
               hasActiveFilters={hasActiveFilters}
@@ -1218,6 +1243,12 @@ function App() {
           ...INCOME_CATEGORIES.map(c => ({ id: c.id, name: c.name })),
           ...customCategories.map(c => ({ id: c.id, name: c.name }))
         ]}
+      />
+      <ConfirmModal
+        isOpen={confirmOpen}
+        message={confirmMessage}
+        onCancel={handleConfirmModalCancel}
+        onConfirm={handleConfirmModalConfirm}
       />
     </div>
   )

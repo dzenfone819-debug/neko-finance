@@ -4,6 +4,7 @@ import { Plus, ArrowRightLeft } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { Modal } from './Modal';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Account {
   id: number;
@@ -116,6 +117,29 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       console.error(e);
     }
   };
+
+  // Local confirmation state for account/goal deletion
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<{ type: 'account' | 'goal'; id: number } | null>(null);
+
+  const openLocalConfirm = (type: 'account' | 'goal', id: number) => {
+    setPendingDelete({ type, id });
+    setConfirmMessage(type === 'account' ? 'Удалить счет? Все транзакции, связанные со счетом останутся.' : 'Удалить копилку? Данные будут утеряны.');
+    setConfirmOpen(true);
+  }
+
+  const handleLocalConfirmCancel = () => { setConfirmOpen(false); setPendingDelete(null); }
+
+  const handleLocalConfirm = async () => {
+    if (!pendingDelete) return;
+    try {
+      if (pendingDelete.type === 'account') await handleDeleteAccount(pendingDelete.id);
+      else await handleDeleteGoal(pendingDelete.id);
+    } catch (e) { console.error(e); }
+    setConfirmOpen(false);
+    setPendingDelete(null);
+  }
 
   const handleLongPressStart = (type: 'account' | 'goal', id: number, e: React.TouchEvent | React.MouseEvent) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -637,9 +661,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 if (contextMenu.type === 'account') {
-                  handleDeleteAccount(contextMenu.id);
+                  openLocalConfirm('account', contextMenu.id);
                 } else {
-                  handleDeleteGoal(contextMenu.id);
+                  openLocalConfirm('goal', contextMenu.id);
                 }
               }}
               style={{
@@ -662,6 +686,8 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           </motion.div>
         </>
       )}
+
+      <ConfirmModal isOpen={confirmOpen} message={confirmMessage} onCancel={handleLocalConfirmCancel} onConfirm={handleLocalConfirm} />
 
       {/* MODAL EDIT ACCOUNT */}
       <Modal isOpen={editingAccount !== null} onClose={() => setEditingAccount(null)} title="Редактировать счет">
