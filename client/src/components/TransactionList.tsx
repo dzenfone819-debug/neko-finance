@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { PanInfo } from 'framer-motion';
 import { Trash2, Filter, Edit2 } from 'lucide-react';
-// Импортируем обе константы и функции
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor, getIconByName } from '../data/constants';
+import { ActionDrawer } from './ActionDrawer';
+import WebApp from '@twa-dev/sdk';
 
 interface Transaction {
   id: number;
   amount: number;
   category: string;
   date: string;
-  type?: 'expense' | 'income'; // Добавили тип
+  type?: 'expense' | 'income';
 }
 
 interface CustomCategory {
@@ -29,34 +29,50 @@ interface Props {
   customCategories?: CustomCategory[];
 }
 
-export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdit, onFilterClick, hasActiveFilters, customCategories = [] }) => {
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+export const TransactionList: React.FC<Props> = ({
+  transactions,
+  onDelete,
+  onEdit,
+  onFilterClick,
+  hasActiveFilters,
+  customCategories = []
+}) => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const longPressTimer = useRef<number | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
   };
 
-  const handleDragEnd = (id: number, transaction: Transaction, info: PanInfo) => {
-    const offset = info.offset.x;
-    const velocity = info.velocity.x;
+  const handleTouchStart = (t: Transaction) => {
+    longPressTimer.current = window.setTimeout(() => {
+      WebApp.HapticFeedback.impactOccurred('medium');
+      setSelectedTransaction(t);
+      setDrawerOpen(true);
+    }, 500); // 500ms long press
+  };
 
-    // Свайп влево - удаление (offset < -100 или быстрый свайп)
-    if (offset < -100 || (velocity < -500 && offset < -50)) {
-      onDelete(id);
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
-    // Свайп вправо - редактирование (offset > 100 или быстрый свайп)
-    else if (onEdit && (offset > 100 || (velocity > 500 && offset > 50))) {
-      onEdit(transaction);
-    }
-    
-    setDraggedItem(null);
+  };
+
+  // Also support right click for desktop testing
+  const handleContextMenu = (e: React.MouseEvent, t: Transaction) => {
+    e.preventDefault();
+    setSelectedTransaction(t);
+    setDrawerOpen(true);
   };
 
   return (
     <div style={{ width: '100%', paddingBottom: 20 }}>
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 10, marginRight: 10, marginBottom: 10 }}>
-        <h3 style={{ color: 'var(--text-main)', margin: 0, fontSize: 18 }}>История операций</h3>
+        <h3 style={{ color: 'var(--text-main)', margin: 0, fontSize: 18, fontWeight: '800' }}>История операций</h3>
         {onFilterClick && (
           <button
             onClick={onFilterClick}
@@ -82,128 +98,121 @@ export const TransactionList: React.FC<Props> = ({ transactions, onDelete, onEdi
           </button>
         )}
       </div>
+
+      {/* List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {transactions.map((t) => {
             const isIncome = t.type === 'income';
-            const isDragging = draggedItem === t.id;
             
-            // Ищем иконку в обоих списках и в кастомных категориях
             const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
             const cat = allCats.find(c => c.id === t.category);
             const customCat = customCategories.find(c => c.id === t.category);
             
-            // Используем кастомную категорию, если найдена
             const categoryName = customCat ? customCat.name : getCategoryName(t.category);
             const categoryColor = customCat ? customCat.color : getCategoryColor(t.category);
-            // Для кастомных категорий используем getIconByName (может быть эмодзи или название компонента)
             const categoryIcon = customCat ? getIconByName(customCat.icon, 20) : (cat?.icon || null);
             
             return (
-              <div key={t.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: 16 }}>
-                {/* Фон с подсказками для свайпа */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                layout
+                onTouchStart={() => handleTouchStart(t)}
+                onTouchEnd={handleTouchEnd}
+                onTouchMove={handleTouchEnd} // Cancel on scroll
+                onContextMenu={(e) => handleContextMenu(e, t)}
+                style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '0 20px',
-                  borderRadius: 16
-                }}>
-                  {onEdit && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      color: '#3498db',
-                      fontWeight: 'bold',
-                      fontSize: 14
-                    }}>
-                      <Edit2 size={20} />
-                      <span>Редактировать</span>
-                    </div>
-                  )}
+                  background: 'var(--bg-input)',
+                  padding: '12px 16px',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  position: 'relative',
+                  transition: 'background-color 0.2s'
+                }}
+                whileTap={{ scale: 0.98, backgroundColor: 'var(--bg-card)' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
+                    background: categoryColor,
+                    padding: 8,
+                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
-                    color: 'var(--accent-danger)',
-                    fontWeight: 'bold',
-                    fontSize: 14,
-                    marginLeft: 'auto'
+                    justifyContent: 'center',
+                    color: '#FFF',
+                    minWidth: 36,
+                    height: 36,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
                   }}>
-                    <span>Удалить</span>
-                    <Trash2 size={20} />
+                    {categoryIcon || <div style={{width: 20, height: 20}} />}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 14 }}>
+                      {categoryName}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
                   </div>
                 </div>
 
-                {/* Карточка транзакции */}
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.2}
-                  onDragStart={() => setDraggedItem(t.id)}
-                  onDragEnd={(_, info) => handleDragEnd(t.id, t, info)}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: 0,
-                    scale: isDragging ? 1.02 : 1
-                  }}
-                  exit={{ opacity: 0, x: -50, height: 0 }}
-                  layout
-                  style={{
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    background: 'var(--bg-input)', 
-                    padding: '12px 16px', 
-                    borderRadius: 16,
-                    position: 'relative',
-                    zIndex: isDragging ? 10 : 1,
-                    cursor: 'grab',
-                    touchAction: 'pan-y'
-                  }}
-                  whileTap={{ cursor: 'grabbing' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ 
-                      background: categoryColor, 
-                      padding: 8, 
-                      borderRadius: '50%', 
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFF',
-                      fontSize: typeof categoryIcon === 'string' ? 18 : undefined
-                    }}>
-                      {categoryIcon || <div style={{width: 20, height: 20}} />}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 14 }}>
-                        {categoryName}
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                    {/* Красим сумму: Зеленый (+) или Фиолетовый (-) */}
-                    <span style={{ fontWeight: '800', color: isIncome ? 'var(--accent-success)' : 'var(--text-main)' }}>
-                      {isIncome ? '+' : '-'}{t.amount} ₽
-                    </span>
-                  </div>
-                </motion.div>
-              </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontWeight: '800', color: isIncome ? 'var(--accent-success)' : 'var(--text-main)', fontSize: 15 }}>
+                    {isIncome ? '+' : '-'}{t.amount} ₽
+                  </span>
+                </div>
+              </motion.div>
             );
           })}
         </AnimatePresence>
-        {transactions.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14, marginTop: 10 }}>История пуста 🕸️</div>}
+
+        {transactions.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            color: 'var(--text-secondary)',
+            fontSize: 14,
+            marginTop: 20,
+            padding: 20,
+            background: 'var(--bg-input)',
+            borderRadius: 16
+          }}>
+            История пуста 🕸️
+          </div>
+        )}
       </div>
+
+      {/* Action Drawer */}
+      <ActionDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Операция"
+        actions={[
+          {
+            icon: <Edit2 size={20} />,
+            label: 'Редактировать',
+            onClick: () => {
+              if (selectedTransaction && onEdit) {
+                onEdit(selectedTransaction);
+              }
+            }
+          },
+          {
+            icon: <Trash2 size={20} />,
+            label: 'Удалить',
+            isDestructive: true,
+            onClick: () => {
+              if (selectedTransaction) {
+                onDelete(selectedTransaction.id);
+              }
+            }
+          }
+        ]}
+      />
     </div>
   );
 };

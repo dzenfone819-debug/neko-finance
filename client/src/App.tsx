@@ -1081,9 +1081,14 @@ function App() {
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 className="modal-input"
               />
-              
-              <IconPicker selectedIcon={newCategoryIcon} onSelectIcon={setNewCategoryIcon} />
-              <ColorPicker selectedColor={newCategoryColor} onSelectColor={setNewCategoryColor} />
+              <div style={{marginTop: 10, marginBottom: 10}}>
+                <span className="picker-label">Иконка</span>
+                <IconPicker selectedIcon={newCategoryIcon} onSelectIcon={setNewCategoryIcon} />
+              </div>
+              <div style={{marginBottom: 10}}>
+                <span className="picker-label">Цвет</span>
+                <ColorPicker selectedColor={newCategoryColor} onSelectColor={setNewCategoryColor} />
+              </div>
             </>
           )}
 
@@ -1106,19 +1111,8 @@ function App() {
       </Modal>
 
       {/* Модальное окно редактирования транзакции */}
-      <Modal title="" isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
+      <Modal title="Редактировать" isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
         <div style={{ padding: '0 4px' }}>
-          <h2 style={{
-            textAlign: 'center',
-            marginBottom: 20,
-            background: 'linear-gradient(135deg, var(--primary) 0%, #FEC8D8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontSize: 22
-          }}>
-            ✏️ Редактировать транзакцию
-          </h2>
-
           <div style={{ marginBottom: 20 }}>
             <label className="modal-label">Сумма</label>
             <input
@@ -1169,7 +1163,7 @@ function App() {
             onClick={handleSaveEdit}
             className="modal-submit-button"
           >
-            💾 Сохранить изменения
+            Сохранить
           </motion.button>
         </div>
       </Modal>
