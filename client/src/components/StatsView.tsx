@@ -138,12 +138,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
     return ((value / budgetLimit) * 100).toFixed(1);
   };
 
-  const getPercentageOfTotal = (value: number) => {
-     const currentTotal = periodTotal > 0 ? periodTotal : total;
-     if (currentTotal === 0) return 0;
-     return (value / currentTotal) * 100;
-  }
-
   // Средние расходы за неделю
   const getWeeklyAverage = () => {
     const period = getBudgetPeriod(currentMonth, periodType, periodStartDay);
@@ -355,70 +349,58 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
 
           <div style={{width: '100%', marginTop: 10}}>
             <div style={{
-              fontSize: 15,
-              fontWeight: '800',
+              fontSize: 14,
+              fontWeight: 'bold',
               color: 'var(--text-main)',
-              marginBottom: 16,
+              marginBottom: 12,
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              paddingLeft: 4
+              gap: 8
             }}>
-              <DollarSign size={20} className="text-primary" style={{color: 'var(--primary)'}} />
-              {budgetLimit > 0 ? '% от бюджета' : 'Распределение'}
+              <DollarSign size={18} />
+              {budgetLimit > 0 ? '% от бюджета по категориям' : 'Распределение по категориям'}
             </div>
             {(periodData.length > 0 ? periodData : data).map((entry, index) => {
               const color = getCategoryColor(entry.name, index);
               const percentage = getCategoryPercentage(entry.value);
-              const icon = getCategoryIcon(entry.name);
 
               return (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '14px 12px',
-                    marginBottom: 8,
-                    background: 'var(--bg-input)',
-                    borderRadius: 14,
+                    padding: '12px 0',
+                    borderBottom: '1px solid var(--border-color)'
                   }}
                 >
-                  <div style={{display: 'flex', alignItems: 'center', gap: 12, flex: 1}}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 10, background: color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', flexShrink: 0, fontSize: 14
-                    }}>
-                      {icon}
-                    </div>
-                    <div style={{display: 'flex', flexDirection: 'column'}}>
-                      <span style={{fontWeight: 700, color: 'var(--text-main)', fontSize: 14}}>
-                        {getDisplayCategoryName(entry.name)}
-                      </span>
-                      <div style={{ height: 4, width: 60, background: 'var(--border-color)', borderRadius: 2, marginTop: 4 }}>
-                         <div style={{ height: '100%', width: `${Math.min(parseFloat(percentage), 100)}%`, background: color, borderRadius: 2 }} />
-                      </div>
-                    </div>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 10, flex: 1}}>
+                    <div style={{width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0}} />
+                    <span style={{fontWeight: 600, color: 'var(--text-main)', fontSize: 14}}>{getDisplayCategoryName(entry.name)}</span>
                   </div>
-                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                     <span style={{
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: 'var(--text-main)',
-                      fontSize: 15
+                      fontSize: 14
                     }}>
                       {entry.value.toLocaleString()} ₽
                     </span>
                     <span style={{
-                      fontSize: 11,
-                      fontWeight: '700',
-                      color: 'var(--text-secondary)'
+                      background: 'rgba(102, 126, 234, 0.1)',
+                      color: '#667eea',
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      minWidth: 48,
+                      textAlign: 'center'
                     }}>
-                      {getPercentageOfTotal(entry.value).toFixed(1)}%
+                      {percentage}%
                     </span>
                   </div>
                 </motion.div>
