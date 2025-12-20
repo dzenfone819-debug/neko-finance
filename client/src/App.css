@@ -1118,3 +1118,50 @@ body:not(.dark-theme) .app-container {
   background-color: var(--border-color);
   border-radius: 3px;
 }
+
+/* --- HEATMAP --- */
+:root {
+  /* Light Theme Heatmap (Salmon/Red/Pink gradient) */
+  /* All text is dark or white depending on contrast. 
+     User wants 'readable' text. Mid-tones usually allow white text or dark text.
+     Let's pick colors that are 'warm' and vibrant. 
+  */
+  --hm-0: var(--bg-input);
+  --hm-1: #FFD6E0; /* Very light pink */
+  --hm-2: #FF9AA2; /* Light Salmon */
+  --hm-3: #FF6B6B; /* Salmon (Mid-tone) */
+  --hm-4: #EE6055; /* Darker Salmon */
+  --hm-5: #D00000; /* Red */
+
+  --hm-text-0: var(--text-secondary);
+  --hm-text-1: #555;
+  --hm-text-2: #333;
+  --hm-text-3: #FFF; /* Mid-tone starts getting dark enough for white text? Or stick to black? #FF6B6B usually white text is OK. */
+  --hm-text-4: #FFF;
+  --hm-text-5: #FFF;
+}
+
+.dark-theme {
+  /* Dark Theme Heatmap (Purple/Pink/Neon gradient) */
+  --hm-0: var(--bg-input);
+  --hm-5: #4A233A; /* Dark purple/brown */
+  --hm-4: #7D3C5C; /* Plum */
+  --hm-3: #B35882; /* Muted Pink */
+  --hm-2: #E675A9; /* Bright Pink */
+  --hm-1: #FF99C8; /* Light Pink Neon */
+
+  --hm-text-0: var(--text-secondary);
+  --hm-text-5: #E2E8F0;
+  --hm-text-4: #FFF;
+  --hm-text-3: #FFF;
+  --hm-text-2: #000; /* Bright background -> Dark text */
+  --hm-text-1: #000;
+}
+
+.heatmap-cell-0 { background-color: var(--hm-0); color: var(--hm-text-0); }
+.heatmap-cell-1 { background-color: var(--hm-1); color: var(--hm-text-1); }
+.heatmap-cell-2 { background-color: var(--hm-2); color: var(--hm-text-2); }
+.heatmap-cell-3 { background-color: var(--hm-3); color: var(--hm-text-3); }
+.heatmap-cell-4 { background-color: var(--hm-4); color: var(--hm-text-4); }
+.heatmap-cell-5 { background-color: var(--hm-5); color: var(--hm-text-5); }
+

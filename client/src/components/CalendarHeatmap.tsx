@@ -43,23 +43,17 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
     return values.length > 0 ? Math.max(...values) : 0;
   }, [dailyExpenses]);
 
-  // Получаем цвет ячейки на основе суммы расходов
-  const getColor = (amount: number) => {
-    if (amount === 0) return 'var(--bg-input)';
+  // Получаем уровень интенсивности (0-5)
+  const getLevel = (amount: number) => {
+    if (amount === 0) return 0;
+    if (maxExpense === 0) return 0;
+    
     const intensity = amount / maxExpense;
-    
-    // For heatmap colors, we might want to keep the pink scale or adapt it slightly.
-    // Let's keep the pink scale but make the "empty" or "low" values work in dark mode.
-    // The previous implementation used light pinks which might look odd in dark mode.
-    // We'll use CSS variables or a function that respects theme if needed, 
-    // but typically heatmaps use a distinct color scale.
-    // For "no expense", 'var(--bg-input)' is good (greyish/dark in dark mode).
-    
-    if (intensity < 0.2) return '#FFF0F5'; // Very light pink
-    if (intensity < 0.4) return '#FFD1E0';
-    if (intensity < 0.6) return '#FFB3CC';
-    if (intensity < 0.8) return '#FF94B8';
-    return '#E75480'; // Strong pink
+    if (intensity < 0.2) return 1;
+    if (intensity < 0.4) return 2;
+    if (intensity < 0.6) return 3;
+    if (intensity < 0.8) return 4;
+    return 5;
   };
 
   // Получаем количество дней в месяце
@@ -200,15 +194,15 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
           }
 
           const expense = dailyExpenses[day] || 0;
-          const color = getColor(expense);
+          const level = getLevel(expense);
 
           return (
             <motion.div
               key={day}
               whileTap={{ scale: 0.9 }}
+              className={`heatmap-cell-${level}`}
               style={{
                 aspectRatio: '1',
-                background: color,
                 borderRadius: 8,
                 display: 'flex',
                 flexDirection: 'column',
@@ -216,7 +210,6 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
                 justifyContent: 'center',
                 fontSize: 13,
                 fontWeight: 700,
-                color: expense > maxExpense * 0.5 ? 'white' : 'var(--text-main)', // Use text-main for lighter cells
                 boxShadow: expense > 0 ? '0 2px 4px var(--shadow-color)' : 'none',
                 cursor: expense > 0 ? 'pointer' : 'default',
               }}
@@ -255,12 +248,12 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
           flexWrap: 'wrap',
         }}>
           {[
-            { color: 'var(--bg-input)', label: 'Нет' },
-            { color: '#FFF0F5', label: 'Мало' },
-            { color: '#FFD1E0', label: 'Средне' },
-            { color: '#FFB3CC', label: 'Выше' },
-            { color: '#FF94B8', label: 'Много' },
-            { color: '#E75480', label: 'Макс' },
+            { level: 0, label: 'Нет' },
+            { level: 1, label: 'Мало' },
+            { level: 2, label: 'Средне' },
+            { level: 3, label: 'Выше' },
+            { level: 4, label: 'Много' },
+            { level: 5, label: 'Макс' },
           ].map((item) => (
             <div
               key={item.label}
@@ -271,10 +264,10 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
               }}
             >
               <div
+                className={`heatmap-cell-${item.level}`}
                 style={{
                   width: 16,
                   height: 16,
-                  background: item.color,
                   borderRadius: 4,
                 }}
               />
