@@ -453,11 +453,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           />
           
           <div style={{ marginTop: 10, marginBottom: 10 }}>
-            <span className="picker-label">Иконка</span>
             <IconPicker selectedIcon={selectedIcon} onSelectIcon={setSelectedIcon} />
           </div>
           <div style={{ marginBottom: 10 }}>
-             <span className="picker-label">Цвет</span>
              <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
           </div>
 
@@ -622,10 +620,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
                 className="modal-input"
              />
           </div>
-          <div style={{marginTop: 15}}>
-             <label className="modal-label">Цвет</label>
+           <div style={{marginTop: 15}}>
              <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
-          </div>
+           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleEditAccount}
@@ -670,11 +667,9 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
           </div>
           
           <div style={{ marginTop: 15, marginBottom: 10 }}>
-            <span className="picker-label">Иконка</span>
             <IconPicker selectedIcon={selectedIcon} onSelectIcon={setSelectedIcon} />
           </div>
           <div style={{ marginBottom: 10 }}>
-             <span className="picker-label">Цвет</span>
              <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
           </div>
           <motion.button

@@ -1082,11 +1082,9 @@ function App() {
                 className="modal-input"
               />
               <div style={{marginTop: 10, marginBottom: 10}}>
-                <span className="picker-label">Иконка</span>
                 <IconPicker selectedIcon={newCategoryIcon} onSelectIcon={setNewCategoryIcon} />
               </div>
               <div style={{marginBottom: 10}}>
-                <span className="picker-label">Цвет</span>
                 <ColorPicker selectedColor={newCategoryColor} onSelectColor={setNewCategoryColor} />
               </div>
             </>

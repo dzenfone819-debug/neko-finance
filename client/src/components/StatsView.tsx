@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Wallet, TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { CATEGORIES, COLORS, getCategoryName } from '../data/constants';
+import { CATEGORIES, COLORS, getCategoryName, getIconByName } from '../data/constants';
 import { getBudgetPeriod } from '../utils/budgetPeriod';
 
 interface CustomCategory {
@@ -23,6 +23,8 @@ interface StatsViewProps {
   currentMonth?: Date;
 }
 
+const RADIAN = Math.PI / 180;
+
 export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0, customCategories = [], periodType = 'calendar_month', periodStartDay = 1, currentMonth = new Date() }) => {
   const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month'>('month');
 
@@ -33,54 +35,62 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
     return getCategoryName(categoryId);
   };
 
+  const getCategoryIcon = (categoryId: string) => {
+    const customCat = customCategories.find(c => c.id === categoryId);
+    if (customCat) {
+      return getIconByName(customCat.icon, 14);
+    }
+    const cat = CATEGORIES.find(c => c.id === categoryId);
+    // Standard icons are 20px, we might want smaller for label
+    // If it's a React Element, we can return it.
+    // However, for foreignObject or text, we might need adjustments.
+    // @ts-ignore - Lucide icons accept size prop
+    return cat ? React.cloneElement(cat.icon as React.ReactElement, { size: 14 }) : null;
+  };
+
+  const getCategoryColor = (categoryId: string, index: number) => {
+    const customCat = customCategories.find(c => c.id === categoryId);
+    if (customCat) return customCat.color;
+    const cat = CATEGORIES.find(c => c.id === categoryId);
+    return cat ? cat.color : COLORS[index % COLORS.length];
+  }
+
   // Кастомный Tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload, coordinate }: any) => {
     if (active && payload && payload.length) {
       const categoryId = payload[0].name;
       const value = payload[0].value;
       const categoryName = getDisplayCategoryName(categoryId);
       const currentTotal = periodTotal > 0 ? periodTotal : total;
       const percentage = ((value / currentTotal) * 100).toFixed(1);
-      const cat = CATEGORIES.find(c => c.id === categoryId);
-      const color = cat ? cat.color : COLORS[0];
+      const color = getCategoryColor(categoryId, 0);
+
+      // Position the tooltip near the slice using coordinate.x / coordinate.y
+      const left = Math.max(8, coordinate.x - 20);
+      const top = Math.max(8, coordinate.y - 60);
 
       return (
         <div style={{
+          position: 'absolute',
+          left,
+          top,
           background: 'var(--bg-content)',
-          border: `3px solid ${color}`,
+          border: `2px solid ${color}`,
           borderRadius: 12,
-          padding: '12px 16px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          backdropFilter: 'blur(10px)'
+          padding: '8px 12px',
+          boxShadow: '0 4px 12px var(--shadow-color)',
+          zIndex: 9999,
+          opacity: 1,
+          pointerEvents: 'auto'
         }}>
-          <div style={{
-            fontWeight: 'bold',
-            color: 'var(--text-main)',
-            fontSize: 14,
-            marginBottom: 6
-          }}>
+          <div style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 13, marginBottom: 4 }}>
             {categoryName}
           </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}>
-            <span style={{
-              fontSize: 16,
-              fontWeight: 'bold',
-              color: color
-            }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+             <span style={{ fontSize: 14, fontWeight: 'bold', color: color }}>
               {value.toLocaleString()} ₽
             </span>
-            <span style={{
-              background: color,
-              color: 'white',
-              padding: '2px 8px',
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 'bold'
-            }}>
+            <span style={{ background: color, color: 'white', padding: '1px 5px', borderRadius: 4, fontSize: 11, fontWeight: 'bold' }}>
               {percentage}%
             </span>
           </div>
@@ -90,17 +100,30 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
     return null;
   };
 
-  // Фильтрация транзакций по выбранному периоду
+  // Фильтрация транзакций по выбранному периоду (Календарные дни)
   const getFilteredTransactions = () => {
     const now = new Date();
+    
+    // Начало сегодняшнего дня (00:00)
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Начало текущей недели (Понедельник)
+    const dayOfWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
+    const diffToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - diffToMon);
+    startOfWeek.setHours(0, 0, 0, 0);
+
     const filtered = transactions.filter(t => {
       const tDate = new Date(t.date);
-      const diffTime = now.getTime() - tDate.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
       
-      if (timePeriod === 'day') return diffDays < 1;
-      if (timePeriod === 'week') return diffDays < 7;
-      return true; // month - все транзакции месяца
+      if (timePeriod === 'day') {
+        return tDate >= startOfDay;
+      }
+      if (timePeriod === 'week') {
+        return tDate >= startOfWeek;
+      }
+      return true; // month - все транзакции (уже отфильтрованы по месяцу в App.tsx)
     });
     return filtered.filter(t => t.type === 'expense');
   };
@@ -112,7 +135,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
     filtered.forEach(t => {
       stats[t.category] = (stats[t.category] || 0) + t.amount;
     });
-    return Object.entries(stats).map(([name, value]) => ({ name, value }));
+    return Object.entries(stats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   };
 
   const periodData = getPeriodStats();
@@ -124,15 +147,18 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
     return ((value / budgetLimit) * 100).toFixed(1);
   };
 
+  //const getPercentageOfTotal = (value: number) => {
+  //   const currentTotal = periodTotal > 0 ? periodTotal : total;
+  //   if (currentTotal === 0) return 0;
+  //   return (value / currentTotal) * 100;
+  //}
+
   // Средние расходы за неделю
   const getWeeklyAverage = () => {
     const period = getBudgetPeriod(currentMonth, periodType, periodStartDay);
     const now = new Date();
-    
-    // Количество дней с начала периода до сегодня
     const daysSinceStart = Math.max(1, Math.floor((now.getTime() - period.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
     const weeksElapsed = daysSinceStart / 7;
-    
     return weeksElapsed > 0 ? Math.round(total / weeksElapsed) : 0;
   };
 
@@ -140,64 +166,116 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
   const getForecast = () => {
     const period = getBudgetPeriod(currentMonth, periodType, periodStartDay);
     const now = new Date();
-    
-    // Количество дней с начала периода до сегодня
     const daysSinceStart = Math.max(1, Math.floor((now.getTime() - period.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-    
-    // Общее количество дней в периоде
     const totalDaysInPeriod = Math.floor((period.endDate.getTime() - period.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    
-    // Количество дней до конца периода
     const daysRemaining = totalDaysInPeriod - daysSinceStart;
-    
     if (daysSinceStart === 0) return total;
-    
     const dailyAverage = total / daysSinceStart;
     const forecast = total + (dailyAverage * daysRemaining);
-    
     return Math.round(forecast);
   };
 
   const weeklyAvg = getWeeklyAverage();
   const forecast = getForecast();
 
+  // Custom Label for Pie Chart
+  const renderCustomizedLabel = (props: any) => {
+    const { cx, cy, midAngle, outerRadius, percent, name } = props;
+    if (percent < 0.04) return null; // Скрываем метки для секторов меньше 4%
+
+    const radius = outerRadius * 1.35; // Выносим метку дальше
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    
+    // Выравнивание текста в зависимости от стороны
+    const textAnchor = x > cx ? 'start' : 'end';
+    
+    // Получаем иконку и цвет
+    const icon = getCategoryIcon(name);
+    const color = getCategoryColor(name, props.index);
+    const percentValue = (percent * 100).toFixed(0) + '%';
+
+    return (
+      <g>
+        {/* Линия от центра сегмента к метке */}
+        <path
+          d={`M${cx + outerRadius * Math.cos(-midAngle * RADIAN)},${cy + outerRadius * Math.sin(-midAngle * RADIAN)}L${x > cx ? x - 5 : x + 5},${y}`}
+          stroke={color}
+          strokeWidth={1}
+          fill="none"
+          opacity={0.5}
+        />
+        
+        {/* Иконка в кружочке */}
+        <foreignObject x={x > cx ? x : x - 22} y={y - 11} width={22} height={22}>
+           <div style={{
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: 22, 
+              height: 22,
+              borderRadius: '50%',
+              background: color,
+              color: '#fff'
+           }}>
+             {icon}
+           </div>
+        </foreignObject>
+
+        {/* Процент */}
+        <text 
+          x={x > cx ? x + 26 : x - 30} 
+          y={y + 5} 
+          fill={'var(--text-main)'} 
+          textAnchor={textAnchor} 
+          dominantBaseline="central"
+          style={{ fontSize: '12px', fontWeight: '800' }}
+        >
+          {percentValue}
+        </text>
+      </g>
+    );
+  };
+
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       
       {data.length > 0 ? (
         <>
-          {/* Заголовок с кнопкой экспорта */}
           <div style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             width: '100%',
-            marginBottom: 16,
+            marginBottom: 20,
             paddingLeft: 10,
             paddingRight: 10
           }}>
-            {/* Переключатель периода */}
             <div style={{
               display: 'flex',
-              gap: 8,
-              background: 'var(--bg-card)',
-              borderRadius: 12,
+              gap: 4,
+              background: 'var(--bg-input)',
+              borderRadius: 14,
               padding: 4
             }}>
               {(['day', 'week', 'month'] as const).map((period) => (
                 <motion.button
                   key={period}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setTimePeriod(period)}
+                  onClick={() => {
+                    setTimePeriod(period);
+                    // Haptic feedback could be triggered here via props or global
+                  }}
                   style={{
-                    padding: '8px 16px',
+                    padding: '8px 20px',
                     border: 'none',
-                    borderRadius: 8,
-                    background: timePeriod === period ? '#667eea' : 'transparent',
-                    color: timePeriod === period ? 'white' : 'var(--text-main)',
-                    fontWeight: 'bold',
+                    borderRadius: 10,
+                    background: timePeriod === period ? 'var(--bg-card)' : 'transparent',
+                    color: timePeriod === period ? 'var(--text-main)' : 'var(--text-secondary)',
+                    fontWeight: '800',
                     fontSize: 13,
                     cursor: 'pointer',
+                    boxShadow: timePeriod === period ? '0 2px 8px var(--shadow-color)' : 'none',
                     transition: 'all 0.2s'
                   }}
                 >
@@ -207,75 +285,76 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
             </div>
           </div>
 
-          {/* График */}
-          <div style={{ width: '100%', height: '220px', flexShrink: 0, position: 'relative' }}>
+          <div style={{ width: '100%', height: '260px', flexShrink: 0, position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={periodData.length > 0 ? periodData : data}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
+                  data={periodData.length > 0 ? periodData : [{name: 'empty', value: 1}]}
+                  innerRadius={55}
+                  outerRadius={75}
+                  paddingAngle={4}
                   dataKey="value"
                   stroke="none"
+                  label={periodData.length > 0 ? renderCustomizedLabel : undefined}
+                  labelLine={false} 
                 >
-                  {(periodData.length > 0 ? periodData : data).map((entry, index) => {
-                    const cat = CATEGORIES.find(c => c.id === entry.name);
-                    return <Cell key={`cell-${index}`} fill={cat ? cat.color : COLORS[index % COLORS.length]} />;
+                  {(periodData.length > 0 ? periodData : [{name: 'empty', value: 1}]).map((entry, index) => {
+                     if (entry.name === 'empty') return <Cell key="empty" fill="var(--bg-input)" />;
+                     return <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, index)} />;
                   })}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                {periodData.length > 0 && <Tooltip content={<CustomTooltip />} />}
               </PieChart>
             </ResponsiveContainer>
             
             <div style={{ 
-                  position: 'absolute', top: '90px', left: '0', right: '0', 
-                  textAlign: 'center', pointerEvents: 'none', color: 'var(--text-main)', fontWeight: 'bold',
+                  position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                  textAlign: 'center', pointerEvents: 'none', color: 'var(--text-main)', 
                   zIndex: 0
             }}>
-              Всего:<br/>{periodTotal > 0 ? periodTotal : total} ₽
+              <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 700 }}>ВСЕГО</div>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>{periodTotal.toLocaleString()}</div>
             </div>
           </div>
 
-          {/* Карточки с метриками */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
             gap: 12,
             width: '100%',
-            marginTop: 20,
+            marginTop: 10,
             marginBottom: 20
           }}>
-            {/* Средние расходы за неделю */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               style={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: 12,
+                borderRadius: 16,
                 padding: 16,
-                color: 'white'
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(118, 75, 162, 0.3)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <Calendar size={18} />
-                <span style={{ fontSize: 11, opacity: 0.9 }}>В среднем/неделю</span>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>В среднем/неделю</span>
               </div>
               <div style={{ fontSize: 20, fontWeight: 'bold' }}>{weeklyAvg.toLocaleString()} ₽</div>
             </motion.div>
 
-            {/* Прогноз до конца периода */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               style={{
                 background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                borderRadius: 12,
+                borderRadius: 16,
                 padding: 16,
-                color: 'white'
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(245, 87, 108, 0.3)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <TrendingUp size={18} />
-                <span style={{ fontSize: 11, opacity: 0.9 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>
                   {periodType === 'calendar_month' ? 'Прогноз месяца' : 'Прогноз периода'}
                 </span>
               </div>
@@ -348,7 +427,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
       ) : (
         <div style={{textAlign: 'center', marginTop: 50, color: 'var(--text-secondary)'}}>
           <Wallet size={48} style={{opacity: 0.3, marginBottom: 10}} />
-          <p>Трат пока нет. <br/>Добавьте первый расход!</p>
+          <p style={{fontWeight: 'bold'}}>Трат пока нет. <br/>Добавьте первый расход!</p>
         </div>
       )}
     </div>
