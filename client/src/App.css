@@ -381,7 +381,7 @@ body:not(.dark-theme) .app-container {
 
 .numpad-grid { 
   display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
+  grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, minmax(45px, 1fr)) minmax(48px, 55px);
   gap: 6px;
   max-height: 250px;
@@ -402,6 +402,17 @@ body:not(.dark-theme) .app-container {
   user-select: none;
 }
 
+.operator-btn {
+  background: var(--bg-input);
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.operator-btn:active {
+  background: var(--primary);
+  color: white;
+}
+
 .numpad-btn:active { 
   background: var(--border-color); 
   transform: scale(0.95);
@@ -418,7 +429,7 @@ body:not(.dark-theme) .app-container {
 
 
 .numpad-confirm { 
-  grid-column: span 3; 
+  grid-column: span 2;
   background: linear-gradient(135deg, var(--primary) 0%, #E891C8 100%);
   color: white; 
   font-size: 15px; 
