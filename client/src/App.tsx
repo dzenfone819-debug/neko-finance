@@ -203,8 +203,8 @@ function App() {
         api.fetchBalance(uid, month, year),
         api.fetchStats(uid, month, year),
         api.fetchTransactions(uid, month, year),
-        api.fetchBudget(uid),
-        api.fetchCategoryLimits(uid),
+        api.fetchBudget(uid, month, year),
+        api.fetchCategoryLimits(uid, month, year),
         api.fetchAccounts(uid),
         api.fetchGoals(uid),
         api.fetchCustomCategories(uid)
@@ -370,12 +370,14 @@ function App() {
   const handleModalSave = async (val: number) => {
     if (!userId || !editTarget) return;
     try {
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
       WebApp.HapticFeedback.notificationOccurred('success');
       if (editTarget.type === 'total') {
-        await api.setBudget(userId, val);
+        await api.setBudget(userId, val, month, year);
         setBudgetLimit(val);
       } else if (editTarget.type === 'category' && editTarget.id) {
-        await api.setCategoryLimit(userId, editTarget.id, val);
+        await api.setCategoryLimit(userId, editTarget.id, val, month, year);
         setCatLimits({ ...catLimits, [editTarget.id]: val });
       }
       setModalOpen(false);
@@ -400,18 +402,28 @@ function App() {
     if (!userId) return;
     
     try {
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
       // Если поле пустое или не число, устанавливаем 0
       const limit = newCategoryLimit && !isNaN(parseFloat(newCategoryLimit)) ? parseFloat(newCategoryLimit) : 0;
       
       if (isCustomCategory) {
-        // Создаём кастомную категорию
+        // Создаём кастомную категорию (лимит для кастомной категории тоже нужно привязать к дате, но пока API createCustomCategory принимает просто limit)
+        // Возможно стоит обновить createCustomCategory чтобы она тоже создавала запись с датой?
+        // Но createCustomCategory создает САМУ категорию. Лимит создается внутри сервера.
+        // Серверный createCustomCategory не был обновлен на прием даты.
+        // Но это не страшно, так как после создания мы можем обновить лимит явно.
         if (!newCategoryName) return;
-        await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
+        const res = await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
+        // Обновляем лимит явно с датой
+        if (limit > 0) {
+            await api.setCategoryLimit(userId, res.id, limit, month, year);
+        }
       } else {
         // Добавляем лимит к стандартной категории
         if (!selectedStandardCategory) return;
         // Устанавливаем лимит (даже если 0)
-        await api.setCategoryLimit(userId, selectedStandardCategory, limit);
+        await api.setCategoryLimit(userId, selectedStandardCategory, limit, month, year);
       }
       
       WebApp.HapticFeedback.notificationOccurred('success');
@@ -429,9 +441,16 @@ function App() {
       if (!userId) return;
       WebApp.HapticFeedback.impactOccurred('medium');
       try {
+        const month = currentDate.getMonth() + 1;
+        const year = currentDate.getFullYear();
         const isCustom = customCategories.some(cat => cat.id === categoryId);
-        if (isCustom) await api.deleteCustomCategory(userId, categoryId);
-        await api.deleteCategoryLimit(userId, categoryId);
+        if (isCustom) {
+            // Если удаляем кастомную категорию, удаляем её полностью (это структура, а не только лимит)
+            await api.deleteCustomCategory(userId, categoryId);
+        } else {
+            // Если это стандартная категория - удаляем лимит для текущего месяца (ставим 0)
+            await api.deleteCategoryLimit(userId, categoryId, month, year);
+        }
         WebApp.HapticFeedback.notificationOccurred('success');
         await loadData(userId, currentDate);
       } catch (e) { console.error(e); WebApp.HapticFeedback.notificationOccurred('error'); }

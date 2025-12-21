@@ -66,32 +66,32 @@ export const updateTransaction = async (userId: number, transactionId: number, a
   return await response.json();
 };
 
-export const fetchBudget = async (userId: number) => {
-  const response = await fetch(`${API_URL}/settings`, { headers: { 'x-user-id': userId.toString() } });
+export const fetchBudget = async (userId: number, month?: number, year?: number) => {
+  const query = getQuery(month, year);
+  const response = await fetch(`${API_URL}/settings${query}`, { headers: { 'x-user-id': userId.toString() } });
   const data = await response.json(); return data.budget || 0;
 };
-export const setBudget = async (userId: number, budget: number) => {
+export const setBudget = async (userId: number, budget: number, month?: number, year?: number) => {
   const response = await fetch(`${API_URL}/settings`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ budget }) 
+    body: JSON.stringify({ budget, month, year }) 
   }); return await response.json();
 };
-export const fetchCategoryLimits = async (userId: number) => {
-  const response = await fetch(`${API_URL}/limits`, { headers: { 'x-user-id': userId.toString() } });
+export const fetchCategoryLimits = async (userId: number, month?: number, year?: number) => {
+  const query = getQuery(month, year);
+  const response = await fetch(`${API_URL}/limits${query}`, { headers: { 'x-user-id': userId.toString() } });
   return await response.json();
 };
-export const setCategoryLimit = async (userId: number, category: string, limit: number) => {
+export const setCategoryLimit = async (userId: number, category: string, limit: number, month?: number, year?: number) => {
   await fetch(`${API_URL}/limits`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ category, limit }) 
+    body: JSON.stringify({ category, limit, month, year }) 
   });
 };
 
-export const deleteCategoryLimit = async (userId: number, category: string) => {
-  await fetch(`${API_URL}/limits/${category}`, {
-    method: 'DELETE', 
-    headers: { 'x-user-id': userId.toString() }
-  });
+export const deleteCategoryLimit = async (userId: number, category: string, month?: number, year?: number) => {
+  // Вместо удаления записи, устанавливаем лимит в 0 для этого месяца
+  await setCategoryLimit(userId, category, 0, month, year);
 };
 
 // ========== КАСТОМНЫЕ КАТЕГОРИИ ==========

@@ -81,15 +81,69 @@ db.serialize(() => {
     )
   `)
 
-  // Лимиты категорий
+  // Лимиты категорий (с поддержкой истории по effective_date)
+  // Сначала проверяем, нужно ли мигрировать старую таблицу
+  db.get("SELECT count(*) as count FROM pragma_table_info('category_limits') WHERE name='effective_date'", (err, row) => {
+    // Если таблицы нет или ошибка - просто пытаемся создать новую структуру
+    // Если таблица есть, но нет колонки effective_date - мигрируем
+    
+    const migrationNeeded = row && row.count === 0;
+    
+    // Проверяем существование таблицы вообще (чтобы не мигрировать несуществующую)
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='category_limits'", (err, tableRow) => {
+      const tableExists = !!tableRow;
+      
+      if (tableExists && migrationNeeded) {
+        console.log('🔄 Migrating category_limits to support history...');
+        db.serialize(() => {
+          db.run("ALTER TABLE category_limits RENAME TO category_limits_old");
+          db.run(`
+            CREATE TABLE category_limits (
+              user_id INTEGER,
+              category_id TEXT,
+              limit_amount REAL,
+              effective_date TEXT,
+              PRIMARY KEY (user_id, category_id, effective_date)
+            )
+          `);
+          // Копируем старые лимиты с датой '2000-01-01'
+          db.run(`
+            INSERT INTO category_limits (user_id, category_id, limit_amount, effective_date)
+            SELECT user_id, category_id, limit_amount, '2000-01-01' FROM category_limits_old
+          `);
+          db.run("DROP TABLE category_limits_old");
+          console.log('✅ category_limits migration complete.');
+        });
+      } else {
+        // Создаем таблицу, если её нет (новая установка)
+        db.run(`
+          CREATE TABLE IF NOT EXISTS category_limits (
+            user_id INTEGER,
+            category_id TEXT,
+            limit_amount REAL,
+            effective_date TEXT,
+            PRIMARY KEY (user_id, category_id, effective_date)
+          )
+        `);
+      }
+    });
+  });
+
+  // История общего бюджета
   db.run(`
-    CREATE TABLE IF NOT EXISTS category_limits (
+    CREATE TABLE IF NOT EXISTS global_budget_limits (
       user_id INTEGER,
-      category_id TEXT,
       limit_amount REAL,
-      PRIMARY KEY (user_id, category_id)
+      effective_date TEXT,
+      PRIMARY KEY (user_id, effective_date)
     )
-  `)
+  `, () => {
+    // Миграция данных из user_settings в global_budget_limits
+    db.run(`
+      INSERT OR IGNORE INTO global_budget_limits (user_id, limit_amount, effective_date)
+      SELECT user_id, budget_limit, '2000-01-01' FROM user_settings WHERE budget_limit > 0
+    `);
+  })
 
   // Кастомные категории (пользовательские лимиты)
   db.run(`
@@ -422,30 +476,112 @@ fastify.put('/transactions/:id', (request, reply) => {
   })
 })
 
-// Настройки бюджета (Общий)
+// Настройки бюджета (Общий) - теперь исторические
 fastify.get('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
-  db.get("SELECT budget_limit FROM user_settings WHERE user_id = ?", [userId], (err, row) => {
-    return reply.send({ budget: row ? row.budget_limit : 0 })
-  })
+  const { month, year } = request.query;
+
+  const now = new Date();
+  const m = month ? parseInt(month) : (now.getMonth() + 1);
+  const y = year ? parseInt(year) : now.getFullYear();
+
+  getBudgetSettings(userId).then(settings => {
+    const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
+    const targetDate = period.startDate.toISOString();
+
+    const sql = `
+      SELECT limit_amount
+      FROM global_budget_limits
+      WHERE user_id = ? AND effective_date <= ?
+      ORDER BY effective_date DESC
+      LIMIT 1
+    `;
+    
+    db.get(sql, [userId, targetDate], (err, row) => {
+      return reply.send({ budget: row ? row.limit_amount : 0 })
+    })
+  }).catch(err => {
+    console.error(err);
+    return reply.send({ budget: 0 });
+  });
 })
 
 fastify.post('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
-  const { budget } = request.body
-  db.run("REPLACE INTO user_settings (user_id, budget_limit) VALUES (?, ?)", [userId, budget], () => {
-    return reply.send({ status: 'ok' })
-  })
+  const { budget, month, year } = request.body
+  
+  const now = new Date();
+  const m = month ? parseInt(month) : (now.getMonth() + 1);
+  const y = year ? parseInt(year) : now.getFullYear();
+
+  getBudgetSettings(userId).then(settings => {
+    const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
+    const effectiveDate = period.startDate.toISOString();
+
+    db.run(
+      "INSERT OR REPLACE INTO global_budget_limits (user_id, limit_amount, effective_date) VALUES (?, ?, ?)",
+      [userId, budget, effectiveDate],
+      () => {
+        return reply.send({ status: 'ok' })
+      }
+    )
+  }).catch(err => {
+    console.error(err);
+    return reply.code(500).send({ error: err.message });
+  });
 })
 
 // Лимиты категорий
 fastify.get('/limits', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
-  db.all("SELECT category_id, limit_amount FROM category_limits WHERE user_id = ?", [userId], (err, rows) => {
-    const limits = {};
-    if (rows) rows.forEach(r => limits[r.category_id] = r.limit_amount);
-    return reply.send(limits)
-  })
+  
+  getDateFilter(request.query, userId).then(filter => {
+    // filter.sql содержит условие date >= ? AND date <= ?
+    // Но нам нужно найти лимиты, действующие на момент начала периода (или внутри него, если менялись).
+    // Логика: effective_date <= period_start. 
+    // На самом деле, мы хотим знать *актуальный* лимит для этого месяца.
+    // Это значит: берем самый свежий лимит, у которого effective_date <= period_end (или start?)
+    // Если пользователь меняет лимит в середине месяца, он хочет, чтобы этот лимит действовал на этот месяц.
+    // Поэтому effective_date будет равна началу месяца.
+    
+    // Получаем начало периода из параметров
+    const { month, year } = request.query;
+    
+    // Если месяц/год не указаны, возвращаем последние (глобальные) лимиты?
+    // Или текущие? Пусть по умолчанию текущие.
+    const now = new Date();
+    const m = month ? parseInt(month) : (now.getMonth() + 1);
+    const y = year ? parseInt(year) : now.getFullYear();
+    
+    // Вычисляем старт периода, для которого ищем лимиты
+    // Нам нужно найти для каждой категории запись с MAX(effective_date), где effective_date <= startDatePeriod
+    getBudgetSettings(userId).then(settings => {
+      const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
+      const targetDate = period.startDate.toISOString(); // Дата начала периода
+      
+      const sql = `
+        SELECT category_id, limit_amount
+        FROM category_limits t1
+        WHERE user_id = ? 
+          AND effective_date = (
+            SELECT MAX(effective_date)
+            FROM category_limits t2
+            WHERE t2.user_id = t1.user_id 
+              AND t2.category_id = t1.category_id
+              AND t2.effective_date <= ?
+          )
+      `;
+      
+      db.all(sql, [userId, targetDate], (err, rows) => {
+        const limits = {};
+        if (rows) rows.forEach(r => limits[r.category_id] = r.limit_amount);
+        return reply.send(limits)
+      })
+    });
+  }).catch(err => {
+     console.error(err);
+     return reply.send({});
+  });
 })
 
 // Получить все кастомные категории пользователя
@@ -477,12 +613,16 @@ fastify.post('/custom-categories', (request, reply) => {
     function(err) {
       if (err) return reply.code(500).send({ error: err.message })
       
-      // Всегда создаем запись в category_limits (даже с лимитом 0)
+      // Всегда создаем запись в category_limits с лимитом 0 и датой '2000-01-01'
+      // Это нужно, чтобы в прошлых месяцах лимит был 0 (неограничен/отключен),
+      // а реальный лимит будет установлен клиентом для текущего месяца отдельным запросом.
       const limitValue = limit !== undefined && limit !== null ? limit : 0
       db.run(
-        "INSERT INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)",
-        [userId, categoryId, limitValue],
+        "INSERT INTO category_limits (user_id, category_id, limit_amount, effective_date) VALUES (?, ?, ?, ?)",
+        [userId, categoryId, 0, '2000-01-01'],
         () => {
+          // Возвращаем переданный лимит, чтобы клиент знал, что категория создана с этим намерением,
+          // хотя в БД база 0. Клиент сам установит актуальный лимит для текущего месяца.
           return reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit: limitValue })
         }
       )
@@ -515,12 +655,29 @@ fastify.delete('/custom-categories/:id', (request, reply) => {
 
 fastify.post('/limits', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
-  const { category, limit } = request.body
+  const { category, limit, month, year } = request.body
   
-  // Всегда используем REPLACE для добавления/обновления лимита (даже 0)
-  db.run("REPLACE INTO category_limits (user_id, category_id, limit_amount) VALUES (?, ?, ?)", [userId, category, limit || 0], () => {
-    return reply.send({ status: 'ok' })
-  })
+  // Определяем дату начала действия лимита
+  const now = new Date();
+  const m = month ? parseInt(month) : (now.getMonth() + 1);
+  const y = year ? parseInt(year) : now.getFullYear();
+
+  getBudgetSettings(userId).then(settings => {
+    const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
+    const effectiveDate = period.startDate.toISOString();
+
+    // Вставляем или обновляем лимит для этой даты
+    db.run(
+      "INSERT OR REPLACE INTO category_limits (user_id, category_id, limit_amount, effective_date) VALUES (?, ?, ?, ?)", 
+      [userId, category, limit || 0, effectiveDate], 
+      () => {
+        return reply.send({ status: 'ok' })
+      }
+    )
+  }).catch(err => {
+    console.error(err);
+    return reply.code(500).send({ error: err.message });
+  });
 })
 
 // Удалить лимит категории
@@ -640,7 +797,7 @@ fastify.post('/goals', (request, reply) => {
 fastify.put('/goals/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
-  const { name, target_amount, current_amount, color, deadline } = request.body
+  const { name, target_amount, current_amount, color, deadline, icon } = request.body
   
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
@@ -652,6 +809,7 @@ fastify.put('/goals/:id', (request, reply) => {
   if (target_amount) { updates.push('target_amount = ?'); params.push(target_amount) }
   if (current_amount !== undefined) { updates.push('current_amount = ?'); params.push(current_amount) }
   if (color) { updates.push('color = ?'); params.push(color) }
+  if (icon) { updates.push('icon = ?'); params.push(icon) }
   if (deadline !== undefined) { updates.push('deadline = ?'); params.push(deadline) }
   
   updates.push('updated_at = ?')
