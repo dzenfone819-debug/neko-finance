@@ -27,6 +27,7 @@ import type { FilterState } from './components/TransactionSearch'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 import { cloudStorage } from './utils/cloudStorage'
+import { evaluateExpression } from './utils/calculator'
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'analytics' | 'settings'>('input')
@@ -328,7 +329,26 @@ function App() {
   const currentCategories = transType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
   const handleConfirm = async () => {
-    const value = parseFloat(amount);
+    let value = 0;
+
+    // Check if amount is an expression
+    if (/[\+\-\*\/]/.test(amount)) {
+      const calculated = evaluateExpression(amount);
+      if (isNaN(calculated) || !isFinite(calculated)) {
+        WebApp.HapticFeedback.notificationOccurred('error');
+        setIsError(true);
+        setTimeout(() => setIsError(false), 500);
+        return;
+      }
+      value = calculated;
+      // Update displayed amount to result?
+      // Optional: keep it as expression or show result.
+      // For now, let's proceed with value.
+      setAmount(calculated.toString());
+    } else {
+      value = parseFloat(amount);
+    }
+
     if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { 
       console.log('❌ Validation failed:', { amount, value, userId });
       api.logToServer('❌ Validation failed:', { amount, value, userId });
@@ -470,7 +490,39 @@ function App() {
   }
 
   const handleDeleteTransaction = async (id: number) => { if (!userId) return; WebApp.HapticFeedback.impactOccurred('medium'); try { await api.deleteTransaction(userId, id); loadData(userId, currentDate); } catch { triggerError(); } }
-  const handleNumberClick = (num: string) => { WebApp.HapticFeedback.impactOccurred('light'); if (amount.length >= 9) return; if (num === '.' && amount.includes('.')) return; setAmount(prev => prev + num); setIsError(false); }
+
+  const handleNumberClick = (num: string) => {
+    WebApp.HapticFeedback.impactOccurred('light');
+
+    // Prevent expression becoming too long
+    if (amount.length >= 20) return;
+
+    // Handle operators
+    const isOperator = ['+', '-', '*', '/'].includes(num);
+    const lastChar = amount.slice(-1);
+    const isLastOperator = ['+', '-', '*', '/'].includes(lastChar);
+
+    // Prevent double operators
+    if (isOperator && isLastOperator) {
+      setAmount(prev => prev.slice(0, -1) + num);
+      return;
+    }
+
+    // Prevent starting with operator (except maybe minus, but let's stick to simple positive starts or 0)
+    if (amount === '' && isOperator) return;
+
+    // Prevent multiple dots in same number segment
+    if (num === '.') {
+      // Find the last number segment
+      const parts = amount.split(/[\+\-\*\/]/);
+      const lastPart = parts[parts.length - 1];
+      if (lastPart.includes('.')) return;
+    }
+
+    setAmount(prev => prev + num);
+    setIsError(false);
+  }
+
   const handleDelete = () => { WebApp.HapticFeedback.impactOccurred('medium'); setAmount(prev => prev.slice(0, -1)); setIsError(false); }
   const triggerError = () => { WebApp.HapticFeedback.notificationOccurred('error'); setIsError(true); setTimeout(() => setIsError(false), 500); }
 
