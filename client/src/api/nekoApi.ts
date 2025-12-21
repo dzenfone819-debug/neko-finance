@@ -32,24 +32,59 @@ export const fetchTransactions = async (userId: number, month?: number, year?: n
   return await response.json();
 };
 
-// ... Остальные функции (add, delete, settings, limits) без изменений ...
-// (Обязательно оставь их!)
-export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account', date?: string) => {
-  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date };
+// Загрузка фото
+export const uploadPhoto = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_URL}/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) throw new Error('Photo upload failed');
+  const data = await response.json();
+  return data.url; // Returns /uploads/filename.ext
+};
+
+export const addTransaction = async (
+  userId: number,
+  amount: number,
+  category: string,
+  type: 'expense' | 'income',
+  accountId?: number,
+  targetType: 'account' | 'goal' = 'account',
+  date?: string,
+  notes?: string,
+  tags?: string,
+  photo_url?: string
+) => {
+  const payload = {
+    amount, category, type,
+    account_id: accountId,
+    target_type: targetType,
+    date,
+    notes, tags, photo_url
+  };
+
   console.log('🔵 API addTransaction payload:', payload);
   const response = await fetch(`${API_URL}/add-expense`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
     body: JSON.stringify(payload) 
   }); 
+
   if (!response.ok) {
     const error = await response.text();
     console.error('❌ API error response:', error);
     throw new Error('Failed to add: ' + error);
   }
+
   const result = await response.json();
   console.log('✅ API addTransaction result:', result);
   return result;
 };
+
 export const deleteTransaction = async (userId: number, transactionId: number) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'DELETE', headers: { 'x-user-id': userId.toString() }
