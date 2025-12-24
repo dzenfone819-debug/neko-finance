@@ -118,7 +118,7 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
         </div>
 
         <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <label className="modal-label">Дата начала</label>
             <input
               type="date"
@@ -128,7 +128,7 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
               style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <label className="modal-label">Дата окончания (опц.)</label>
             <input
               type="date"
