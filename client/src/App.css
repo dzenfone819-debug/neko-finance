@@ -566,6 +566,32 @@ body:not(.dark-theme) .app-container {
   right: 0;
 }
 
+/* iOS/WebKit specific fixes for date/time inputs inside modals */
+.modal-content input[type="date"],
+.modal-content input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 44px; /* reserve space for native icon */
+  overflow: hidden;
+}
+
+.modal-content input[type="date"]::-webkit-datetime-edit,
+.modal-content input[type="time"]::-webkit-datetime-edit {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fallback for inputs placed in flex children: ensure they can shrink on iOS */
+.modal-content > .modal-body input,
+.modal-content input {
+  min-width: 0;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
