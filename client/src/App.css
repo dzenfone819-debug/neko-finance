@@ -548,6 +548,24 @@ body:not(.dark-theme) .app-container {
   box-sizing: border-box;
 }
 
+/* Fix for iOS native date/time controls that can push width to the right edge */
+.modal-content input[type="date"],
+.modal-content input[type="time"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* leave space for native picker icon so content doesn't overflow */
+  padding-right: 40px;
+}
+
+.modal-content input[type="date"]::-webkit-calendar-picker-indicator,
+.modal-content input[type="time"]::-webkit-calendar-picker-indicator {
+  /* ensure indicator doesn't overflow visually */
+  position: relative;
+  right: 0;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
