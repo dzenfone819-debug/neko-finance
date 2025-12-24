@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ModalProps {
@@ -21,7 +22,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
     };
   }, [isOpen]);
 
-  return (
+  // Render modal into document.body so it's not affected by transformed parents
+  return ReactDOM.createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -49,6 +51,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
           </motion.aside>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
