@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2, Download, Upload, Cloud, Moon, Sun } from 'lucide-react';
+import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2, Download, Upload, Cloud, Moon, Sun, Bell } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import * as api from '../api/nekoApi';
 import { exportBackup, importBackup, performFullRestore } from '../utils/backupRestore';
 import { cloudStorage } from '../utils/cloudStorage';
+import { RemindersList } from './Reminders/RemindersList';
 
 interface LinkedAccount {
   telegram_id: number
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSave, userId, accounts = [], onRefresh, lastSyncTime = 0, isSyncing = false, theme, toggleTheme }) => {
+  const [currentView, setCurrentView] = useState<'settings' | 'reminders'>('settings');
   const [localPeriodType, setLocalPeriodType] = useState(periodType);
   const [localStartDay, setLocalStartDay] = useState(periodStartDay);
   const [isSaving, setIsSaving] = useState(false);
@@ -347,12 +349,56 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
 
   const hasChanges = localPeriodType !== periodType || localStartDay !== periodStartDay;
 
+  if (currentView === 'reminders' && userId) {
+    return <RemindersList userId={userId} onBack={() => setCurrentView('settings')} />;
+  }
+
   return (
     <div style={{ padding: '20px 15px', paddingBottom: 100 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 25 }}>
         <Settings size={24} color="var(--text-main)" />
         <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: 20 }}>Настройки бюджета</h2>
       </div>
+
+      {/* Напоминания */}
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setCurrentView('reminders')}
+        style={{
+          width: '100%',
+          background: 'var(--bg-card)',
+          border: 'none',
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px var(--shadow-color)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          textAlign: 'left'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+          <div style={{
+            background: 'rgba(102, 126, 234, 0.1)',
+            padding: 10,
+            borderRadius: 12,
+            color: '#667eea'
+          }}>
+            <Bell size={24} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: 16, color: 'var(--text-main)', marginBottom: 4 }}>
+              Напоминания
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              Управление регулярными платежами
+            </div>
+          </div>
+        </div>
+        <div style={{ color: 'var(--text-secondary)' }}>→</div>
+      </motion.button>
 
       {/* Переключатель темы */}
       <div style={{ 

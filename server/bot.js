@@ -23,6 +23,11 @@ function startBot(botToken, db, geminiKey) {
   const bot = new Telegraf(botToken)
   const genAI = new GoogleGenerativeAI(geminiKey)
 
+  // --- SCHEDULER FOR REMINDERS ---
+  setInterval(() => {
+    checkReminders(db, bot)
+  }, 60000) // Check every minute
+
   // Используем Gemini 1.5 Pro (или Flash, если Pro недоступна)
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash-lite", 
@@ -60,6 +65,96 @@ function startBot(botToken, db, geminiKey) {
   process.once('SIGINT', () => bot.stop('SIGINT'))
   process.once('SIGTERM', () => bot.stop('SIGTERM'))
   console.log('🤖 AI Bot обновлен и запущен!')
+}
+
+// --- SCHEDULER LOGIC ---
+function checkReminders(db, bot) {
+  const now = new Date()
+  const currentISO = now.toISOString()
+
+  // Получаем все активные напоминания
+  db.all("SELECT * FROM reminders WHERE is_active = 1", [], (err, rows) => {
+    if (err) {
+      console.error('Error checking reminders:', err)
+      return
+    }
+
+    if (!rows || rows.length === 0) return
+
+    rows.forEach(reminder => {
+      // 1. Проверяем даты начала и конца
+      if (reminder.start_date && new Date(reminder.start_date) > now) return
+      if (reminder.end_date && new Date(reminder.end_date) < now) return
+
+      // 2. Вычисляем текущее время пользователя
+      // timezone_offset - это смещение в минутах ОТ UTC (например, -180 для UTC+3)
+      // В JS getTimezoneOffset возвращает положительное для запада и отрицательное для востока (наоборот от ISO)
+      // Здесь мы предполагаем, что timezone_offset сохранен как "смещение пользователя в минутах от UTC"
+      // Если я в UTC+3, мое время = UTC + 3ч.
+      // UTC время = now.getTime() + (now.getTimezoneOffset() * 60000) - это неверно.
+      // now - это уже момент времени.
+
+      // Простой способ:
+      // Серверное время в UTC:
+      const utcNow = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
+
+      // Время пользователя:
+      // Если timezone_offset (из БД) это "смещение от UTC в минутах" (например 180 для UTC+3)
+      // То UserTime = UTC + Offset
+      // Если timezone_offset (из new Date().getTimezoneOffset()) это "-180" для UTC+3.
+      // Примем соглашение: timezone_offset в БД хранит значение как JS Date.getTimezoneOffset() (т.е. -180 для Москвы)
+      // Тогда UserTime = UTC - Offset
+
+      const userTime = new Date(utcNow.getTime() - (reminder.timezone_offset * 60000))
+
+      const userHours = userTime.getHours().toString().padStart(2, '0')
+      const userMinutes = userTime.getMinutes().toString().padStart(2, '0')
+      const currentTimeStr = `${userHours}:${userMinutes}`
+
+      // Сравниваем время
+      if (currentTimeStr === reminder.time) {
+        // Проверяем frequency и last_sent
+        let shouldSend = false
+
+        if (!reminder.last_sent) {
+          shouldSend = true
+        } else {
+          const lastSentDate = new Date(reminder.last_sent)
+          // Adjust lastSent to user timezone too for date comparison?
+          // Или просто проверим, было ли отправлено сегодня?
+
+          // Для простоты: проверяем разницу во времени
+          const timeDiff = now.getTime() - lastSentDate.getTime()
+
+          if (reminder.frequency === 'daily') {
+             // Если прошло больше 20 часов, считаем что пора (защита от дублей в ту же минуту)
+             if (timeDiff > 20 * 60 * 60 * 1000) shouldSend = true
+          } else if (reminder.frequency === 'weekly') {
+             if (timeDiff > 6 * 24 * 60 * 60 * 1000) shouldSend = true
+          } else if (reminder.frequency === 'monthly') {
+             if (timeDiff > 27 * 24 * 60 * 60 * 1000) shouldSend = true
+          } else if (reminder.frequency === 'once') {
+             shouldSend = false // Already sent
+          }
+        }
+
+        if (shouldSend) {
+          console.log(`🔔 Sending reminder "${reminder.title}" to user ${reminder.user_id}`)
+          bot.telegram.sendMessage(reminder.user_id, `🔔 Напоминание: ${reminder.title}`)
+            .then(() => {
+              // Обновляем last_sent
+              db.run("UPDATE reminders SET last_sent = ? WHERE id = ?", [currentISO, reminder.id])
+
+              // Если 'once', деактивируем
+              if (reminder.frequency === 'once') {
+                db.run("UPDATE reminders SET is_active = 0 WHERE id = ?", [reminder.id])
+              }
+            })
+            .catch(e => console.error('Failed to send reminder:', e))
+        }
+      }
+    })
+  })
 }
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
