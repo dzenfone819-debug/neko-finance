@@ -801,7 +801,7 @@ function App() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  height: 25,
+                  height: 20,
                   flexShrink: 0
                 }}
               >
