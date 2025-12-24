@@ -301,6 +301,9 @@ fastify.put('/reminders/:id', (request, reply) => {
   if (is_active !== undefined) { updates.push('is_active = ?'); params.push(is_active) }
   if (timezone_offset !== undefined) { updates.push('timezone_offset = ?'); params.push(timezone_offset) }
   
+  // Если напоминание обновляется, сбрасываем last_sent, чтобы оно могло сработать снова (если время изменено)
+  updates.push('last_sent = NULL')
+
   params.push(id)
   params.push(userId)
   
