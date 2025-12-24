@@ -39,7 +39,6 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
 
     WebApp.HapticFeedback.impactOccurred('light');
 
-    // Получаем смещение часового пояса (в минутах, наоборот от ISO)
     const timezone_offset = new Date().getTimezoneOffset();
 
     await onSave({
@@ -60,31 +59,27 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
       onClose={onClose}
       title={initialData ? 'Редактировать напоминание' : 'Новое напоминание'}
     >
-      <div style={{ padding: '0 4px' }}>
-        <div style={{ marginBottom: 20 }}>
-          <label className="modal-label">Название</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Например: Оплатить интернет"
-            className="modal-input"
-            style={{ width: '100%', boxSizing: 'border-box' }}
-          />
-        </div>
+      <div className="modal-body">
+        <label className="modal-label">Название</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Например: Оплатить интернет"
+          className="modal-input"
+        />
 
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginTop: 12 }}>
           <label className="modal-label">Время</label>
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             className="modal-input"
-            style={{ width: '100%', boxSizing: 'border-box' }}
           />
         </div>
 
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginTop: 12 }}>
           <label className="modal-label">Частота</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[
@@ -103,7 +98,7 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
                   padding: '10px',
                   background: frequency === opt.id ? 'var(--primary)' : 'var(--bg-input)',
                   color: frequency === opt.id ? 'white' : 'var(--text-main)',
-                  border: 'none',
+                  border: '1px solid var(--border-color)',
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 'bold',
@@ -117,33 +112,31 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <label className="modal-label">Дата начала</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="modal-input"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <label className="modal-label">Дата окончания (опц.)</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="modal-input"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
+        <div style={{ marginTop: 12 }}>
+          <label className="modal-label">Дата начала</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="modal-input"
+          />
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <label className="modal-label">Дата окончания (опц.)</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="modal-input"
+          />
         </div>
 
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleSubmit}
           className="modal-submit-button"
+          style={{ marginTop: 24 }}
         >
           {initialData ? 'Сохранить изменения' : 'Создать напоминание'}
         </motion.button>

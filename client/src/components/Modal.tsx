@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ModalProps {
@@ -21,7 +22,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
     };
   }, [isOpen]);
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -33,9 +36,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
         >
           <motion.aside
             className="modal-content"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -49,6 +52,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
           </motion.aside>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
