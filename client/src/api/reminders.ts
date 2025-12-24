@@ -46,9 +46,12 @@ export const updateReminder = async (userId: number, id: number, updates: Partia
 };
 
 export const deleteReminder = async (userId: number, id: number) => {
+  const headers = {
+    'x-user-id': userId ? userId.toString() : '0'
+  };
   const response = await fetch(`${API_URL}/reminders/${id}`, {
     method: 'DELETE',
-    headers: getHeaders(userId)
+    headers
   });
   if (!response.ok) throw new Error('Failed to delete reminder');
   return response.json();
