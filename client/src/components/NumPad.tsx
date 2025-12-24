@@ -6,9 +6,10 @@ interface NumPadProps {
   onNumberClick: (num: string) => void;
   onDelete: () => void;
   onConfirm: () => void;
+  confirmLabel?: string;
 }
 
-export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfirm }) => {
+export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfirm, confirmLabel = 'Внести💵' }) => {
   // Standard calculator layout
   // 7 8 9 ÷
   // 4 5 6 ×
@@ -50,7 +51,7 @@ export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfi
         whileTap={{ scale: 0.95 }}
         onClick={onConfirm}
       >
-        = / Внести💵
+        {confirmLabel}
       </motion.button>
     </div>
   );

@@ -328,11 +328,13 @@ function App() {
 
   const currentCategories = transType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
+  const isExpression = /[\+\-\*\/]/.test(amount);
+
   const handleConfirm = async () => {
     let value = 0;
 
     // Check if amount is an expression
-    if (/[\+\-\*\/]/.test(amount)) {
+    if (isExpression) {
       const calculated = evaluateExpression(amount);
       if (isNaN(calculated) || !isFinite(calculated)) {
         WebApp.HapticFeedback.notificationOccurred('error');
@@ -340,11 +342,10 @@ function App() {
         setTimeout(() => setIsError(false), 500);
         return;
       }
-      value = calculated;
-      // Update displayed amount to result?
-      // Optional: keep it as expression or show result.
-      // For now, let's proceed with value.
+      // If it's an expression, just update the state to the result and return
       setAmount(calculated.toString());
+      WebApp.HapticFeedback.impactOccurred('light');
+      return;
     } else {
       value = parseFloat(amount);
     }
@@ -986,7 +987,12 @@ function App() {
               </div>
             </div>
             <div className="numpad-container">
-              <NumPad onNumberClick={handleNumberClick} onDelete={handleDelete} onConfirm={handleConfirm} />
+              <NumPad
+                onNumberClick={handleNumberClick}
+                onDelete={handleDelete}
+                onConfirm={handleConfirm}
+                confirmLabel={isExpression ? "=" : "Внести💵"}
+              />
             </div>
           </>
         )}
