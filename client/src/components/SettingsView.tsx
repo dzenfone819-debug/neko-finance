@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Settings, Link2, Unlink, Info, UserPlus, Check, X, Trash2, Download, Upload, Cloud, Moon, Sun, Bell } from 'lucide-react';
-import WebApp from '@twa-dev/sdk';
+import { safeHaptic } from '../utils/telegram';
 import * as api from '../api/nekoApi';
 import { exportBackup, importBackup, performFullRestore } from '../utils/backupRestore';
 import { cloudStorage } from '../utils/cloudStorage';
@@ -88,7 +88,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       return
     }
 
-    WebApp.HapticFeedback.impactOccurred('medium')
+    safeHaptic.impactOccurred('medium')
     
     try {
       await api.linkAccount(userId, targetUserId)
@@ -96,18 +96,18 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       setLinkUserId('')
       setIsLinking(false)
       loadLinkedAccounts()
-      WebApp.HapticFeedback.notificationOccurred('success')
+      safeHaptic.notificationOccurred('success')
     } catch (error) {
       console.error('Error linking account:', error)
       showMessage('Ошибка при привязке', 'error')
-      WebApp.HapticFeedback.notificationOccurred('error')
+      safeHaptic.notificationOccurred('error')
     }
   }
 
   const handleUnlinkAccount = async () => {
     if (!userId) return
     
-    WebApp.HapticFeedback.impactOccurred('medium')
+    safeHaptic.impactOccurred('medium')
     
     const confirmed = window.confirm('Вы уверены, что хотите отвязать свой аккаунт? Вы вернетесь к использованию отдельных данных.')
     if (!confirmed) return
@@ -116,18 +116,18 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       await api.unlinkAccount(userId)
       showMessage('Аккаунт отвязан', 'success')
       loadLinkedAccounts()
-      WebApp.HapticFeedback.notificationOccurred('success')
+      safeHaptic.notificationOccurred('success')
     } catch (error) {
       console.error('Error unlinking account:', error)
       showMessage('Ошибка при отвязке', 'error')
-      WebApp.HapticFeedback.notificationOccurred('error')
+      safeHaptic.notificationOccurred('error')
     }
   }
 
   const handleResetAllData = async () => {
     if (!userId) return
     
-    WebApp.HapticFeedback.impactOccurred('heavy')
+    safeHaptic.impactOccurred('heavy')
     
     const confirmed = window.confirm(
       '⚠️ ВНИМАНИЕ!\n\n' +
@@ -155,7 +155,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
     try {
       await api.resetAllData(userId)
       showMessage('✅ Все данные удалены. Перезагрузите приложение.', 'success')
-      WebApp.HapticFeedback.notificationOccurred('success')
+      safeHaptic.notificationOccurred('success')
       
       setTimeout(() => {
         window.location.reload()
@@ -163,7 +163,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
     } catch (error) {
       console.error('Error resetting data:', error)
       showMessage('❌ Ошибка при сбросе данных', 'error')
-      WebApp.HapticFeedback.notificationOccurred('error')
+      safeHaptic.notificationOccurred('error')
     }
   }
 
@@ -176,7 +176,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
   const handleExportBackup = async () => {
     if (!userId) return;
     try {
-      WebApp.HapticFeedback.impactOccurred('light');
+      safeHaptic.impactOccurred('light');
       
       // Загружаем все данные для экспорта
       const [allTransactions, budgetData, customCategories, categoryLimits, goals] = await Promise.all([
@@ -188,17 +188,17 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       ]);
 
       await exportBackup(allTransactions, accounts || [], goals, { budget_limit: budgetData }, customCategories, categoryLimits);
-      WebApp.HapticFeedback.notificationOccurred('success');
+      safeHaptic.notificationOccurred('success');
       showMessage('✅ Бэкап успешно создан!', 'success');
     } catch (e) {
       console.error('Export error:', e);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
       showMessage('❌ Ошибка создания бэкапа', 'error');
     }
   };
 
   const handleImportBackup = () => {
-    WebApp.HapticFeedback.impactOccurred('light');
+    safeHaptic.impactOccurred('light');
     fileInputRef.current?.click();
   };
 
@@ -208,11 +208,11 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
 
     try {
       setIsRestoring(true);
-      WebApp.HapticFeedback.impactOccurred('medium');
+      safeHaptic.impactOccurred('medium');
 
       const backup = await importBackup(file);
       if (!backup) {
-        WebApp.HapticFeedback.notificationOccurred('error');
+        safeHaptic.notificationOccurred('error');
         alert('Ошибка: неверный формат файла');
         return;
       }
@@ -235,16 +235,16 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       const success = await performFullRestore(String(userId), backup);
       
       if (success) {
-        WebApp.HapticFeedback.notificationOccurred('success');
+        safeHaptic.notificationOccurred('success');
         showMessage('✅ Данные успешно восстановлены!', 'success');
         if (onRefresh) onRefresh();
       } else {
-        WebApp.HapticFeedback.notificationOccurred('error');
+        safeHaptic.notificationOccurred('error');
         showMessage('❌ Ошибка восстановления данных', 'error');
       }
     } catch (e) {
       console.error('Import error:', e);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
       showMessage('❌ Ошибка импорта', 'error');
     } finally {
       setIsRestoring(false);
@@ -259,7 +259,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
     }
 
     try {
-      WebApp.HapticFeedback.impactOccurred('medium');
+      safeHaptic.impactOccurred('medium');
       setIsRestoring(true);
 
       const cloudData = await cloudStorage.loadFromCloud();
@@ -299,16 +299,16 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
       const success = await performFullRestore(String(userId), backup);
       
       if (success) {
-        WebApp.HapticFeedback.notificationOccurred('success');
+        safeHaptic.notificationOccurred('success');
         showMessage('✅ Данные из облака восстановлены!', 'success');
         if (onRefresh) onRefresh();
       } else {
-        WebApp.HapticFeedback.notificationOccurred('error');
+        safeHaptic.notificationOccurred('error');
         showMessage('❌ Ошибка восстановления', 'error');
       }
     } catch (e) {
       console.error('Cloud restore error:', e);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
       showMessage('❌ Ошибка восстановления из облака', 'error');
     } finally {
       setIsRestoring(false);
@@ -317,24 +317,24 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
 
 
   const handleSave = async () => {
-    WebApp.HapticFeedback.impactOccurred('medium');
+    safeHaptic.impactOccurred('medium');
     setIsSaving(true);
     try {
       await onSave(localPeriodType, localStartDay);
-      WebApp.HapticFeedback.notificationOccurred('success');
+      safeHaptic.notificationOccurred('success');
       // Перезагружаем страницу через 500мс чтобы применить новые настройки
       setTimeout(() => {
         window.location.reload();
       }, 500);
     } catch (error) {
       console.error('Failed to save settings:', error);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
       setIsSaving(false);
     }
   };
 
   const handlePeriodTypeChange = (type: 'calendar_month' | 'custom_period') => {
-    WebApp.HapticFeedback.selectionChanged();
+    safeHaptic.selectionChanged();
     setLocalPeriodType(type);
     // При переключении на календарный месяц сбрасываем день на 1
     if (type === 'calendar_month') {
@@ -343,7 +343,7 @@ export const SettingsView: React.FC<Props> = ({ periodType, periodStartDay, onSa
   };
 
   const handleDayChange = (day: number) => {
-    WebApp.HapticFeedback.selectionChanged();
+    safeHaptic.selectionChanged();
     setLocalStartDay(day);
   };
 

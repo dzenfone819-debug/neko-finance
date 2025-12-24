@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus } from 'lucide-react';
-import WebApp from '@twa-dev/sdk';
+import { safeHaptic } from '../../utils/telegram';
 import { ReminderItem } from './ReminderItem';
 import { ReminderForm } from './ReminderForm';
 import * as api from '../../api/reminders';
@@ -37,11 +37,11 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
   const handleCreate = async (data: Partial<Reminder>) => {
     try {
       await api.createReminder(userId, data as any);
-      WebApp.HapticFeedback.notificationOccurred('success');
+      safeHaptic.notificationOccurred('success');
       loadReminders();
     } catch (error) {
       console.error(error);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
     }
   };
 
@@ -49,11 +49,11 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
     if (!editingReminder) return;
     try {
       await api.updateReminder(userId, editingReminder.id, data);
-      WebApp.HapticFeedback.notificationOccurred('success');
+      safeHaptic.notificationOccurred('success');
       loadReminders();
     } catch (error) {
       console.error(error);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
     }
   };
 
@@ -61,18 +61,18 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
     if (!confirm('Удалить напоминание?')) return;
     try {
       await api.deleteReminder(userId, id);
-      WebApp.HapticFeedback.notificationOccurred('success');
+      safeHaptic.notificationOccurred('success');
       loadReminders();
     } catch (error) {
       console.error(error);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      safeHaptic.notificationOccurred('error');
     }
   };
 
   const handleToggle = async (id: number, isActive: boolean) => {
     try {
       await api.updateReminder(userId, id, { is_active: isActive ? 1 : 0 });
-      WebApp.HapticFeedback.impactOccurred('light');
+      safeHaptic.impactOccurred('light');
       // Optimistic update
       setReminders(prev => prev.map(r => r.id === id ? { ...r, is_active: isActive ? 1 : 0 } : r));
     } catch (error) {
@@ -88,7 +88,7 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => {
-            WebApp.HapticFeedback.selectionChanged();
+            safeHaptic.selectionChanged();
             onBack();
           }}
           style={{
@@ -146,7 +146,7 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
       <motion.button
         whileTap={{ scale: 0.9 }}
         onClick={() => {
-          WebApp.HapticFeedback.impactOccurred('medium');
+          safeHaptic.impactOccurred('medium');
           setEditingReminder(null);
           setIsFormOpen(true);
         }}

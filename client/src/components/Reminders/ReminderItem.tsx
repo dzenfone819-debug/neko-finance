@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Bell, Repeat, Trash2, Edit2, Clock } from 'lucide-react';
 import type { Reminder } from '../../api/reminders';
-import WebApp from '@twa-dev/sdk';
+import { safeHaptic } from '../../utils/telegram';
 
 interface Props {
   reminder: Reminder;
@@ -74,7 +74,7 @@ export const ReminderItem: React.FC<Props> = ({ reminder, onEdit, onDelete, onTo
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => {
-              WebApp.HapticFeedback.impactOccurred('light');
+              safeHaptic.impactOccurred('light');
               onToggle(reminder.id, !reminder.is_active);
             }}
             style={{
@@ -101,7 +101,7 @@ export const ReminderItem: React.FC<Props> = ({ reminder, onEdit, onDelete, onTo
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => {
-            WebApp.HapticFeedback.impactOccurred('light');
+            safeHaptic.impactOccurred('light');
             onEdit(reminder);
           }}
           style={{
@@ -124,7 +124,7 @@ export const ReminderItem: React.FC<Props> = ({ reminder, onEdit, onDelete, onTo
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => {
-            WebApp.HapticFeedback.impactOccurred('medium');
+            safeHaptic.impactOccurred('medium');
             onDelete(reminder.id);
           }}
           style={{
