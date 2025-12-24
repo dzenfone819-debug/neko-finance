@@ -27,6 +27,7 @@ import type { FilterState } from './components/TransactionSearch'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
 import { cloudStorage } from './utils/cloudStorage'
+import { evaluateExpression, formatCurrency } from './utils/calculator'
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'analytics' | 'settings'>('input')
@@ -327,8 +328,29 @@ function App() {
 
   const currentCategories = transType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
+  const isExpression = /[\+\-\*\/]/.test(amount);
+
   const handleConfirm = async () => {
-    const value = parseFloat(amount);
+    let value = 0;
+    
+    // Check if amount is an expression
+    if (isExpression) {
+      const calculated = evaluateExpression(amount);
+      if (isNaN(calculated) || !isFinite(calculated)) {
+        WebApp.HapticFeedback.notificationOccurred('error');
+        setIsError(true);
+        setTimeout(() => setIsError(false), 500);
+        return;
+      }
+        // If it's an expression, update the state to the result rounded to 2 decimals and return
+        const rounded = calculated.toFixed(2);
+        setAmount(rounded.length > 15 ? rounded.slice(0, 15) : rounded);
+      WebApp.HapticFeedback.impactOccurred('light');
+      return;
+    } else {
+      value = parseFloat(amount);
+    }
+
     if (!amount || amount === '.' || isNaN(value) || value <= 0 || !userId) { 
       console.log('❌ Validation failed:', { amount, value, userId });
       api.logToServer('❌ Validation failed:', { amount, value, userId });
@@ -470,7 +492,39 @@ function App() {
   }
 
   const handleDeleteTransaction = async (id: number) => { if (!userId) return; WebApp.HapticFeedback.impactOccurred('medium'); try { await api.deleteTransaction(userId, id); loadData(userId, currentDate); } catch { triggerError(); } }
-  const handleNumberClick = (num: string) => { WebApp.HapticFeedback.impactOccurred('light'); if (amount.length >= 9) return; if (num === '.' && amount.includes('.')) return; setAmount(prev => prev + num); setIsError(false); }
+  
+  const handleNumberClick = (num: string) => { 
+    WebApp.HapticFeedback.impactOccurred('light'); 
+    
+    // Prevent expression becoming too long (max 15 chars)
+    if (amount.length >= 15) return; 
+
+    // Handle operators
+    const isOperator = ['+', '-', '*', '/'].includes(num);
+    const lastChar = amount.slice(-1);
+    const isLastOperator = ['+', '-', '*', '/'].includes(lastChar);
+    
+    // Prevent double operators
+    if (isOperator && isLastOperator) {
+      setAmount(prev => prev.slice(0, -1) + num);
+      return;
+    }
+    
+    // Prevent starting with operator (except maybe minus, but let's stick to simple positive starts or 0)
+    if (amount === '' && isOperator) return;
+
+    // Prevent multiple dots in same number segment
+    if (num === '.') {
+      // Find the last number segment
+      const parts = amount.split(/[\+\-\*\/]/);
+      const lastPart = parts[parts.length - 1];
+      if (lastPart.includes('.')) return;
+    }
+
+    setAmount(prev => prev + num); 
+    setIsError(false); 
+  }
+  
   const handleDelete = () => { WebApp.HapticFeedback.impactOccurred('medium'); setAmount(prev => prev.slice(0, -1)); setIsError(false); }
   const triggerError = () => { WebApp.HapticFeedback.notificationOccurred('error'); setIsError(true); setTimeout(() => setIsError(false), 500); }
 
@@ -723,13 +777,38 @@ function App() {
           paddingRight: 15,
           boxSizing: 'border-box'
         }}>
-          {/* Котик слева */}
+          {/* Котик слева и кнопка даты под ним */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <motion.div 
               animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
-              style={{ flexShrink: 0 }}
             >
               <NekoAvatar mood={getNekoMood()} theme={theme} />
             </motion.div>
+            {activeTab === 'input' && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setShowDatePicker(true); }}
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '5px 5px',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 25,
+                  flexShrink: 0
+                }}
+              >
+                📅 {transactionDate.getDate()}/{transactionDate.getMonth() + 1}
+              </motion.button>
+            )}
+          </div>
 
           {/* Правая колонка: бюджет, доступно/лимит, сумма */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
@@ -757,31 +836,29 @@ function App() {
             {activeTab === 'input' ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: 0 }}>
                 <motion.div className="amount-display" style={{ margin: 0 }}>
-                  <span style={{color: transType === 'income' ? 'var(--accent-success)' : 'var(--text-main)'}}>{amount || '0'}</span> 
+                  <span style={{color: transType === 'income' ? 'var(--accent-success)' : 'var(--text-main)'}}>
+                    {
+                      (() => {
+                        if (!amount) return '0';
+                        // Strict numeric (machine) format: digits with optional decimal part
+                        const numericPattern = /^\d+(?:\.\d+)?$/;
+                        if (numericPattern.test(amount)) {
+                          const num = parseFloat(amount);
+                          // If amount has exactly 2 decimals (likely from evaluation), show with 2 fixed decimals
+                          if (/^\d+\.\d{2}$/.test(amount)) {
+                            return formatCurrency(num, 2);
+                          }
+                          // Otherwise show localized with up to 2 decimals
+                          return formatCurrency(num);
+                        }
+                        // For expressions or in-progress input (like ending with dot) show raw string
+                        return amount;
+                      })()
+                    }
+                  </span>
                   <span className="currency">₽</span>
                 </motion.div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setShowDatePicker(true); }}
-                  style={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '4px 10px',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    height: 24,
-                    flexShrink: 0
-                  }}
-                >
-                  📅 {transactionDate.getDate()}/{transactionDate.getMonth() + 1}
-                </motion.button>
+                {/* date button moved to left column under avatar */}
               </div>
             ) : (
               <div style={{fontSize: 22, color: 'var(--text-main)', fontWeight: 'bold'}}>
@@ -934,7 +1011,12 @@ function App() {
               </div>
             </div>
             <div className="numpad-container">
-              <NumPad onNumberClick={handleNumberClick} onDelete={handleDelete} onConfirm={handleConfirm} />
+              <NumPad 
+                onNumberClick={handleNumberClick} 
+                onDelete={handleDelete} 
+                onConfirm={handleConfirm} 
+                confirmLabel={isExpression ? "=" : "Внести💵"} 
+              />
             </div>
           </>
         )}
