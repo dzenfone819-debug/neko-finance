@@ -592,6 +592,30 @@ body:not(.dark-theme) .app-container {
   min-width: 0;
 }
 
+/* Same fixes for inline picker modal on main screen */
+.picker-modal input[type="date"],
+.picker-modal input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 44px; /* reserve space for native icon */
+  overflow: hidden;
+}
+
+.picker-modal input[type="date"]::-webkit-datetime-edit,
+.picker-modal input[type="time"]::-webkit-datetime-edit {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-modal input {
+  min-width: 0;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
