@@ -132,8 +132,21 @@ function checkReminders(db, bot) {
 
         if (shouldSend) {
           console.log(`🔔 Sending reminder "${reminder.title}" to user ${reminder.user_id}`)
-          bot.telegram.sendMessage(reminder.user_id, `🔔 Напоминание: ${reminder.title}`)
-            .then(() => {
+
+          // Получаем все связанные аккаунты
+          db.all("SELECT telegram_id FROM user_links WHERE primary_user_id = ?", [reminder.user_id], (err, links) => {
+            const recipients = new Set([reminder.user_id]);
+            if (links && links.length > 0) {
+              links.forEach(l => recipients.add(l.telegram_id));
+            }
+
+            // Отправляем всем
+            const sendPromises = Array.from(recipients).map(id =>
+              bot.telegram.sendMessage(id, `🔔 Напоминание: ${reminder.title}`)
+                .catch(e => console.error(`Failed to send reminder to ${id}:`, e))
+            );
+
+            Promise.all(sendPromises).then(() => {
               // Обновляем last_sent
               db.run("UPDATE reminders SET last_sent = ? WHERE id = ?", [currentISO, reminder.id])
               
@@ -141,8 +154,8 @@ function checkReminders(db, bot) {
               if (reminder.frequency === 'once') {
                 db.run("UPDATE reminders SET is_active = 0 WHERE id = ?", [reminder.id])
               }
-            })
-            .catch(e => console.error('Failed to send reminder:', e))
+            });
+          });
         }
       }
     })
