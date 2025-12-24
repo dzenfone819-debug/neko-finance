@@ -776,13 +776,41 @@ function App() {
           paddingRight: 15,
           boxSizing: 'border-box'
         }}>
-          {/* Котик слева */}
+          {/* Котик слева + Кнопка даты */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <motion.div 
               animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}
-              style={{ flexShrink: 0 }}
             >
               <NekoAvatar mood={getNekoMood()} theme={theme} />
             </motion.div>
+
+            {activeTab === 'input' && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setShowDatePicker(true); }}
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '4px 8px',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 3,
+                  height: 22,
+                  width: '100%',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                 {transactionDate.getDate()}/{transactionDate.getMonth() + 1} 📅
+              </motion.button>
+            )}
+          </div>
 
           {/* Правая колонка: бюджет, доступно/лимит, сумма */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
@@ -808,33 +836,11 @@ function App() {
 
             {/* СУММА ИЛИ ЗАГОЛОВОК */}
             {activeTab === 'input' ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: 0, width: '100%' }}>
                 <motion.div className="amount-display" style={{ margin: 0 }}>
                   <span style={{color: transType === 'income' ? 'var(--accent-success)' : 'var(--text-main)'}}>{amount || '0'}</span> 
                   <span className="currency">₽</span>
                 </motion.div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setShowDatePicker(true); }}
-                  style={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, #D291BC 100%)',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '4px 10px',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    height: 24,
-                    flexShrink: 0
-                  }}
-                >
-                  📅 {transactionDate.getDate()}/{transactionDate.getMonth() + 1}
-                </motion.button>
               </div>
             ) : (
               <div style={{fontSize: 22, color: 'var(--text-main)', fontWeight: 'bold'}}>
