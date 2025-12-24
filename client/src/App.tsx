@@ -704,7 +704,9 @@ function App() {
                 max={new Date().toISOString().split('T')[0]}
                 style={{
                   width: '100%',
-                  padding: '16px 12px',
+                  padding: '16px 12px 16px 12px',
+                  paddingRight: '44px',
+                  WebkitAppearance: 'none',
                   fontSize: 16,
                   borderRadius: 16,
                   border: '2px solid var(--border-color)',
