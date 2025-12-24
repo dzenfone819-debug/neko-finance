@@ -4,6 +4,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { safeHaptic } from '../../utils/telegram';
 import { ReminderItem } from './ReminderItem';
 import { ReminderForm } from './ReminderForm';
+import { ConfirmModal } from '../ConfirmModal';
 import * as api from '../../api/reminders';
 import type { Reminder } from '../../api/reminders';
 
@@ -17,6 +18,7 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [confirmState, setConfirmState] = useState<{ isOpen: boolean; id: number | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
     loadReminders();
@@ -57,15 +59,22 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Удалить напоминание?')) return;
+  const handleDeleteClick = (id: number) => {
+    safeHaptic.impactOccurred('medium');
+    setConfirmState({ isOpen: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.id) return;
     try {
-      await api.deleteReminder(userId, id);
+      await api.deleteReminder(userId, confirmState.id);
       safeHaptic.notificationOccurred('success');
       loadReminders();
     } catch (error) {
       console.error(error);
       safeHaptic.notificationOccurred('error');
+    } finally {
+      setConfirmState({ isOpen: false, id: null });
     }
   };
 
@@ -135,12 +144,19 @@ export const RemindersList: React.FC<Props> = ({ userId, onBack }) => {
                 setEditingReminder(r);
                 setIsFormOpen(true);
               }}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick}
               onToggle={handleToggle}
             />
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        message="Вы уверены, что хотите удалить это напоминание?"
+        onCancel={() => setConfirmState({ isOpen: false, id: null })}
+        onConfirm={handleConfirmDelete}
+      />
 
       {/* FAB Add Button */}
       <motion.button

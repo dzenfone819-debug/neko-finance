@@ -87,29 +87,21 @@ function checkReminders(db, bot) {
       if (reminder.end_date && new Date(reminder.end_date) < now) return
 
       // 2. Вычисляем текущее время пользователя
-      // timezone_offset - это смещение в минутах ОТ UTC (например, -180 для UTC+3)
-      // В JS getTimezoneOffset возвращает положительное для запада и отрицательное для востока (наоборот от ISO)
-      // Здесь мы предполагаем, что timezone_offset сохранен как "смещение пользователя в минутах от UTC"
-      // Если я в UTC+3, мое время = UTC + 3ч.
-      // UTC время = now.getTime() + (now.getTimezoneOffset() * 60000) - это неверно.
-      // now - это уже момент времени.
+      // reminder.timezone_offset - это смещение в минутах (JS формат: UTC - Local).
+      // Например, для Москвы (UTC+3) offset = -180.
+      // Чтобы получить время пользователя: Time = UTC - Offset
+      // (12:00 UTC) - (-180 min) = 15:00.
       
-      // Простой способ:
-      // Серверное время в UTC:
-      const utcNow = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
+      // Берем текущий UTC timestamp
+      const currentUtcTimestamp = now.getTime();
       
-      // Время пользователя:
-      // Если timezone_offset (из БД) это "смещение от UTC в минутах" (например 180 для UTC+3)
-      // То UserTime = UTC + Offset
-      // Если timezone_offset (из new Date().getTimezoneOffset()) это "-180" для UTC+3.
-      // Примем соглашение: timezone_offset в БД хранит значение как JS Date.getTimezoneOffset() (т.е. -180 для Москвы)
-      // Тогда UserTime = UTC - Offset
+      // Вычисляем "сдвинутый" timestamp, который при отображении как UTC даст время пользователя
+      const userTimeShifted = new Date(currentUtcTimestamp - (reminder.timezone_offset * 60000));
       
-      const userTime = new Date(utcNow.getTime() - (reminder.timezone_offset * 60000))
-      
-      const userHours = userTime.getHours().toString().padStart(2, '0')
-      const userMinutes = userTime.getMinutes().toString().padStart(2, '0')
-      const currentTimeStr = `${userHours}:${userMinutes}`
+      // Используем getUTC methods, чтобы игнорировать таймзону сервера
+      const userHours = userTimeShifted.getUTCHours().toString().padStart(2, '0');
+      const userMinutes = userTimeShifted.getUTCMinutes().toString().padStart(2, '0');
+      const currentTimeStr = `${userHours}:${userMinutes}`;
       
       // Сравниваем время
       if (currentTimeStr === reminder.time) {
