@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Modal } from '../Modal';
-import WebApp from '@twa-dev/sdk';
+import { safeHaptic } from '../../utils/telegram';
 import type { Reminder } from '../../api/reminders';
 
 interface Props {
@@ -37,7 +37,7 @@ export const ReminderForm: React.FC<Props> = ({ isOpen, onClose, onSave, initial
   const handleSubmit = async () => {
     if (!title || !time) return;
     
-    WebApp.HapticFeedback.impactOccurred('light');
+    safeHaptic.impactOccurred('light');
     
     // Получаем смещение часового пояса (в минутах, наоборот от ISO)
     const timezone_offset = new Date().getTimezoneOffset();
