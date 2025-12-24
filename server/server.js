@@ -214,6 +214,23 @@ db.serialize(() => {
       custom_period_day INTEGER DEFAULT 1 -- День начала периода (1-28)
     )
   `)
+
+  // НАПОМИНАНИЯ (Reminders)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      title TEXT NOT NULL,
+      frequency TEXT DEFAULT 'once', -- 'once', 'daily', 'weekly', 'monthly'
+      time TEXT NOT NULL, -- 'HH:MM'
+      start_date TEXT, -- ISO Date
+      end_date TEXT, -- ISO Date or NULL
+      is_active INTEGER DEFAULT 1,
+      last_sent TEXT, -- ISO DateTime
+      timezone_offset INTEGER DEFAULT 0, -- offset in minutes from UTC
+      created_at TEXT
+    )
+  `)
 })
 
 // --- MIDDLEWARE для подмены user_id ---
@@ -231,6 +248,82 @@ fastify.addHook('preHandler', async (request, reply) => {
 });
 
 // --- API ---
+
+// --- REMINDERS API ---
+
+// Получить все напоминания пользователя
+fastify.get('/reminders', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  db.all("SELECT * FROM reminders WHERE user_id = ? ORDER BY time ASC", [userId], (err, rows) => {
+    if (err) return reply.code(500).send({ error: err.message })
+    return reply.send(rows || [])
+  })
+})
+
+// Создать напоминание
+fastify.post('/reminders', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  const { title, frequency, time, start_date, end_date, timezone_offset } = request.body
+  if (!title || !time) return reply.code(400).send({ error: 'Title and time are required' })
+  
+  const now = new Date().toISOString()
+  
+  db.run(
+    "INSERT INTO reminders (user_id, title, frequency, time, start_date, end_date, timezone_offset, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [userId, title, frequency || 'once', time, start_date || null, end_date || null, timezone_offset || 0, now],
+    function(err) {
+      if (err) return reply.code(500).send({ error: err.message })
+      return reply.send({ id: this.lastID, status: 'created' })
+    }
+  )
+})
+
+// Обновить напоминание
+fastify.put('/reminders/:id', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { id } = request.params
+  const { title, frequency, time, start_date, end_date, is_active, timezone_offset } = request.body
+  
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  const updates = []
+  const params = []
+  
+  if (title !== undefined) { updates.push('title = ?'); params.push(title) }
+  if (frequency !== undefined) { updates.push('frequency = ?'); params.push(frequency) }
+  if (time !== undefined) { updates.push('time = ?'); params.push(time) }
+  if (start_date !== undefined) { updates.push('start_date = ?'); params.push(start_date) }
+  if (end_date !== undefined) { updates.push('end_date = ?'); params.push(end_date) }
+  if (is_active !== undefined) { updates.push('is_active = ?'); params.push(is_active) }
+  if (timezone_offset !== undefined) { updates.push('timezone_offset = ?'); params.push(timezone_offset) }
+  
+  params.push(id)
+  params.push(userId)
+  
+  const sql = `UPDATE reminders SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`
+  
+  db.run(sql, params, function(err) {
+    if (err) return reply.code(500).send({ error: err.message })
+    return reply.send({ status: 'updated' })
+  })
+})
+
+// Удалить напоминание
+fastify.delete('/reminders/:id', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { id } = request.params
+  
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+  
+  db.run("DELETE FROM reminders WHERE id = ? AND user_id = ?", [id, userId], function(err) {
+    if (err) return reply.code(500).send({ error: err.message })
+    return reply.send({ status: 'deleted' })
+  })
+})
 
 // Логирование
 fastify.post('/log-client', (request, reply) => {

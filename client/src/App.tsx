@@ -342,9 +342,10 @@ function App() {
         setTimeout(() => setIsError(false), 500);
         return;
       }
-        // If it's an expression, update the state to the result rounded to 2 decimals and return
-        const rounded = calculated.toFixed(2);
-        setAmount(rounded.length > 15 ? rounded.slice(0, 15) : rounded);
+        // If it's an expression, update the state: if integer -> no decimals, else keep 2 decimals
+        const hasFraction = Math.abs(calculated % 1) > 0;
+        const resultStr = hasFraction ? calculated.toFixed(2) : String(Math.trunc(calculated));
+        setAmount(resultStr.length > 15 ? resultStr.slice(0, 15) : resultStr);
       WebApp.HapticFeedback.impactOccurred('light');
       return;
     } else {
