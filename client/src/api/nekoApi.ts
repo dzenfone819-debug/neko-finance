@@ -103,11 +103,11 @@ export const fetchCustomCategories = async (userId: number) => {
   return await response.json();
 };
 
-export const createCustomCategory = async (userId: number, name: string, icon: string, color: string, limit?: number) => {
+export const createCustomCategory = async (userId: number, name: string, icon: string, color: string, limit?: number, type: 'expense' | 'income' = 'expense') => {
   const response = await fetch(`${API_URL}/custom-categories`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ name, icon, color, limit })
+    body: JSON.stringify({ name, icon, color, limit, type })
   });
   return await response.json();
 };
