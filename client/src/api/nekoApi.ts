@@ -103,11 +103,37 @@ export const fetchCustomCategories = async (userId: number) => {
   return await response.json();
 };
 
-export const createCustomCategory = async (userId: number, name: string, icon: string, color: string, limit?: number) => {
+// ========== CATEGORY OVERRIDES ==========
+export const fetchCategoryOverrides = async (userId: number) => {
+  const response = await fetch(`${API_URL}/category-overrides`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  if (!response.ok) return {};
+  return await response.json();
+};
+
+export const setCategoryOverride = async (userId: number, categoryId: string, data: any) => {
+  const response = await fetch(`${API_URL}/category-overrides/${encodeURIComponent(categoryId)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify(data)
+  });
+  return await response.json();
+};
+
+export const deleteCategoryOverride = async (userId: number, categoryId: string) => {
+  const response = await fetch(`${API_URL}/category-overrides/${encodeURIComponent(categoryId)}`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  return await response.json();
+};
+
+export const createCustomCategory = async (userId: number, name: string, icon: string, color: string, limit?: number, type: 'expense' | 'income' = 'expense') => {
   const response = await fetch(`${API_URL}/custom-categories`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ name, icon, color, limit })
+    body: JSON.stringify({ name, icon, color, limit, type })
   });
   return await response.json();
 };

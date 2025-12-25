@@ -96,6 +96,11 @@ function App() {
   const [accounts, setAccounts] = useState<any[]>([])
   const [goals, setGoals] = useState<any[]>([])
   const [customCategories, setCustomCategories] = useState<any[]>([])
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, any>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('category_overrides') || '{}');
+    } catch (e) { return {}; }
+  });
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
   const [isCustomCategory, setIsCustomCategory] = useState(false)
   const [selectedStandardCategory, setSelectedStandardCategory] = useState('')
@@ -103,6 +108,8 @@ function App() {
   const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
   const [newCategoryColor, setNewCategoryColor] = useState('#FF6B6B')
   const [newCategoryLimit, setNewCategoryLimit] = useState('')
+  const [addCategoryType, setAddCategoryType] = useState<'expense' | 'income'>('expense')
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
 
   // Состояния для поиска и фильтров
   const [showSearchPanel, setShowSearchPanel] = useState(false)
@@ -221,6 +228,27 @@ function App() {
       setAccounts(accs);
       setGoals(gls);
       setCustomCategories(customCats);
+      // Load overrides from server and merge with any local overrides
+      try {
+        const serverOverrides = await api.fetchCategoryOverrides(uid).catch(() => ({}));
+        let localOverrides: Record<string, any> = {};
+        try { localOverrides = JSON.parse(localStorage.getItem('category_overrides') || '{}'); } catch (e) { localOverrides = {}; }
+
+        // If localOverrides has entries not present on server, push them to server (only when server missing)
+        for (const key of Object.keys(localOverrides)) {
+          const localVal = localOverrides[key];
+          const serverVal = serverOverrides[key];
+          // If server doesn't have this override, push local (local only wins for missing server entries)
+          if (serverVal === undefined) {
+            api.setCategoryOverride(uid, key, localVal).catch((e) => console.error('Failed to push local override', e));
+          }
+        }
+
+        // Prefer server overrides when merging so other clients' edits win
+        const merged = { ...(localOverrides || {}), ...(serverOverrides || {}) };
+        setCategoryOverrides(merged);
+        try { localStorage.setItem('category_overrides', JSON.stringify(merged)); } catch (e) {}
+      } catch (e) { console.error('Failed to load category overrides', e); }
       // Устанавливаем первый счет по умолчанию, если не выбран
       if (!selectedAccount && accs.length > 0) {
         setSelectedAccount({type: 'account', id: accs[0].id});
@@ -229,6 +257,32 @@ function App() {
       // Автоматическая синхронизация с облаком после загрузки данных
       syncToCloud(hist, accs, gls, bud, customCats, lims);
     } catch (e) { console.error(e) }
+  }
+
+  const setCategoryOverride = (categoryId: string, data: any) => {
+    const next = { ...(categoryOverrides || {}), [categoryId]: { ...(categoryOverrides?.[categoryId] || {}), ...data } };
+    setCategoryOverrides(next);
+    try { localStorage.setItem('category_overrides', JSON.stringify(next)); } catch (e) {}
+    // Optimistically persist to server (fire-and-forget)
+    if (userId) {
+      api.setCategoryOverride(userId, categoryId, next[categoryId]).catch(e => console.error('Failed to save override to server', e));
+    }
+  }
+
+  // Apply overrides that come from server (do not push them back)
+  const applyServerOverrides = (overrides: Record<string, any>) => {
+    setCategoryOverrides(overrides);
+    try { localStorage.setItem('category_overrides', JSON.stringify(overrides)); } catch (e) {}
+  }
+
+  const removeCategoryOverride = (categoryId: string) => {
+    const next = { ...(categoryOverrides || {}) };
+    delete next[categoryId];
+    setCategoryOverrides(next);
+    try { localStorage.setItem('category_overrides', JSON.stringify(next)); } catch (e) {}
+    if (userId) {
+      api.deleteCategoryOverride(userId, categoryId).catch(e => console.error('Failed to delete override on server', e));
+    }
   }
 
   // Синхронизация с облаком
@@ -273,6 +327,29 @@ function App() {
       console.error('Failed to load budget period settings:', error);
     }
   };
+
+  // Poll server for overrides periodically so other open clients receive updates
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    const fetchAndApply = async () => {
+      try {
+        const serverOverrides = await api.fetchCategoryOverrides(userId).catch(() => ({}));
+        if (cancelled) return;
+        // If serverOverrides differ from current state, apply server copy
+        if (JSON.stringify(serverOverrides) !== JSON.stringify(categoryOverrides)) {
+          applyServerOverrides(serverOverrides);
+        }
+      } catch (e) {
+        console.error('Error polling category overrides', e);
+      }
+    }
+
+    // Initial fetch
+    fetchAndApply();
+    const id = setInterval(fetchAndApply, 5000);
+    return () => { cancelled = true; clearInterval(id); }
+  }, [userId]);
 
   // Сохранение настроек бюджетного периода
   const handleSaveBudgetPeriodSettings = async (
@@ -410,15 +487,52 @@ function App() {
     }
   }
 
-  const handleAddCategory = () => {
+  const handleAddCategory = (initialType: 'expense' | 'income' = 'expense') => {
     WebApp.HapticFeedback.impactOccurred('light');
-    setIsCustomCategory(false);
+    setAddCategoryType(initialType);
+    setIsCustomCategory(initialType === 'income'); // For income, default to custom as there are no "standard limit" flows
     setSelectedStandardCategory('');
     setNewCategoryName('');
     setNewCategoryIcon('Package');
     setNewCategoryColor('#FF6B6B');
     setNewCategoryLimit('');
+    setEditingCategoryId(null);
     setShowAddCategoryModal(true);
+  }
+
+  const openEditCategoryModal = (categoryId: string) => {
+    WebApp.HapticFeedback.impactOccurred('light');
+    // Determine if it's a custom category
+    const custom = customCategories.find(c => c.id === categoryId);
+    if (custom) {
+      setAddCategoryType(custom.type || 'expense');
+      setIsCustomCategory(true);
+      // Prefer persisted/local overrides when present
+      const override = categoryOverrides?.[custom.id] || {};
+      setNewCategoryName(override.name || custom.name || '');
+      setNewCategoryIcon(override.icon || custom.icon || 'Package');
+      setNewCategoryColor(override.color || custom.color || '#FF6B6B');
+      setNewCategoryLimit(override.limit !== undefined ? String(override.limit) : (catLimits[custom.id] ? String(catLimits[custom.id]) : ''));
+      setEditingCategoryId(custom.id);
+      setShowAddCategoryModal(true);
+      return;
+    }
+
+    // It's a standard category (expense or income)
+    // find in standard lists
+    const std = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === categoryId);
+    if (std) {
+      setAddCategoryType(INCOME_CATEGORIES.some(c => c.id === categoryId) ? 'income' : 'expense');
+      setIsCustomCategory(INCOME_CATEGORIES.some(c => c.id === categoryId));
+      // Apply any local overrides so modal shows current values
+      const override = categoryOverrides?.[categoryId] || {};
+      setNewCategoryName(override.name || std.name || '');
+      setNewCategoryIcon(override.icon || (typeof std.icon === 'string' ? std.icon : 'Package'));
+      setNewCategoryColor(override.color || std.color || '#FF6B6B');
+      setNewCategoryLimit(override.limit !== undefined ? String(override.limit) : (catLimits[categoryId] ? String(catLimits[categoryId]) : ''));
+      setEditingCategoryId(categoryId);
+      setShowAddCategoryModal(true);
+    }
   }
 
   const handleCreateCategory = async () => {
@@ -430,27 +544,34 @@ function App() {
       // Если поле пустое или не число, устанавливаем 0
       const limit = newCategoryLimit && !isNaN(parseFloat(newCategoryLimit)) ? parseFloat(newCategoryLimit) : 0;
       
-      if (isCustomCategory) {
-        // Создаём кастомную категорию (лимит для кастомной категории тоже нужно привязать к дате, но пока API createCustomCategory принимает просто limit)
-        // Возможно стоит обновить createCustomCategory чтобы она тоже создавала запись с датой?
-        // Но createCustomCategory создает САМУ категорию. Лимит создается внутри сервера.
-        // Серверный createCustomCategory не был обновлен на прием даты.
-        // Но это не страшно, так как после создания мы можем обновить лимит явно.
-        if (!newCategoryName) return;
-        const res = await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
-        // Обновляем лимит явно с датой
-        if (limit > 0) {
-            await api.setCategoryLimit(userId, res.id, limit, month, year);
+      if (editingCategoryId) {
+        // Save edits as local overrides for both standard and custom categories
+        setCategoryOverride(editingCategoryId, { name: newCategoryName, icon: newCategoryIcon, color: newCategoryColor, limit: limit });
+        // If it was a custom category and user changed limit for expense, also update server limit
+        if (customCategories.some(c => c.id === editingCategoryId)) {
+          if (addCategoryType === 'expense' || limit > 0) {
+            await api.setCategoryLimit(userId, editingCategoryId, limit, month, year);
+          }
         }
       } else {
-        // Добавляем лимит к стандартной категории
-        if (!selectedStandardCategory) return;
-        // Устанавливаем лимит (даже если 0)
-        await api.setCategoryLimit(userId, selectedStandardCategory, limit, month, year);
+        if (isCustomCategory) {
+          if (!newCategoryName) return;
+          // Передаем addCategoryType (expense или income)
+          const res = await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit, addCategoryType);
+          // Обновляем лимит явно с датой (только если это расход или лимит задан)
+          if (addCategoryType === 'expense' || limit > 0) {
+            await api.setCategoryLimit(userId, res.id, limit, month, year);
+          }
+        } else {
+          // Добавляем лимит к стандартной категории (только для расходов)
+          if (!selectedStandardCategory) return;
+          await api.setCategoryLimit(userId, selectedStandardCategory, limit, month, year);
+        }
       }
       
       WebApp.HapticFeedback.notificationOccurred('success');
       setShowAddCategoryModal(false);
+      setEditingCategoryId(null);
       loadData(userId, currentDate);
     } catch (e) {
       console.error(e);
@@ -645,6 +766,23 @@ function App() {
 
   // Отфильтрованные транзакции для отображения
   const filteredTransactions = filterTransactions(transactions);
+
+  // Helper to apply local overrides to standard and custom categories
+  const applyOverridesToCategory = (cat: any) => {
+    const override = categoryOverrides?.[cat.id] || {};
+    if (override.hidden) return { ...cat, hidden: true };
+    return {
+      ...cat,
+      name: override.name || cat.name,
+      color: override.color || cat.color,
+      icon: override.icon || cat.icon,
+      hidden: false
+    };
+  };
+
+  // Categories displayed in input
+  const displayedStandardCategories = currentCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden);
+  const displayedCustomCategories = customCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden && (c.type || 'expense') === transType);
 
   return (
     <div className="app-container">
@@ -927,7 +1065,9 @@ function App() {
 
               {(accounts.length > 0 || goals.length > 0) && (
                 <div className="account-selector-section">
-                  <label className="section-label">На счет/копилку:</label>
+                  <label className="section-label">
+                    {transType === 'expense' ? 'Со счета/копилки:' : 'На счет/копилку:'}
+                  </label>
                   <div className="account-selector-scroll">
                     {accounts.map((acc) => {
                       const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
@@ -980,21 +1120,21 @@ function App() {
                 <div className="categories-scroll">
                   {/* Для расходов - фильтруем по лимитам, для доходов - показываем все */}
                   {transType === 'expense' 
-                    ? currentCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
+                    ? displayedStandardCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
                         <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
-                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon}</div>
+                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
                           <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
                         </motion.button>
                       ))
-                    : currentCategories.map((cat) => (
+                    : displayedStandardCategories.map((cat) => (
                         <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
-                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon}</div>
+                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
                           <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
                         </motion.button>
                       ))
                   }
-                  {/* КАСТОМНЫЕ КАТЕГОРИИ (только для расходов) */}
-                  {transType === 'expense' && customCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
+                  {/* КАСТОМНЫЕ КАТЕГОРИИ */}
+                  {displayedCustomCategories.map((cat) => (
                     <motion.button 
                       key={cat.id} 
                       whileTap={{ scale: 0.95 }} 
@@ -1006,7 +1146,7 @@ function App() {
                         filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none'
                       }}
                     >
-                      <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{getIconByName(cat.icon, 20)}</div>
+                      <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : getIconByName(cat.icon || 'Package', 20)}</div>
                       <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
                     </motion.button>
                   ))}
@@ -1046,6 +1186,7 @@ function App() {
               onFilterClick={() => setShowSearchPanel(true)}
               hasActiveFilters={hasActiveFilters}
               customCategories={customCategories}
+              accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
             />
             <div style={{ height: 80 }} /> 
           </div>
@@ -1069,8 +1210,14 @@ function App() {
               customCategories={customCategories}
               onEditCategory={openEditCategory} 
               onEditTotal={openEditTotal}
-              onAddCategory={handleAddCategory}
+              onAddCategory={() => handleAddCategory('expense')}
+              onAddIncomeCategory={() => handleAddCategory('income')}
               onDeleteCategory={handleDeleteCategory}
+              transactions={transactions}
+              accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
+              categoryOverrides={categoryOverrides}
+              onSetCategoryOverride={setCategoryOverride}
+              onOpenEditCategory={openEditCategoryModal}
             />
             <div style={{ height: 80 }} />
           </div>
@@ -1105,49 +1252,51 @@ function App() {
         <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Settings size={22} /></div><span>Настройки</span></button>
       </div>
 
-      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА */}
-      <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title="Новый лимит">
+      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА / КАТЕГОРИИ */}
+      <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title={addCategoryType === 'income' ? "Новая категория" : "Новый лимит"}>
         <div className="modal-body">
-          {/* Переключатель типа категории */}
-          <div style={{ marginBottom: 15 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsCustomCategory(false)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  background: !isCustomCategory ? '#667eea' : 'var(--bg-input)',
-                  color: !isCustomCategory ? 'white' : 'var(--text-main)',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                Стандартные
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsCustomCategory(true)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  background: isCustomCategory ? '#667eea' : 'var(--bg-input)',
-                  color: isCustomCategory ? 'white' : 'var(--text-main)',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                Свои
-              </motion.button>
+          {/* Переключатель типа категории (только если это Расходы, для Доходов всегда Свои) */}
+          {addCategoryType === 'expense' && (
+            <div style={{ marginBottom: 15 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsCustomCategory(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: !isCustomCategory ? '#667eea' : 'var(--bg-input)',
+                    color: !isCustomCategory ? 'white' : 'var(--text-main)',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Стандартные
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsCustomCategory(true)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: isCustomCategory ? '#667eea' : 'var(--bg-input)',
+                    color: isCustomCategory ? 'white' : 'var(--text-main)',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Свои
+                </motion.button>
+              </div>
             </div>
-          </div>
-
-          {!isCustomCategory ? (
-            // СТАНДАРТНЫЕ КАТЕГОРИИ
+          )}
+          
+          {addCategoryType === 'expense' && !isCustomCategory ? (
+            // СТАНДАРТНЫЕ КАТЕГОРИИ (РАСХОДЫ)
             <div style={{ marginBottom: 15 }}>
               <label className="modal-label">Выберите категорию</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
@@ -1176,11 +1325,11 @@ function App() {
               </div>
             </div>
           ) : (
-            // КАСТОМНАЯ КАТЕГОРИЯ
+            // КАСТОМНАЯ КАТЕГОРИЯ (РАСХОД ИЛИ ДОХОД)
             <>
               <input
                 type="text"
-                placeholder="Название лимита"
+                placeholder="Название категории"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 className="modal-input"
@@ -1194,21 +1343,51 @@ function App() {
             </>
           )}
 
-          <input
-            type="number"
-            placeholder="Лимит (опционально)"
-            value={newCategoryLimit}
-            onChange={(e) => setNewCategoryLimit(e.target.value)}
-            className="modal-input"
-          />
+          {addCategoryType === 'expense' && (
+            <input
+              type="number"
+              placeholder="Лимит (опционально)"
+              value={newCategoryLimit}
+              onChange={(e) => setNewCategoryLimit(e.target.value)}
+              className="modal-input"
+            />
+          )}
 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateCategory}
             className="modal-submit-button"
           >
-            {isCustomCategory ? 'Создать лимит' : 'Добавить лимит'}
+            {addCategoryType === 'income' ? (editingCategoryId ? 'Изменить категорию' : 'Создать категорию') : (isCustomCategory ? 'Создать лимит' : 'Добавить лимит')}
           </motion.button>
+          {editingCategoryId && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                // Confirm deletion
+                openConfirm('Удалить категорию? Действие необратимо.', async () => {
+                  if (!userId || !editingCategoryId) return;
+                  try {
+                    const isCustom = customCategories.some(c => c.id === editingCategoryId);
+                    if (isCustom) {
+                      await api.deleteCustomCategory(userId, editingCategoryId);
+                      // remove any local override
+                      removeCategoryOverride(editingCategoryId);
+                    } else {
+                      // Hide standard category via overrides
+                      setCategoryOverride(editingCategoryId, { hidden: true });
+                    }
+                    setShowAddCategoryModal(false);
+                    setEditingCategoryId(null);
+                    loadData(userId, currentDate);
+                  } catch (e) { console.error(e); }
+                });
+              }}
+              style={{ marginTop: 8, background: 'transparent', border: '2px solid var(--accent-danger)', color: 'var(--accent-danger)' }}
+            >
+              Удалить категорию
+            </motion.button>
+          )}
         </div>
       </Modal>
 

@@ -153,9 +153,15 @@ db.serialize(() => {
       name TEXT NOT NULL,
       icon TEXT,
       color TEXT,
-      created_at TEXT
+      created_at TEXT,
+      type TEXT DEFAULT 'expense' -- 'expense' или 'income'
     )
   `)
+
+  // Миграция для custom_categories (добавляем type)
+  db.run("ALTER TABLE custom_categories ADD COLUMN type TEXT DEFAULT 'expense'", (err) => {
+    // Игнорируем ошибку, если колонка уже есть
+  })
 
   // СЧЕТА (Accounts) - текущие счета, кредитные карты, кошельки и т.д.
   db.run(`
@@ -231,6 +237,16 @@ db.serialize(() => {
       created_at TEXT
     )
   `)
+
+    // Category overrides (user-specific visual/name/icon overrides for standard/custom categories)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS category_overrides (
+        user_id INTEGER,
+        category_id TEXT,
+        data TEXT,
+        PRIMARY KEY (user_id, category_id)
+      )
+    `)
 })
 
 // --- MIDDLEWARE для подмены user_id ---
@@ -524,7 +540,7 @@ fastify.get('/transactions', (request, reply) => {
   getDateFilter(request.query, userId)
     .then(filter => {
       const sql = `
-        SELECT id, amount, category, date, type
+        SELECT id, amount, category, date, type, account_id
         FROM transactions 
         WHERE user_id = ? ${filter.sql}
         ORDER BY date DESC, id DESC 
@@ -696,30 +712,27 @@ fastify.post('/custom-categories', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
   
-  const { name, icon, color, limit } = request.body
+  const { name, icon, color, limit, type } = request.body
   if (!name) return reply.code(400).send({ error: 'Name is required' })
   
   // Генерируем уникальный ID для категории
   const categoryId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   const createdAt = new Date().toISOString()
-  
+  const categoryType = type || 'expense';
+
   db.run(
-    "INSERT INTO custom_categories (id, user_id, name, icon, color, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [categoryId, userId, name, icon || '📦', color || '#A0C4FF', createdAt],
+    "INSERT INTO custom_categories (id, user_id, name, icon, color, created_at, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [categoryId, userId, name, icon || '📦', color || '#A0C4FF', createdAt, categoryType],
     function(err) {
       if (err) return reply.code(500).send({ error: err.message })
       
-      // Всегда создаем запись в category_limits с лимитом 0 и датой '2000-01-01'
-      // Это нужно, чтобы в прошлых месяцах лимит был 0 (неограничен/отключен),
-      // а реальный лимит будет установлен клиентом для текущего месяца отдельным запросом.
+      // Для категорий расходов создаем лимит (для доходов лимиты обычно не ставят, но структура позволяет)
       const limitValue = limit !== undefined && limit !== null ? limit : 0
       db.run(
         "INSERT INTO category_limits (user_id, category_id, limit_amount, effective_date) VALUES (?, ?, ?, ?)",
         [userId, categoryId, 0, '2000-01-01'],
         () => {
-          // Возвращаем переданный лимит, чтобы клиент знал, что категория создана с этим намерением,
-          // хотя в БД база 0. Клиент сам установит актуальный лимит для текущего месяца.
-          return reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit: limitValue })
+          return reply.send({ id: categoryId, name, icon: icon || '📦', color: color || '#A0C4FF', limit: limitValue, type: categoryType })
         }
       )
     }
@@ -746,6 +759,51 @@ fastify.delete('/custom-categories/:id', (request, reply) => {
         return reply.send({ status: 'ok' })
       })
     })
+  })
+})
+
+// --- CATEGORY OVERRIDES API ---
+
+// Get all overrides for the user
+fastify.get('/category-overrides', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  db.all("SELECT category_id, data FROM category_overrides WHERE user_id = ?", [userId], (err, rows) => {
+    if (err) return reply.code(500).send({ error: err.message })
+    const map = {};
+    (rows || []).forEach(r => {
+      try {
+        map[r.category_id] = JSON.parse(r.data);
+      } catch (e) { map[r.category_id] = {}; }
+    })
+    return reply.send(map);
+  })
+})
+
+// Upsert override for a category
+fastify.post('/category-overrides/:categoryId', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { categoryId } = request.params
+  const data = request.body || {}
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  const json = JSON.stringify(data);
+  db.run("INSERT OR REPLACE INTO category_overrides (user_id, category_id, data) VALUES (?, ?, ?)", [userId, categoryId, json], function(err) {
+    if (err) return reply.code(500).send({ error: err.message })
+    return reply.send({ status: 'ok', categoryId })
+  })
+})
+
+// Delete override for a category
+fastify.delete('/category-overrides/:categoryId', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const { categoryId } = request.params
+  if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+  db.run("DELETE FROM category_overrides WHERE user_id = ? AND category_id = ?", [userId, categoryId], function(err) {
+    if (err) return reply.code(500).send({ error: err.message })
+    return reply.send({ status: 'deleted', categoryId })
   })
 })
 

@@ -11,6 +11,8 @@ interface Transaction {
   category: string;
   date: string;
   type?: 'expense' | 'income';
+  account_id?: number | null;
+  target_type?: 'account' | 'goal';
 }
 
 interface CustomCategory {
@@ -27,6 +29,7 @@ interface Props {
   onFilterClick?: () => void;
   hasActiveFilters?: boolean;
   customCategories?: CustomCategory[];
+  accounts?: { id: number | string; name?: string; color?: string; type?: string }[];
 }
 
 export const TransactionList: React.FC<Props> = ({ 
@@ -36,6 +39,7 @@ export const TransactionList: React.FC<Props> = ({
   onFilterClick, 
   hasActiveFilters, 
   customCategories = [] 
+  , accounts = []
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -157,7 +161,25 @@ export const TransactionList: React.FC<Props> = ({
                     <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 14 }}>
                       {categoryName}
                     </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
+                      {/* Account tag */}
+                      {t.account_id !== undefined && t.account_id !== null ? (
+                        (() => {
+                          const acc = accounts?.find(a => a && a.id !== undefined && a.id !== null && a.id.toString() === t.account_id!.toString());
+                          const name = acc?.name || `#${t.account_id}`;
+                          const color = acc?.color || 'gray';
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{name}</span>
+                            </div>
+                          )
+                        })()
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>—</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
