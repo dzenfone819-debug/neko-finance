@@ -103,6 +103,7 @@ function App() {
   const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
   const [newCategoryColor, setNewCategoryColor] = useState('#FF6B6B')
   const [newCategoryLimit, setNewCategoryLimit] = useState('')
+  const [addCategoryType, setAddCategoryType] = useState<'expense' | 'income'>('expense')
 
   // Состояния для поиска и фильтров
   const [showSearchPanel, setShowSearchPanel] = useState(false)
@@ -410,9 +411,10 @@ function App() {
     }
   }
 
-  const handleAddCategory = () => {
+  const handleAddCategory = (initialType: 'expense' | 'income' = 'expense') => {
     WebApp.HapticFeedback.impactOccurred('light');
-    setIsCustomCategory(false);
+    setAddCategoryType(initialType);
+    setIsCustomCategory(initialType === 'income'); // For income, default to custom as there are no "standard limit" flows
     setSelectedStandardCategory('');
     setNewCategoryName('');
     setNewCategoryIcon('Package');
@@ -431,21 +433,17 @@ function App() {
       const limit = newCategoryLimit && !isNaN(parseFloat(newCategoryLimit)) ? parseFloat(newCategoryLimit) : 0;
       
       if (isCustomCategory) {
-        // Создаём кастомную категорию (лимит для кастомной категории тоже нужно привязать к дате, но пока API createCustomCategory принимает просто limit)
-        // Возможно стоит обновить createCustomCategory чтобы она тоже создавала запись с датой?
-        // Но createCustomCategory создает САМУ категорию. Лимит создается внутри сервера.
-        // Серверный createCustomCategory не был обновлен на прием даты.
-        // Но это не страшно, так как после создания мы можем обновить лимит явно.
         if (!newCategoryName) return;
-        const res = await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit);
-        // Обновляем лимит явно с датой
-        if (limit > 0) {
+        // Передаем addCategoryType (expense или income)
+        const res = await api.createCustomCategory(userId, newCategoryName, newCategoryIcon, newCategoryColor, limit, addCategoryType);
+
+        // Обновляем лимит явно с датой (только если это расход или лимит задан)
+        if (addCategoryType === 'expense' || limit > 0) {
             await api.setCategoryLimit(userId, res.id, limit, month, year);
         }
       } else {
-        // Добавляем лимит к стандартной категории
+        // Добавляем лимит к стандартной категории (только для расходов)
         if (!selectedStandardCategory) return;
-        // Устанавливаем лимит (даже если 0)
         await api.setCategoryLimit(userId, selectedStandardCategory, limit, month, year);
       }
       
@@ -927,7 +925,9 @@ function App() {
 
               {(accounts.length > 0 || goals.length > 0) && (
                 <div className="account-selector-section">
-                  <label className="section-label">На счет/копилку:</label>
+                  <label className="section-label">
+                    {transType === 'expense' ? 'Со счета/копилки:' : 'На счет/копилку:'}
+                  </label>
                   <div className="account-selector-scroll">
                     {accounts.map((acc) => {
                       const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
@@ -993,8 +993,8 @@ function App() {
                         </motion.button>
                       ))
                   }
-                  {/* КАСТОМНЫЕ КАТЕГОРИИ (только для расходов) */}
-                  {transType === 'expense' && customCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
+                  {/* КАСТОМНЫЕ КАТЕГОРИИ */}
+                  {customCategories.filter(cat => (cat.type || 'expense') === transType).filter(cat => transType === 'expense' ? (catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0) : true).map((cat) => (
                     <motion.button 
                       key={cat.id} 
                       whileTap={{ scale: 0.95 }} 
@@ -1069,8 +1069,11 @@ function App() {
               customCategories={customCategories}
               onEditCategory={openEditCategory} 
               onEditTotal={openEditTotal}
-              onAddCategory={handleAddCategory}
+              onAddCategory={() => handleAddCategory('expense')}
+              onAddIncomeCategory={() => handleAddCategory('income')}
               onDeleteCategory={handleDeleteCategory}
+              transactions={transactions}
+              accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
             />
             <div style={{ height: 80 }} />
           </div>
@@ -1105,49 +1108,51 @@ function App() {
         <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); WebApp.HapticFeedback.selectionChanged(); }}><div className="tab-icon-bg"><Settings size={22} /></div><span>Настройки</span></button>
       </div>
 
-      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА */}
-      <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title="Новый лимит">
+      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЛИМИТА / КАТЕГОРИИ */}
+      <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title={addCategoryType === 'income' ? "Новая категория" : "Новый лимит"}>
         <div className="modal-body">
-          {/* Переключатель типа категории */}
-          <div style={{ marginBottom: 15 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsCustomCategory(false)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  background: !isCustomCategory ? '#667eea' : 'var(--bg-input)',
-                  color: !isCustomCategory ? 'white' : 'var(--text-main)',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                Стандартные
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsCustomCategory(true)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  background: isCustomCategory ? '#667eea' : 'var(--bg-input)',
-                  color: isCustomCategory ? 'white' : 'var(--text-main)',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                Свои
-              </motion.button>
+          {/* Переключатель типа категории (только если это Расходы, для Доходов всегда Свои) */}
+          {addCategoryType === 'expense' && (
+            <div style={{ marginBottom: 15 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsCustomCategory(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: !isCustomCategory ? '#667eea' : 'var(--bg-input)',
+                    color: !isCustomCategory ? 'white' : 'var(--text-main)',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Стандартные
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsCustomCategory(true)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: isCustomCategory ? '#667eea' : 'var(--bg-input)',
+                    color: isCustomCategory ? 'white' : 'var(--text-main)',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Свои
+                </motion.button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {!isCustomCategory ? (
-            // СТАНДАРТНЫЕ КАТЕГОРИИ
+          {addCategoryType === 'expense' && !isCustomCategory ? (
+            // СТАНДАРТНЫЕ КАТЕГОРИИ (РАСХОДЫ)
             <div style={{ marginBottom: 15 }}>
               <label className="modal-label">Выберите категорию</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
@@ -1176,11 +1181,11 @@ function App() {
               </div>
             </div>
           ) : (
-            // КАСТОМНАЯ КАТЕГОРИЯ
+            // КАСТОМНАЯ КАТЕГОРИЯ (РАСХОД ИЛИ ДОХОД)
             <>
               <input
                 type="text"
-                placeholder="Название лимита"
+                placeholder="Название категории"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 className="modal-input"
@@ -1194,20 +1199,22 @@ function App() {
             </>
           )}
 
-          <input
-            type="number"
-            placeholder="Лимит (опционально)"
-            value={newCategoryLimit}
-            onChange={(e) => setNewCategoryLimit(e.target.value)}
-            className="modal-input"
-          />
+          {addCategoryType === 'expense' && (
+            <input
+              type="number"
+              placeholder="Лимит (опционально)"
+              value={newCategoryLimit}
+              onChange={(e) => setNewCategoryLimit(e.target.value)}
+              className="modal-input"
+            />
+          )}
 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateCategory}
             className="modal-submit-button"
           >
-            {isCustomCategory ? 'Создать лимит' : 'Добавить лимит'}
+            {addCategoryType === 'income' ? 'Создать категорию' : (isCustomCategory ? 'Создать лимит' : 'Добавить лимит')}
           </motion.button>
         </div>
       </Modal>
