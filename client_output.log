@@ -1,0 +1,18 @@
+
+> client@0.0.0 dev
+> vite
+
+
+  VITE v7.2.6  ready in 353 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+1:01:24 PM [vite] (client) hmr update /src/App.tsx
+1:01:24 PM [vite] (client) hmr update /src/components/TransactionDetailModal.tsx
+1:01:24 PM [vite] (client) hmr update /src/components/TransactionDetailsInput.tsx
+1:01:54 PM [vite] (client) hmr update /src/components/TransactionDetailsInput.tsx
+1:02:14 PM [vite] (client) hmr update /src/components/TransactionDetailModal.tsx
+1:05:08 PM [vite] (client) hmr update /src/components/TransactionDetailModal.tsx
+1:05:45 PM [vite] (client) hmr update /src/components/TransactionDetailsInput.tsx
+1:07:38 PM [vite] (client) hmr update /src/components/TransactionDetailModal.tsx
+1:08:12 PM [vite] (client) hmr update /src/components/TransactionDetailsInput.tsx

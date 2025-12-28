@@ -1,0 +1,387 @@
+
+> server@1.0.0 start
+> node server.js
+
+📁 Используется путь к БД: /app/database.db
+{"level":30,"time":1766926748483,"pid":19206,"hostname":"devbox","msg":"Server listening at http://127.0.0.1:3000"}
+Сервер запущен
+✅ Подключено к SQLite
+📁 БД находится по пути: /app/database.db
+⚠️  BOT_TOKEN или GEMINI_KEY не установлены
+{"level":30,"time":1766926748483,"pid":19206,"hostname":"devbox","msg":"Server listening at http://192.168.0.2:3000"}
+{"level":30,"time":1766926778745,"pid":19206,"hostname":"devbox","reqId":"req-1","req":{"method":"OPTIONS","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778752,"pid":19206,"hostname":"devbox","reqId":"req-1","res":{"statusCode":204},"responseTime":5.4081480000168085,"msg":"request completed"}
+{"level":30,"time":1766926778753,"pid":19206,"hostname":"devbox","reqId":"req-2","req":{"method":"OPTIONS","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778753,"pid":19206,"hostname":"devbox","reqId":"req-2","res":{"statusCode":204},"responseTime":0.4569660001434386,"msg":"request completed"}
+{"level":30,"time":1766926778755,"pid":19206,"hostname":"devbox","reqId":"req-3","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926778757,"pid":19206,"hostname":"devbox","reqId":"req-4","req":{"method":"OPTIONS","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778757,"pid":19206,"hostname":"devbox","reqId":"req-4","res":{"statusCode":204},"responseTime":0.3789079999551177,"msg":"request completed"}
+{"level":30,"time":1766926778758,"pid":19206,"hostname":"devbox","reqId":"req-5","req":{"method":"OPTIONS","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778760,"pid":19206,"hostname":"devbox","reqId":"req-5","res":{"statusCode":204},"responseTime":1.1893710000440478,"msg":"request completed"}
+{"level":30,"time":1766926778760,"pid":19206,"hostname":"devbox","reqId":"req-6","req":{"method":"OPTIONS","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778760,"pid":19206,"hostname":"devbox","reqId":"req-6","res":{"statusCode":204},"responseTime":0.38965799985453486,"msg":"request completed"}
+{"level":30,"time":1766926778763,"pid":19206,"hostname":"devbox","reqId":"req-3","res":{"statusCode":200},"responseTime":7.568894000258297,"msg":"request completed"}
+{"level":30,"time":1766926778763,"pid":19206,"hostname":"devbox","reqId":"req-7","req":{"method":"OPTIONS","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926778764,"pid":19206,"hostname":"devbox","reqId":"req-7","res":{"statusCode":204},"responseTime":1.0998420002870262,"msg":"request completed"}
+{"level":30,"time":1766926778764,"pid":19206,"hostname":"devbox","reqId":"req-8","req":{"method":"OPTIONS","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926778765,"pid":19206,"hostname":"devbox","reqId":"req-8","res":{"statusCode":204},"responseTime":0.46016599982976913,"msg":"request completed"}
+{"level":30,"time":1766926778767,"pid":19206,"hostname":"devbox","reqId":"req-9","req":{"method":"OPTIONS","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778769,"pid":19206,"hostname":"devbox","reqId":"req-9","res":{"statusCode":204},"responseTime":1.4177769999951124,"msg":"request completed"}
+{"level":30,"time":1766926778770,"pid":19206,"hostname":"devbox","reqId":"req-a","req":{"method":"OPTIONS","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778771,"pid":19206,"hostname":"devbox","reqId":"req-a","res":{"statusCode":204},"responseTime":0.7680060002021492,"msg":"request completed"}
+{"level":30,"time":1766926778772,"pid":19206,"hostname":"devbox","reqId":"req-b","req":{"method":"OPTIONS","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778772,"pid":19206,"hostname":"devbox","reqId":"req-b","res":{"statusCode":204},"responseTime":0.40015899995341897,"msg":"request completed"}
+{"level":30,"time":1766926778772,"pid":19206,"hostname":"devbox","reqId":"req-c","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926778774,"pid":19206,"hostname":"devbox","reqId":"req-d","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926778775,"pid":19206,"hostname":"devbox","reqId":"req-e","req":{"method":"OPTIONS","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926778775,"pid":19206,"hostname":"devbox","reqId":"req-e","res":{"statusCode":204},"responseTime":0.5190989999100566,"msg":"request completed"}
+{"level":30,"time":1766926778775,"pid":19206,"hostname":"devbox","reqId":"req-f","req":{"method":"OPTIONS","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778776,"pid":19206,"hostname":"devbox","reqId":"req-f","res":{"statusCode":204},"responseTime":0.14340800000354648,"msg":"request completed"}
+{"level":30,"time":1766926778776,"pid":19206,"hostname":"devbox","reqId":"req-g","req":{"method":"OPTIONS","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778777,"pid":19206,"hostname":"devbox","reqId":"req-g","res":{"statusCode":204},"responseTime":0.23969099996611476,"msg":"request completed"}
+{"level":30,"time":1766926778777,"pid":19206,"hostname":"devbox","reqId":"req-h","req":{"method":"OPTIONS","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778777,"pid":19206,"hostname":"devbox","reqId":"req-h","res":{"statusCode":204},"responseTime":0.18945100018754601,"msg":"request completed"}
+{"level":30,"time":1766926778779,"pid":19206,"hostname":"devbox","reqId":"req-i","req":{"method":"OPTIONS","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926778779,"pid":19206,"hostname":"devbox","reqId":"req-i","res":{"statusCode":204},"responseTime":0.16583100007846951,"msg":"request completed"}
+{"level":30,"time":1766926778780,"pid":19206,"hostname":"devbox","reqId":"req-c","res":{"statusCode":200},"responseTime":7.37661200016737,"msg":"request completed"}
+{"level":30,"time":1766926778780,"pid":19206,"hostname":"devbox","reqId":"req-j","req":{"method":"OPTIONS","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778780,"pid":19206,"hostname":"devbox","reqId":"req-j","res":{"statusCode":204},"responseTime":0.2348390002734959,"msg":"request completed"}
+{"level":30,"time":1766926778780,"pid":19206,"hostname":"devbox","reqId":"req-k","req":{"method":"OPTIONS","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778781,"pid":19206,"hostname":"devbox","reqId":"req-k","res":{"statusCode":204},"responseTime":0.12789100036025047,"msg":"request completed"}
+{"level":30,"time":1766926778781,"pid":19206,"hostname":"devbox","reqId":"req-l","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778784,"pid":19206,"hostname":"devbox","reqId":"req-m","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926778785,"pid":19206,"hostname":"devbox","reqId":"req-d","res":{"statusCode":200},"responseTime":10.571707000024617,"msg":"request completed"}
+{"level":30,"time":1766926778785,"pid":19206,"hostname":"devbox","reqId":"req-n","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778786,"pid":19206,"hostname":"devbox","reqId":"req-o","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778786,"pid":19206,"hostname":"devbox","reqId":"req-p","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926778787,"pid":19206,"hostname":"devbox","reqId":"req-l","res":{"statusCode":200},"responseTime":6.170650000218302,"msg":"request completed"}
+{"level":30,"time":1766926778788,"pid":19206,"hostname":"devbox","reqId":"req-q","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926778790,"pid":19206,"hostname":"devbox","reqId":"req-m","res":{"statusCode":200},"responseTime":5.308818000368774,"msg":"request completed"}
+{"level":30,"time":1766926778790,"pid":19206,"hostname":"devbox","reqId":"req-o","res":{"statusCode":200},"responseTime":4.224472000263631,"msg":"request completed"}
+{"level":30,"time":1766926778793,"pid":19206,"hostname":"devbox","reqId":"req-r","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778794,"pid":19206,"hostname":"devbox","reqId":"req-n","res":{"statusCode":200},"responseTime":8.978959999978542,"msg":"request completed"}
+{"level":30,"time":1766926778802,"pid":19206,"hostname":"devbox","reqId":"req-s","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926778803,"pid":19206,"hostname":"devbox","reqId":"req-p","res":{"statusCode":200},"responseTime":16.58600699994713,"msg":"request completed"}
+{"level":30,"time":1766926778803,"pid":19206,"hostname":"devbox","reqId":"req-t","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778804,"pid":19206,"hostname":"devbox","reqId":"req-u","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778805,"pid":19206,"hostname":"devbox","reqId":"req-v","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926778806,"pid":19206,"hostname":"devbox","reqId":"req-q","res":{"statusCode":200},"responseTime":18.047166000120342,"msg":"request completed"}
+{"level":30,"time":1766926778807,"pid":19206,"hostname":"devbox","reqId":"req-r","res":{"statusCode":200},"responseTime":14.098635999951512,"msg":"request completed"}
+{"level":30,"time":1766926778809,"pid":19206,"hostname":"devbox","reqId":"req-s","res":{"statusCode":200},"responseTime":6.776821999810636,"msg":"request completed"}
+{"level":30,"time":1766926778809,"pid":19206,"hostname":"devbox","reqId":"req-t","res":{"statusCode":200},"responseTime":5.594343000091612,"msg":"request completed"}
+{"level":30,"time":1766926778811,"pid":19206,"hostname":"devbox","reqId":"req-v","res":{"statusCode":200},"responseTime":5.59010999975726,"msg":"request completed"}
+{"level":30,"time":1766926778812,"pid":19206,"hostname":"devbox","reqId":"req-u","res":{"statusCode":200},"responseTime":7.796321999747306,"msg":"request completed"}
+{"level":30,"time":1766926778822,"pid":19206,"hostname":"devbox","reqId":"req-w","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926778823,"pid":19206,"hostname":"devbox","reqId":"req-x","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926778823,"pid":19206,"hostname":"devbox","reqId":"req-y","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926778824,"pid":19206,"hostname":"devbox","reqId":"req-z","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778825,"pid":19206,"hostname":"devbox","reqId":"req-10","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926778825,"pid":19206,"hostname":"devbox","reqId":"req-11","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926778829,"pid":19206,"hostname":"devbox","reqId":"req-w","res":{"statusCode":200},"responseTime":6.947153999935836,"msg":"request completed"}
+{"level":30,"time":1766926778831,"pid":19206,"hostname":"devbox","reqId":"req-10","res":{"statusCode":200},"responseTime":5.556948999874294,"msg":"request completed"}
+{"level":30,"time":1766926778831,"pid":19206,"hostname":"devbox","reqId":"req-11","res":{"statusCode":200},"responseTime":6.031187000218779,"msg":"request completed"}
+{"level":30,"time":1766926778834,"pid":19206,"hostname":"devbox","reqId":"req-x","res":{"statusCode":200},"responseTime":10.84847699990496,"msg":"request completed"}
+{"level":30,"time":1766926778835,"pid":19206,"hostname":"devbox","reqId":"req-y","res":{"statusCode":200},"responseTime":11.782246000133455,"msg":"request completed"}
+{"level":30,"time":1766926778835,"pid":19206,"hostname":"devbox","reqId":"req-z","res":{"statusCode":200},"responseTime":11.083816000260413,"msg":"request completed"}
+{"level":30,"time":1766926778850,"pid":19206,"hostname":"devbox","reqId":"req-12","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926778853,"pid":19206,"hostname":"devbox","reqId":"req-12","res":{"statusCode":200},"responseTime":3.5679369997233152,"msg":"request completed"}
+{"level":30,"time":1766926778856,"pid":19206,"hostname":"devbox","reqId":"req-13","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778859,"pid":19206,"hostname":"devbox","reqId":"req-13","res":{"statusCode":200},"responseTime":2.884705999866128,"msg":"request completed"}
+{"level":30,"time":1766926778888,"pid":19206,"hostname":"devbox","reqId":"req-14","req":{"method":"OPTIONS","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778889,"pid":19206,"hostname":"devbox","reqId":"req-14","res":{"statusCode":204},"responseTime":0.5599110000766814,"msg":"request completed"}
+{"level":30,"time":1766926778891,"pid":19206,"hostname":"devbox","reqId":"req-15","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778903,"pid":19206,"hostname":"devbox","reqId":"req-15","res":{"statusCode":200},"responseTime":11.443815000355244,"msg":"request completed"}
+{"level":30,"time":1766926778903,"pid":19206,"hostname":"devbox","reqId":"req-16","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926778906,"pid":19206,"hostname":"devbox","reqId":"req-16","res":{"statusCode":200},"responseTime":2.814174999948591,"msg":"request completed"}
+{"level":30,"time":1766926778908,"pid":19206,"hostname":"devbox","reqId":"req-17","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926778909,"pid":19206,"hostname":"devbox","reqId":"req-17","res":{"statusCode":200},"responseTime":1.2210969999432564,"msg":"request completed"}
+{"level":30,"time":1766926779469,"pid":19206,"hostname":"devbox","reqId":"req-18","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926779470,"pid":19206,"hostname":"devbox","reqId":"req-19","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926779474,"pid":19206,"hostname":"devbox","reqId":"req-19","res":{"statusCode":200},"responseTime":3.947939000092447,"msg":"request completed"}
+{"level":30,"time":1766926779474,"pid":19206,"hostname":"devbox","reqId":"req-1a","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926779475,"pid":19206,"hostname":"devbox","reqId":"req-1b","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926779476,"pid":19206,"hostname":"devbox","reqId":"req-1c","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926779476,"pid":19206,"hostname":"devbox","reqId":"req-1d","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926779481,"pid":19206,"hostname":"devbox","reqId":"req-18","res":{"statusCode":200},"responseTime":11.704690999817103,"msg":"request completed"}
+{"level":30,"time":1766926779485,"pid":19206,"hostname":"devbox","reqId":"req-1a","res":{"statusCode":200},"responseTime":10.292975999880582,"msg":"request completed"}
+{"level":30,"time":1766926779485,"pid":19206,"hostname":"devbox","reqId":"req-1c","res":{"statusCode":200},"responseTime":9.812127999961376,"msg":"request completed"}
+{"level":30,"time":1766926779486,"pid":19206,"hostname":"devbox","reqId":"req-1d","res":{"statusCode":200},"responseTime":10.061967000365257,"msg":"request completed"}
+{"level":30,"time":1766926779486,"pid":19206,"hostname":"devbox","reqId":"req-1b","res":{"statusCode":200},"responseTime":10.953565000090748,"msg":"request completed"}
+{"level":30,"time":1766926779486,"pid":19206,"hostname":"devbox","reqId":"req-1e","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926779489,"pid":19206,"hostname":"devbox","reqId":"req-1e","res":{"statusCode":200},"responseTime":2.821957000065595,"msg":"request completed"}
+{"level":30,"time":1766926779494,"pid":19206,"hostname":"devbox","reqId":"req-1f","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926779495,"pid":19206,"hostname":"devbox","reqId":"req-1g","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926779497,"pid":19206,"hostname":"devbox","reqId":"req-1h","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926779497,"pid":19206,"hostname":"devbox","reqId":"req-1i","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926779497,"pid":19206,"hostname":"devbox","reqId":"req-1j","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926779497,"pid":19206,"hostname":"devbox","reqId":"req-1k","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926779500,"pid":19206,"hostname":"devbox","reqId":"req-1i","res":{"statusCode":200},"responseTime":3.49543400015682,"msg":"request completed"}
+{"level":30,"time":1766926779502,"pid":19206,"hostname":"devbox","reqId":"req-1f","res":{"statusCode":200},"responseTime":7.355485999956727,"msg":"request completed"}
+{"level":30,"time":1766926779502,"pid":19206,"hostname":"devbox","reqId":"req-1g","res":{"statusCode":200},"responseTime":7.190845999866724,"msg":"request completed"}
+{"level":30,"time":1766926779503,"pid":19206,"hostname":"devbox","reqId":"req-1j","res":{"statusCode":200},"responseTime":5.693027999717742,"msg":"request completed"}
+{"level":30,"time":1766926779504,"pid":19206,"hostname":"devbox","reqId":"req-1h","res":{"statusCode":200},"responseTime":7.166999999899417,"msg":"request completed"}
+{"level":30,"time":1766926779505,"pid":19206,"hostname":"devbox","reqId":"req-1k","res":{"statusCode":200},"responseTime":7.176998999901116,"msg":"request completed"}
+{"level":30,"time":1766926779512,"pid":19206,"hostname":"devbox","reqId":"req-1l","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926779514,"pid":19206,"hostname":"devbox","reqId":"req-1m","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926779514,"pid":19206,"hostname":"devbox","reqId":"req-1n","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926779515,"pid":19206,"hostname":"devbox","reqId":"req-1l","res":{"statusCode":200},"responseTime":3.211951000150293,"msg":"request completed"}
+{"level":30,"time":1766926779516,"pid":19206,"hostname":"devbox","reqId":"req-1o","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926779517,"pid":19206,"hostname":"devbox","reqId":"req-1p","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926779517,"pid":19206,"hostname":"devbox","reqId":"req-1q","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926779519,"pid":19206,"hostname":"devbox","reqId":"req-1r","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926779520,"pid":19206,"hostname":"devbox","reqId":"req-1p","res":{"statusCode":200},"responseTime":2.6989269996993244,"msg":"request completed"}
+{"level":30,"time":1766926779520,"pid":19206,"hostname":"devbox","reqId":"req-1q","res":{"statusCode":200},"responseTime":2.635061000008136,"msg":"request completed"}
+{"level":30,"time":1766926779521,"pid":19206,"hostname":"devbox","reqId":"req-1m","res":{"statusCode":200},"responseTime":6.5367840002290905,"msg":"request completed"}
+{"level":30,"time":1766926779521,"pid":19206,"hostname":"devbox","reqId":"req-1n","res":{"statusCode":200},"responseTime":6.0926439999602735,"msg":"request completed"}
+{"level":30,"time":1766926779522,"pid":19206,"hostname":"devbox","reqId":"req-1r","res":{"statusCode":200},"responseTime":2.6946950000710785,"msg":"request completed"}
+{"level":30,"time":1766926779522,"pid":19206,"hostname":"devbox","reqId":"req-1o","res":{"statusCode":200},"responseTime":5.3470580000430346,"msg":"request completed"}
+{"level":30,"time":1766926779531,"pid":19206,"hostname":"devbox","reqId":"req-1s","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926779532,"pid":19206,"hostname":"devbox","reqId":"req-1t","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926779533,"pid":19206,"hostname":"devbox","reqId":"req-1s","res":{"statusCode":200},"responseTime":1.6730390000157058,"msg":"request completed"}
+{"level":30,"time":1766926779534,"pid":19206,"hostname":"devbox","reqId":"req-1t","res":{"statusCode":200},"responseTime":2.1483350000344217,"msg":"request completed"}
+{"level":30,"time":1766926779554,"pid":19206,"hostname":"devbox","reqId":"req-1u","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926779557,"pid":19206,"hostname":"devbox","reqId":"req-1u","res":{"statusCode":200},"responseTime":1.2598210000433028,"msg":"request completed"}
+{"level":30,"time":1766926779571,"pid":19206,"hostname":"devbox","reqId":"req-1v","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926779572,"pid":19206,"hostname":"devbox","reqId":"req-1v","res":{"statusCode":200},"responseTime":1.2000040002167225,"msg":"request completed"}
+{"level":30,"time":1766926779576,"pid":19206,"hostname":"devbox","reqId":"req-1w","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926779578,"pid":19206,"hostname":"devbox","reqId":"req-1w","res":{"statusCode":200},"responseTime":1.5749209998175502,"msg":"request completed"}
+{"level":30,"time":1766926780436,"pid":19206,"hostname":"devbox","reqId":"req-1x","req":{"method":"OPTIONS","url":"/log-client","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926780437,"pid":19206,"hostname":"devbox","reqId":"req-1x","res":{"statusCode":204},"responseTime":0.4000750002451241,"msg":"request completed"}
+{"level":30,"time":1766926780437,"pid":19206,"hostname":"devbox","reqId":"req-1y","req":{"method":"OPTIONS","url":"/add-expense","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926780437,"pid":19206,"hostname":"devbox","reqId":"req-1y","res":{"statusCode":204},"responseTime":0.2557669999077916,"msg":"request completed"}
+{"level":30,"time":1766926780445,"pid":19206,"hostname":"devbox","reqId":"req-1z","req":{"method":"POST","url":"/log-client","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+🔵 CLIENT LOG: 📤 BEFORE API.addTransaction {
+  userId: 777,
+  value: 100,
+  selectedCategory: 'groceries',
+  transType: 'expense',
+  targetId: 24,
+  targetType: 'account',
+  date: '2025-12-28T12:59:39.354Z',
+  accountsCount: 1,
+  goalsCount: 0
+}
+{"level":30,"time":1766926780448,"pid":19206,"hostname":"devbox","reqId":"req-1z","res":{"statusCode":200},"responseTime":3.249112999998033,"msg":"request completed"}
+{"level":30,"time":1766926780448,"pid":19206,"hostname":"devbox","reqId":"req-20","req":{"method":"POST","url":"/add-expense","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+📥 /add-expense FULL request.body: {
+  "amount": 100,
+  "category": "groceries",
+  "type": "expense",
+  "account_id": 24,
+  "target_type": "account",
+  "date": "2025-12-28T12:59:39.354Z",
+  "note": "Verification Note",
+  "tags": [
+    "testtag"
+  ],
+  "photo_urls": []
+}
+✅ Transaction saved with ID: 121
+{"level":30,"time":1766926780460,"pid":19206,"hostname":"devbox","reqId":"req-20","res":{"statusCode":200},"responseTime":12.097000999841839,"msg":"request completed"}
+{"level":30,"time":1766926780466,"pid":19206,"hostname":"devbox","reqId":"req-21","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926780467,"pid":19206,"hostname":"devbox","reqId":"req-22","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926780468,"pid":19206,"hostname":"devbox","reqId":"req-23","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58336},"msg":"incoming request"}
+{"level":30,"time":1766926780469,"pid":19206,"hostname":"devbox","reqId":"req-24","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58376},"msg":"incoming request"}
+{"level":30,"time":1766926780469,"pid":19206,"hostname":"devbox","reqId":"req-25","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58370},"msg":"incoming request"}
+{"level":30,"time":1766926780470,"pid":19206,"hostname":"devbox","reqId":"req-26","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58384},"msg":"incoming request"}
+{"level":30,"time":1766926780473,"pid":19206,"hostname":"devbox","reqId":"req-21","res":{"statusCode":200},"responseTime":6.558888000436127,"msg":"request completed"}
+{"level":30,"time":1766926780473,"pid":19206,"hostname":"devbox","reqId":"req-22","res":{"statusCode":200},"responseTime":6.648263999726623,"msg":"request completed"}
+{"level":30,"time":1766926780474,"pid":19206,"hostname":"devbox","reqId":"req-26","res":{"statusCode":200},"responseTime":3.7256469996646047,"msg":"request completed"}
+{"level":30,"time":1766926780474,"pid":19206,"hostname":"devbox","reqId":"req-23","res":{"statusCode":200},"responseTime":6.113548000343144,"msg":"request completed"}
+{"level":30,"time":1766926780475,"pid":19206,"hostname":"devbox","reqId":"req-24","res":{"statusCode":200},"responseTime":6.498403000179678,"msg":"request completed"}
+{"level":30,"time":1766926780476,"pid":19206,"hostname":"devbox","reqId":"req-25","res":{"statusCode":200},"responseTime":6.476195000112057,"msg":"request completed"}
+{"level":30,"time":1766926780477,"pid":19206,"hostname":"devbox","reqId":"req-27","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58352},"msg":"incoming request"}
+{"level":30,"time":1766926780478,"pid":19206,"hostname":"devbox","reqId":"req-28","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926780479,"pid":19206,"hostname":"devbox","reqId":"req-27","res":{"statusCode":200},"responseTime":1.4535149997100234,"msg":"request completed"}
+{"level":30,"time":1766926780479,"pid":19206,"hostname":"devbox","reqId":"req-28","res":{"statusCode":200},"responseTime":1.420916000381112,"msg":"request completed"}
+{"level":30,"time":1766926780527,"pid":19206,"hostname":"devbox","reqId":"req-29","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58356},"msg":"incoming request"}
+{"level":30,"time":1766926780532,"pid":19206,"hostname":"devbox","reqId":"req-29","res":{"statusCode":200},"responseTime":4.3601410002447665,"msg":"request completed"}
+{"level":30,"time":1766926812906,"pid":19206,"hostname":"devbox","reqId":"req-2a","req":{"method":"OPTIONS","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812907,"pid":19206,"hostname":"devbox","reqId":"req-2a","res":{"statusCode":204},"responseTime":0.38160300021991134,"msg":"request completed"}
+{"level":30,"time":1766926812910,"pid":19206,"hostname":"devbox","reqId":"req-2b","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812911,"pid":19206,"hostname":"devbox","reqId":"req-2c","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812919,"pid":19206,"hostname":"devbox","reqId":"req-2c","res":{"statusCode":200},"responseTime":8.144534000195563,"msg":"request completed"}
+{"level":30,"time":1766926812920,"pid":19206,"hostname":"devbox","reqId":"req-2b","res":{"statusCode":200},"responseTime":9.774852000176907,"msg":"request completed"}
+{"level":30,"time":1766926812923,"pid":19206,"hostname":"devbox","reqId":"req-2d","req":{"method":"OPTIONS","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926812923,"pid":19206,"hostname":"devbox","reqId":"req-2d","res":{"statusCode":204},"responseTime":0.15925699984654784,"msg":"request completed"}
+{"level":30,"time":1766926812923,"pid":19206,"hostname":"devbox","reqId":"req-2e","req":{"method":"OPTIONS","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926812923,"pid":19206,"hostname":"devbox","reqId":"req-2e","res":{"statusCode":204},"responseTime":0.11878000013530254,"msg":"request completed"}
+{"level":30,"time":1766926812923,"pid":19206,"hostname":"devbox","reqId":"req-2f","req":{"method":"OPTIONS","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926812923,"pid":19206,"hostname":"devbox","reqId":"req-2f","res":{"statusCode":204},"responseTime":0.12503600027412176,"msg":"request completed"}
+{"level":30,"time":1766926812924,"pid":19206,"hostname":"devbox","reqId":"req-2g","req":{"method":"OPTIONS","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926812924,"pid":19206,"hostname":"devbox","reqId":"req-2g","res":{"statusCode":204},"responseTime":0.10277900006622076,"msg":"request completed"}
+{"level":30,"time":1766926812924,"pid":19206,"hostname":"devbox","reqId":"req-2h","req":{"method":"OPTIONS","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812924,"pid":19206,"hostname":"devbox","reqId":"req-2h","res":{"statusCode":204},"responseTime":0.09909999975934625,"msg":"request completed"}
+{"level":30,"time":1766926812924,"pid":19206,"hostname":"devbox","reqId":"req-2i","req":{"method":"OPTIONS","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812924,"pid":19206,"hostname":"devbox","reqId":"req-2i","res":{"statusCode":204},"responseTime":0.09636399988085032,"msg":"request completed"}
+{"level":30,"time":1766926812931,"pid":19206,"hostname":"devbox","reqId":"req-2j","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812931,"pid":19206,"hostname":"devbox","reqId":"req-2k","req":{"method":"OPTIONS","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812932,"pid":19206,"hostname":"devbox","reqId":"req-2k","res":{"statusCode":204},"responseTime":0.16625899961218238,"msg":"request completed"}
+{"level":30,"time":1766926812932,"pid":19206,"hostname":"devbox","reqId":"req-2l","req":{"method":"OPTIONS","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926812932,"pid":19206,"hostname":"devbox","reqId":"req-2l","res":{"statusCode":204},"responseTime":0.12937999982386827,"msg":"request completed"}
+{"level":30,"time":1766926812932,"pid":19206,"hostname":"devbox","reqId":"req-2m","req":{"method":"OPTIONS","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926812933,"pid":19206,"hostname":"devbox","reqId":"req-2m","res":{"statusCode":204},"responseTime":0.13560800021514297,"msg":"request completed"}
+{"level":30,"time":1766926812933,"pid":19206,"hostname":"devbox","reqId":"req-2n","req":{"method":"OPTIONS","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926812933,"pid":19206,"hostname":"devbox","reqId":"req-2n","res":{"statusCode":204},"responseTime":0.3103930000215769,"msg":"request completed"}
+{"level":30,"time":1766926812934,"pid":19206,"hostname":"devbox","reqId":"req-2o","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926812934,"pid":19206,"hostname":"devbox","reqId":"req-2p","req":{"method":"OPTIONS","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812935,"pid":19206,"hostname":"devbox","reqId":"req-2p","res":{"statusCode":204},"responseTime":0.252405000384897,"msg":"request completed"}
+{"level":30,"time":1766926812936,"pid":19206,"hostname":"devbox","reqId":"req-2q","req":{"method":"OPTIONS","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812936,"pid":19206,"hostname":"devbox","reqId":"req-2q","res":{"statusCode":204},"responseTime":0.16917300038039684,"msg":"request completed"}
+{"level":30,"time":1766926812937,"pid":19206,"hostname":"devbox","reqId":"req-2r","req":{"method":"OPTIONS","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926812937,"pid":19206,"hostname":"devbox","reqId":"req-2r","res":{"statusCode":204},"responseTime":0.15940700005739927,"msg":"request completed"}
+{"level":30,"time":1766926812937,"pid":19206,"hostname":"devbox","reqId":"req-2s","req":{"method":"OPTIONS","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926812938,"pid":19206,"hostname":"devbox","reqId":"req-2s","res":{"statusCode":204},"responseTime":0.19299100013449788,"msg":"request completed"}
+{"level":30,"time":1766926812938,"pid":19206,"hostname":"devbox","reqId":"req-2t","req":{"method":"OPTIONS","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926812938,"pid":19206,"hostname":"devbox","reqId":"req-2t","res":{"statusCode":204},"responseTime":0.12853299966081977,"msg":"request completed"}
+{"level":30,"time":1766926812938,"pid":19206,"hostname":"devbox","reqId":"req-2u","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812940,"pid":19206,"hostname":"devbox","reqId":"req-2v","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926812940,"pid":19206,"hostname":"devbox","reqId":"req-2w","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926812941,"pid":19206,"hostname":"devbox","reqId":"req-2x","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926812941,"pid":19206,"hostname":"devbox","reqId":"req-2o","res":{"statusCode":200},"responseTime":7.737730000168085,"msg":"request completed"}
+{"level":30,"time":1766926812942,"pid":19206,"hostname":"devbox","reqId":"req-2j","res":{"statusCode":200},"responseTime":11.20018699998036,"msg":"request completed"}
+{"level":30,"time":1766926812944,"pid":19206,"hostname":"devbox","reqId":"req-2y","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926812944,"pid":19206,"hostname":"devbox","reqId":"req-2z","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812946,"pid":19206,"hostname":"devbox","reqId":"req-2u","res":{"statusCode":200},"responseTime":7.184402000159025,"msg":"request completed"}
+{"level":30,"time":1766926812946,"pid":19206,"hostname":"devbox","reqId":"req-2z","res":{"statusCode":200},"responseTime":2.011301000136882,"msg":"request completed"}
+{"level":30,"time":1766926812948,"pid":19206,"hostname":"devbox","reqId":"req-2v","res":{"statusCode":200},"responseTime":8.072021000087261,"msg":"request completed"}
+{"level":30,"time":1766926812949,"pid":19206,"hostname":"devbox","reqId":"req-2w","res":{"statusCode":200},"responseTime":8.073640000075102,"msg":"request completed"}
+{"level":30,"time":1766926812949,"pid":19206,"hostname":"devbox","reqId":"req-30","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812949,"pid":19206,"hostname":"devbox","reqId":"req-31","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812950,"pid":19206,"hostname":"devbox","reqId":"req-2y","res":{"statusCode":200},"responseTime":5.6998260002583265,"msg":"request completed"}
+{"level":30,"time":1766926812951,"pid":19206,"hostname":"devbox","reqId":"req-2x","res":{"statusCode":200},"responseTime":9.873230999801308,"msg":"request completed"}
+{"level":30,"time":1766926812952,"pid":19206,"hostname":"devbox","reqId":"req-30","res":{"statusCode":200},"responseTime":3.4704529996961355,"msg":"request completed"}
+{"level":30,"time":1766926812953,"pid":19206,"hostname":"devbox","reqId":"req-31","res":{"statusCode":200},"responseTime":3.3341600000858307,"msg":"request completed"}
+{"level":30,"time":1766926812953,"pid":19206,"hostname":"devbox","reqId":"req-32","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926812953,"pid":19206,"hostname":"devbox","reqId":"req-33","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926812954,"pid":19206,"hostname":"devbox","reqId":"req-34","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926812954,"pid":19206,"hostname":"devbox","reqId":"req-35","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926812954,"pid":19206,"hostname":"devbox","reqId":"req-36","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812955,"pid":19206,"hostname":"devbox","reqId":"req-37","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812957,"pid":19206,"hostname":"devbox","reqId":"req-37","res":{"statusCode":200},"responseTime":2.0715800002217293,"msg":"request completed"}
+{"level":30,"time":1766926812957,"pid":19206,"hostname":"devbox","reqId":"req-32","res":{"statusCode":200},"responseTime":4.776139000430703,"msg":"request completed"}
+{"level":30,"time":1766926812959,"pid":19206,"hostname":"devbox","reqId":"req-34","res":{"statusCode":200},"responseTime":5.239440000150353,"msg":"request completed"}
+{"level":30,"time":1766926812959,"pid":19206,"hostname":"devbox","reqId":"req-36","res":{"statusCode":200},"responseTime":4.91949800029397,"msg":"request completed"}
+{"level":30,"time":1766926812959,"pid":19206,"hostname":"devbox","reqId":"req-38","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926812960,"pid":19206,"hostname":"devbox","reqId":"req-39","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926812960,"pid":19206,"hostname":"devbox","reqId":"req-33","res":{"statusCode":200},"responseTime":6.727261999621987,"msg":"request completed"}
+{"level":30,"time":1766926812960,"pid":19206,"hostname":"devbox","reqId":"req-35","res":{"statusCode":200},"responseTime":6.296520999632776,"msg":"request completed"}
+{"level":30,"time":1766926812962,"pid":19206,"hostname":"devbox","reqId":"req-3a","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926812962,"pid":19206,"hostname":"devbox","reqId":"req-3b","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926812964,"pid":19206,"hostname":"devbox","reqId":"req-39","res":{"statusCode":200},"responseTime":4.523051000200212,"msg":"request completed"}
+{"level":30,"time":1766926812965,"pid":19206,"hostname":"devbox","reqId":"req-3b","res":{"statusCode":200},"responseTime":2.6713649998418987,"msg":"request completed"}
+{"level":30,"time":1766926812965,"pid":19206,"hostname":"devbox","reqId":"req-3a","res":{"statusCode":200},"responseTime":3.2109590000472963,"msg":"request completed"}
+{"level":30,"time":1766926812966,"pid":19206,"hostname":"devbox","reqId":"req-38","res":{"statusCode":200},"responseTime":6.949902000371367,"msg":"request completed"}
+{"level":30,"time":1766926813010,"pid":19206,"hostname":"devbox","reqId":"req-3c","req":{"method":"OPTIONS","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926813010,"pid":19206,"hostname":"devbox","reqId":"req-3c","res":{"statusCode":204},"responseTime":0.28960900008678436,"msg":"request completed"}
+{"level":30,"time":1766926813011,"pid":19206,"hostname":"devbox","reqId":"req-3d","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926813014,"pid":19206,"hostname":"devbox","reqId":"req-3d","res":{"statusCode":200},"responseTime":2.6939199999906123,"msg":"request completed"}
+{"level":30,"time":1766926813033,"pid":19206,"hostname":"devbox","reqId":"req-3e","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926813036,"pid":19206,"hostname":"devbox","reqId":"req-3e","res":{"statusCode":200},"responseTime":2.4797559999860823,"msg":"request completed"}
+{"level":30,"time":1766926813037,"pid":19206,"hostname":"devbox","reqId":"req-3f","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926813039,"pid":19206,"hostname":"devbox","reqId":"req-3f","res":{"statusCode":200},"responseTime":2.1237869998440146,"msg":"request completed"}
+{"level":30,"time":1766926813430,"pid":19206,"hostname":"devbox","reqId":"req-3g","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926813431,"pid":19206,"hostname":"devbox","reqId":"req-3h","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926813434,"pid":19206,"hostname":"devbox","reqId":"req-3i","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926813435,"pid":19206,"hostname":"devbox","reqId":"req-3j","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813436,"pid":19206,"hostname":"devbox","reqId":"req-3k","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926813437,"pid":19206,"hostname":"devbox","reqId":"req-3l","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926813440,"pid":19206,"hostname":"devbox","reqId":"req-3h","res":{"statusCode":200},"responseTime":8.234104000031948,"msg":"request completed"}
+{"level":30,"time":1766926813442,"pid":19206,"hostname":"devbox","reqId":"req-3g","res":{"statusCode":200},"responseTime":11.64523799996823,"msg":"request completed"}
+{"level":30,"time":1766926813444,"pid":19206,"hostname":"devbox","reqId":"req-3m","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926813444,"pid":19206,"hostname":"devbox","reqId":"req-3n","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926813446,"pid":19206,"hostname":"devbox","reqId":"req-3j","res":{"statusCode":200},"responseTime":11.502221999689937,"msg":"request completed"}
+{"level":30,"time":1766926813447,"pid":19206,"hostname":"devbox","reqId":"req-3k","res":{"statusCode":200},"responseTime":10.328166999854147,"msg":"request completed"}
+{"level":30,"time":1766926813447,"pid":19206,"hostname":"devbox","reqId":"req-3l","res":{"statusCode":200},"responseTime":10.2384759997949,"msg":"request completed"}
+{"level":30,"time":1766926813447,"pid":19206,"hostname":"devbox","reqId":"req-3i","res":{"statusCode":200},"responseTime":12.919356999918818,"msg":"request completed"}
+{"level":30,"time":1766926813447,"pid":19206,"hostname":"devbox","reqId":"req-3o","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813450,"pid":19206,"hostname":"devbox","reqId":"req-3n","res":{"statusCode":200},"responseTime":5.584431000053883,"msg":"request completed"}
+{"level":30,"time":1766926813451,"pid":19206,"hostname":"devbox","reqId":"req-3p","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926813451,"pid":19206,"hostname":"devbox","reqId":"req-3q","req":{"method":"GET","url":"/tags","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926813452,"pid":19206,"hostname":"devbox","reqId":"req-3r","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926813453,"pid":19206,"hostname":"devbox","reqId":"req-3o","res":{"statusCode":200},"responseTime":5.812546000350267,"msg":"request completed"}
+{"level":30,"time":1766926813454,"pid":19206,"hostname":"devbox","reqId":"req-3s","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926813454,"pid":19206,"hostname":"devbox","reqId":"req-3q","res":{"statusCode":200},"responseTime":2.8470409996807575,"msg":"request completed"}
+{"level":30,"time":1766926813455,"pid":19206,"hostname":"devbox","reqId":"req-3t","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813455,"pid":19206,"hostname":"devbox","reqId":"req-3m","res":{"statusCode":200},"responseTime":10.86888900026679,"msg":"request completed"}
+{"level":30,"time":1766926813458,"pid":19206,"hostname":"devbox","reqId":"req-3p","res":{"statusCode":200},"responseTime":6.464182999916375,"msg":"request completed"}
+{"level":30,"time":1766926813458,"pid":19206,"hostname":"devbox","reqId":"req-3u","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926813458,"pid":19206,"hostname":"devbox","reqId":"req-3v","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926813459,"pid":19206,"hostname":"devbox","reqId":"req-3r","res":{"statusCode":200},"responseTime":6.966964999679476,"msg":"request completed"}
+{"level":30,"time":1766926813460,"pid":19206,"hostname":"devbox","reqId":"req-3s","res":{"statusCode":200},"responseTime":6.444267000071704,"msg":"request completed"}
+{"level":30,"time":1766926813461,"pid":19206,"hostname":"devbox","reqId":"req-3t","res":{"statusCode":200},"responseTime":6.265011999756098,"msg":"request completed"}
+{"level":30,"time":1766926813461,"pid":19206,"hostname":"devbox","reqId":"req-3w","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926813461,"pid":19206,"hostname":"devbox","reqId":"req-3x","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926813463,"pid":19206,"hostname":"devbox","reqId":"req-3u","res":{"statusCode":200},"responseTime":5.029579000081867,"msg":"request completed"}
+{"level":30,"time":1766926813463,"pid":19206,"hostname":"devbox","reqId":"req-3v","res":{"statusCode":200},"responseTime":4.846078000031412,"msg":"request completed"}
+{"level":30,"time":1766926813463,"pid":19206,"hostname":"devbox","reqId":"req-3y","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926813465,"pid":19206,"hostname":"devbox","reqId":"req-3z","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813465,"pid":19206,"hostname":"devbox","reqId":"req-40","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926813466,"pid":19206,"hostname":"devbox","reqId":"req-3w","res":{"statusCode":200},"responseTime":4.99129300005734,"msg":"request completed"}
+{"level":30,"time":1766926813467,"pid":19206,"hostname":"devbox","reqId":"req-3x","res":{"statusCode":200},"responseTime":5.147725000046194,"msg":"request completed"}
+{"level":30,"time":1766926813468,"pid":19206,"hostname":"devbox","reqId":"req-3z","res":{"statusCode":200},"responseTime":3.506348999682814,"msg":"request completed"}
+{"level":30,"time":1766926813469,"pid":19206,"hostname":"devbox","reqId":"req-40","res":{"statusCode":200},"responseTime":3.2579060001298785,"msg":"request completed"}
+{"level":30,"time":1766926813470,"pid":19206,"hostname":"devbox","reqId":"req-3y","res":{"statusCode":200},"responseTime":6.302612999919802,"msg":"request completed"}
+{"level":30,"time":1766926813472,"pid":19206,"hostname":"devbox","reqId":"req-41","req":{"method":"GET","url":"/budget-period-settings","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813472,"pid":19206,"hostname":"devbox","reqId":"req-41","res":{"statusCode":200},"responseTime":0.6830649999901652,"msg":"request completed"}
+{"level":30,"time":1766926813501,"pid":19206,"hostname":"devbox","reqId":"req-42","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813502,"pid":19206,"hostname":"devbox","reqId":"req-42","res":{"statusCode":200},"responseTime":1.2364440001547337,"msg":"request completed"}
+{"level":30,"time":1766926813508,"pid":19206,"hostname":"devbox","reqId":"req-43","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813509,"pid":19206,"hostname":"devbox","reqId":"req-43","res":{"statusCode":200},"responseTime":1.067429999820888,"msg":"request completed"}
+{"level":30,"time":1766926813511,"pid":19206,"hostname":"devbox","reqId":"req-44","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926813514,"pid":19206,"hostname":"devbox","reqId":"req-44","res":{"statusCode":200},"responseTime":3.3322220002301037,"msg":"request completed"}
+{"level":30,"time":1766926814234,"pid":19206,"hostname":"devbox","reqId":"req-45","req":{"method":"OPTIONS","url":"/log-client","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926814235,"pid":19206,"hostname":"devbox","reqId":"req-45","res":{"statusCode":204},"responseTime":0.3177070003002882,"msg":"request completed"}
+{"level":30,"time":1766926814236,"pid":19206,"hostname":"devbox","reqId":"req-46","req":{"method":"OPTIONS","url":"/add-expense","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926814236,"pid":19206,"hostname":"devbox","reqId":"req-46","res":{"statusCode":204},"responseTime":0.2077879998832941,"msg":"request completed"}
+{"level":30,"time":1766926814237,"pid":19206,"hostname":"devbox","reqId":"req-47","req":{"method":"POST","url":"/log-client","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+🔵 CLIENT LOG: 📤 BEFORE API.addTransaction {
+  userId: 777,
+  value: 100,
+  selectedCategory: 'groceries',
+  transType: 'expense',
+  targetId: 24,
+  targetType: 'account',
+  date: '2025-12-28T13:00:13.341Z',
+  accountsCount: 1,
+  goalsCount: 0
+}
+{"level":30,"time":1766926814238,"pid":19206,"hostname":"devbox","reqId":"req-47","res":{"statusCode":200},"responseTime":1.1859300001524389,"msg":"request completed"}
+{"level":30,"time":1766926814239,"pid":19206,"hostname":"devbox","reqId":"req-48","req":{"method":"POST","url":"/add-expense","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+📥 /add-expense FULL request.body: {
+  "amount": 100,
+  "category": "groceries",
+  "type": "expense",
+  "account_id": 24,
+  "target_type": "account",
+  "date": "2025-12-28T13:00:13.341Z",
+  "note": "Verification Note",
+  "tags": [
+    "testtag"
+  ],
+  "photo_urls": []
+}
+✅ Transaction saved with ID: 122
+{"level":30,"time":1766926814245,"pid":19206,"hostname":"devbox","reqId":"req-48","res":{"statusCode":200},"responseTime":6.523721999954432,"msg":"request completed"}
+{"level":30,"time":1766926814250,"pid":19206,"hostname":"devbox","reqId":"req-49","req":{"method":"GET","url":"/balance?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926814251,"pid":19206,"hostname":"devbox","reqId":"req-4a","req":{"method":"GET","url":"/stats?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52932},"msg":"incoming request"}
+{"level":30,"time":1766926814251,"pid":19206,"hostname":"devbox","reqId":"req-4b","req":{"method":"GET","url":"/transactions?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52902},"msg":"incoming request"}
+{"level":30,"time":1766926814251,"pid":19206,"hostname":"devbox","reqId":"req-4c","req":{"method":"GET","url":"/settings?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52888},"msg":"incoming request"}
+{"level":30,"time":1766926814252,"pid":19206,"hostname":"devbox","reqId":"req-4d","req":{"method":"GET","url":"/limits?month=12&year=2025","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52916},"msg":"incoming request"}
+{"level":30,"time":1766926814252,"pid":19206,"hostname":"devbox","reqId":"req-4e","req":{"method":"GET","url":"/accounts","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926814254,"pid":19206,"hostname":"devbox","reqId":"req-4e","res":{"statusCode":200},"responseTime":2.1762339998967946,"msg":"request completed"}
+{"level":30,"time":1766926814255,"pid":19206,"hostname":"devbox","reqId":"req-4f","req":{"method":"GET","url":"/goals","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52876},"msg":"incoming request"}
+{"level":30,"time":1766926814256,"pid":19206,"hostname":"devbox","reqId":"req-49","res":{"statusCode":200},"responseTime":5.6892089997418225,"msg":"request completed"}
+{"level":30,"time":1766926814256,"pid":19206,"hostname":"devbox","reqId":"req-4a","res":{"statusCode":200},"responseTime":5.298351999837905,"msg":"request completed"}
+{"level":30,"time":1766926814256,"pid":19206,"hostname":"devbox","reqId":"req-4c","res":{"statusCode":200},"responseTime":4.859380000270903,"msg":"request completed"}
+{"level":30,"time":1766926814257,"pid":19206,"hostname":"devbox","reqId":"req-4b","res":{"statusCode":200},"responseTime":5.655015999916941,"msg":"request completed"}
+{"level":30,"time":1766926814257,"pid":19206,"hostname":"devbox","reqId":"req-4d","res":{"statusCode":200},"responseTime":5.555465999990702,"msg":"request completed"}
+{"level":30,"time":1766926814258,"pid":19206,"hostname":"devbox","reqId":"req-4f","res":{"statusCode":200},"responseTime":2.6681900001131,"msg":"request completed"}
+{"level":30,"time":1766926814259,"pid":19206,"hostname":"devbox","reqId":"req-4g","req":{"method":"GET","url":"/custom-categories","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926814260,"pid":19206,"hostname":"devbox","reqId":"req-4g","res":{"statusCode":200},"responseTime":0.7966330000199378,"msg":"request completed"}
+{"level":30,"time":1766926814297,"pid":19206,"hostname":"devbox","reqId":"req-4h","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926814299,"pid":19206,"hostname":"devbox","reqId":"req-4h","res":{"statusCode":200},"responseTime":1.6145109999924898,"msg":"request completed"}
+{"level":30,"time":1766926818502,"pid":19206,"hostname":"devbox","reqId":"req-4i","req":{"method":"OPTIONS","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926818502,"pid":19206,"hostname":"devbox","reqId":"req-4i","res":{"statusCode":204},"responseTime":0.3634709999896586,"msg":"request completed"}
+{"level":30,"time":1766926818503,"pid":19206,"hostname":"devbox","reqId":"req-4j","req":{"method":"GET","url":"/category-overrides","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52930},"msg":"incoming request"}
+{"level":30,"time":1766926818504,"pid":19206,"hostname":"devbox","reqId":"req-4j","res":{"statusCode":200},"responseTime":1.0882570003159344,"msg":"request completed"}

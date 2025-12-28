@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Filter, Edit2 } from 'lucide-react';
+import { Trash2, Filter, Edit2, FileText, Camera } from 'lucide-react';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor, getIconByName } from '../data/constants';
 import { ActionDrawer } from './ActionDrawer';
 import WebApp from '@twa-dev/sdk';
@@ -13,6 +13,9 @@ interface Transaction {
   type?: 'expense' | 'income';
   account_id?: number | null;
   target_type?: 'account' | 'goal';
+  note?: string;
+  tags?: string[];
+  photo_urls?: string[];
 }
 
 interface CustomCategory {
@@ -72,6 +75,12 @@ export const TransactionList: React.FC<Props> = ({
     setDrawerOpen(true);
   };
 
+  const handleClick = (t: Transaction) => {
+    if (onEdit) {
+        onEdit(t);
+    }
+  };
+
   return (
     <div style={{ width: '100%', paddingBottom: 20 }}>
       {/* Header */}
@@ -124,6 +133,7 @@ export const TransactionList: React.FC<Props> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 layout
+                onClick={() => handleClick(t)}
                 onTouchStart={() => handleTouchStart(t)}
                 onTouchEnd={handleTouchEnd}
                 onTouchMove={handleTouchEnd} // Cancel on scroll
@@ -164,7 +174,7 @@ export const TransactionList: React.FC<Props> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
                       {/* Account tag */}
-                      {t.account_id !== undefined && t.account_id !== null ? (
+                      {t.account_id !== undefined && t.account_id !== null && (
                         (() => {
                           const acc = accounts?.find(a => a && a.id !== undefined && a.id !== null && a.id.toString() === t.account_id!.toString());
                           const name = acc?.name || `#${t.account_id}`;
@@ -176,9 +186,22 @@ export const TransactionList: React.FC<Props> = ({
                             </div>
                           )
                         })()
-                      ) : (
-                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>—</span>
                       )}
+
+                       {/* Indicators: Note, Photos, Tags */}
+                       {(t.note || (t.tags && t.tags.length > 0) || (t.photo_urls && t.photo_urls.length > 0)) && (
+                           <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
+                               {/* Tags (max 2) */}
+                               {t.tags && t.tags.slice(0, 2).map(tag => (
+                                   <span key={tag} style={{ background: 'var(--bg-card)', padding: '0 4px', borderRadius: 4, fontSize: 10, color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>#{tag}</span>
+                               ))}
+                               {/* Note Icon */}
+                               {t.note && <FileText size={12} color="var(--text-secondary)" />}
+                               {/* Photo Icon */}
+                               {t.photo_urls && t.photo_urls.length > 0 && <Camera size={12} color="var(--text-secondary)" />}
+                           </div>
+                       )}
+
                     </div>
                   </div>
                 </div>
@@ -208,7 +231,7 @@ export const TransactionList: React.FC<Props> = ({
         )}
       </div>
 
-      {/* Action Drawer */}
+      {/* Action Drawer (Only for long press now, or remove if click covers everything) */}
       <ActionDrawer 
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}

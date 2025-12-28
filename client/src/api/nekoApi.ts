@@ -1,4 +1,4 @@
-const API_URL = '';
+const API_URL = import.meta.env.DEV ? 'http://localhost:3000' : '';
 
 // Вспомогательная функция для добавления параметров
 const getQuery = (month?: number, year?: number) => {
@@ -34,8 +34,8 @@ export const fetchTransactions = async (userId: number, month?: number, year?: n
 
 // ... Остальные функции (add, delete, settings, limits) без изменений ...
 // (Обязательно оставь их!)
-export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account', date?: string) => {
-  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date };
+export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account', date?: string, note?: string, tags?: string[], photo_urls?: string[]) => {
+  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date, note, tags, photo_urls };
   console.log('🔵 API addTransaction payload:', payload);
   const response = await fetch(`${API_URL}/add-expense`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
@@ -56,11 +56,11 @@ export const deleteTransaction = async (userId: number, transactionId: number) =
   }); if (!response.ok) throw new Error('Failed to delete'); return true;
 };
 
-export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income') => {
+export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income', note?: string, tags?: string[], photo_urls?: string[]) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ amount, category, date, type })
+    body: JSON.stringify({ amount, category, date, type, note, tags, photo_urls })
   });
   if (!response.ok) throw new Error('Failed to update');
   return await response.json();
@@ -317,4 +317,23 @@ export const setBudgetPeriodSettings = async (
     throw new Error('Failed to save budget period settings');
   }
   return await response.json();
+};
+
+// NEW API FUNCTIONS
+export const fetchTags = async () => {
+    const response = await fetch(`${API_URL}/tags`);
+    return await response.json();
+};
+
+export const uploadFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await response.json();
+    return data.urls;
 };

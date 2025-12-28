@@ -23,6 +23,8 @@ import TransactionSearch from './components/TransactionSearch'
 import { ConfirmModal } from './components/ConfirmModal'
 import { ColorPicker } from './components/ColorPicker'
 import { IconPicker } from './components/IconPicker'
+import { TransactionDetailsInput } from './components/TransactionDetailsInput'
+import { TransactionDetailModal } from './components/TransactionDetailModal'
 import type { FilterState } from './components/TransactionSearch'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/constants'
 import * as api from './api/nekoApi'
@@ -36,6 +38,28 @@ function App() {
   const [selectedAccount, setSelectedAccount] = useState<{type: 'account' | 'goal', id: number} | null>(null)
   const [amount, setAmount] = useState('')
   
+  // Extra fields for transaction
+  const [transNote, setTransNote] = useState('');
+  const [transTags, setTransTags] = useState<string[]>([]);
+  const [transPhotos, setTransPhotos] = useState<string[]>([]);
+  // Initialize from localStorage
+  const [showExtraInput, setShowExtraInput] = useState(() => {
+      try {
+          return localStorage.getItem('showExtraInput') === 'true';
+      } catch {
+          return false;
+      }
+  });
+
+  const toggleExtraInput = (show: boolean) => {
+      setShowExtraInput(show);
+      try {
+          localStorage.setItem('showExtraInput', String(show));
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return localStorage.getItem('app-theme') as 'light' | 'dark' || 'light';
@@ -120,11 +144,7 @@ function App() {
   })
 
   // Состояния для редактирования транзакции
-  const [editingTransaction, setEditingTransaction] = useState<any | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [editAmount, setEditAmount] = useState('')
-  const [editCategory, setEditCategory] = useState('')
-  const [editDate, setEditDate] = useState(new Date())
+  const [selectedTransactionForModal, setSelectedTransactionForModal] = useState<any | null>(null)
 
   // Confirmation modal state (centralized)
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -447,10 +467,34 @@ function App() {
       const targetId = selectedAccount.id;
       console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, targetId, targetType, date: transactionDate.toISOString(), accountsCount: accounts.length, goalsCount: goals.length });
       api.logToServer('📤 BEFORE API.addTransaction', { userId, value, selectedCategory, transType, targetId, targetType, date: transactionDate.toISOString(), accountsCount: accounts.length, goalsCount: goals.length });
-      const result = await api.addTransaction(userId, value, selectedCategory, transType, targetId, targetType, transactionDate.toISOString());
+
+      const result = await api.addTransaction(
+          userId,
+          value,
+          selectedCategory,
+          transType,
+          targetId,
+          targetType,
+          transactionDate.toISOString(),
+          transNote,
+          transTags,
+          transPhotos
+      );
+
       console.log('✅ Transaction result:', result);
       WebApp.HapticFeedback.notificationOccurred('success');
-      setIsHappy(true); setAmount(''); 
+      setIsHappy(true);
+      setAmount('');
+      setTransNote('');
+      setTransTags([]);
+      setTransPhotos([]);
+      // Don't close if user wants sticky state, but we usually reset input fields
+      // If we keep "showExtraInput" open, the fields inside are cleared
+      // The user asked for "State is remembered (if user often adds notes)"
+      // This implies the *panel* stays open/closed, but fields clear.
+      // So I do NOT reset showExtraInput here.
+      // setShowExtraInput(false); <- Removed to respect sticky state
+
       loadData(userId, currentDate);
       // Обновляем все транзакции для аналитики
       if (allTransactions.length > 0) {
@@ -613,7 +657,17 @@ function App() {
     return 'neutral';
   }
 
-  const handleDeleteTransaction = async (id: number) => { if (!userId) return; WebApp.HapticFeedback.impactOccurred('medium'); try { await api.deleteTransaction(userId, id); loadData(userId, currentDate); } catch { triggerError(); } }
+  const handleDeleteTransaction = async (id: number) => {
+      if (!userId) return;
+      WebApp.HapticFeedback.impactOccurred('medium');
+      try {
+          await api.deleteTransaction(userId, id);
+          setSelectedTransactionForModal(null);
+          loadData(userId, currentDate);
+      } catch {
+          triggerError();
+      }
+  }
   
   const handleNumberClick = (num: string) => { 
     WebApp.HapticFeedback.impactOccurred('light'); 
@@ -650,22 +704,18 @@ function App() {
   const handleDelete = () => { WebApp.HapticFeedback.impactOccurred('medium'); setAmount(prev => prev.slice(0, -1)); setIsError(false); }
   const triggerError = () => { WebApp.HapticFeedback.notificationOccurred('error'); setIsError(true); setTimeout(() => setIsError(false), 500); }
 
-  // Функция открытия редактирования
-  const handleEditTransaction = (transaction: any) => {
+  // Функция открытия деталей транзакции (новый модал)
+  const handleOpenTransactionDetails = (transaction: any) => {
     WebApp.HapticFeedback.impactOccurred('light');
-    setEditingTransaction(transaction);
-    setEditAmount(transaction.amount.toString());
-    setEditCategory(transaction.category);
-    setEditDate(new Date(transaction.date));
-    setShowEditModal(true);
+    setSelectedTransactionForModal(transaction);
   }
 
   // Функция сохранения изменений
-  const handleSaveEdit = async () => {
-    if (!userId || !editingTransaction) return;
+  const handleSaveEdit = async (updatedTransaction: any) => {
+    if (!userId) return;
     
-    const value = parseFloat(editAmount);
-    if (!editAmount || isNaN(value) || value <= 0) {
+    const value = updatedTransaction.amount;
+    if (isNaN(value) || value <= 0) {
       triggerError();
       return;
     }
@@ -673,17 +723,18 @@ function App() {
     try {
       await api.updateTransaction(
         userId,
-        editingTransaction.id,
+        updatedTransaction.id,
         value,
-        editCategory,
-        editDate.toISOString(),
-        editingTransaction.type
+        updatedTransaction.category,
+        updatedTransaction.date,
+        updatedTransaction.type,
+        updatedTransaction.note,
+        updatedTransaction.tags,
+        updatedTransaction.photo_urls
       );
       
       WebApp.HapticFeedback.notificationOccurred('success');
-      setShowEditModal(false);
-      setEditingTransaction(null);
-      setEditAmount('');
+      setSelectedTransactionForModal(null);
       loadData(userId, currentDate);
     } catch (e) {
       console.error(e);
@@ -1159,6 +1210,38 @@ function App() {
                 onDelete={handleDelete} 
                 onConfirm={handleConfirm} 
                 confirmLabel={isExpression ? "=" : "Внести💵"} 
+                extraInputNode={
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        {!showExtraInput && (
+                            <button
+                                onClick={() => toggleExtraInput(true)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: 12,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    padding: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <Plus size={12} /> Заметка • Теги • Фото
+                            </button>
+                        )}
+                        <TransactionDetailsInput
+                            isOpen={showExtraInput}
+                            onClose={() => toggleExtraInput(false)}
+                            note={transNote}
+                            setNote={setTransNote}
+                            tags={transTags}
+                            setTags={setTransTags}
+                            photos={transPhotos}
+                            setPhotos={setTransPhotos}
+                        />
+                    </div>
+                }
               />
             </div>
           </>
@@ -1182,7 +1265,7 @@ function App() {
               onDelete={(id: number) => openConfirm('Удалить транзакцию? Действие необратимо.', async () => {
                 await handleDeleteTransaction(id);
               })}
-              onEdit={handleEditTransaction}
+              onEdit={handleOpenTransactionDetails} // Now opens detailed modal
               onFilterClick={() => setShowSearchPanel(true)}
               hasActiveFilters={hasActiveFilters}
               customCategories={customCategories}
@@ -1391,63 +1474,18 @@ function App() {
         </div>
       </Modal>
 
-      {/* Модальное окно редактирования транзакции */}
-      <Modal title="Редактировать" isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div style={{ padding: '0 4px' }}>
-          <div style={{ marginBottom: 20 }}>
-            <label className="modal-label">Сумма</label>
-            <input
-              type="text"
-              value={editAmount}
-              onChange={(e) => setEditAmount(e.target.value)}
-              placeholder="0"
-              className="modal-input"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label className="modal-label">Категория</label>
-            <select
-              value={editCategory}
-              onChange={(e) => setEditCategory(e.target.value)}
-              className="modal-select"
-            >
-              {editingTransaction?.type === 'expense' 
-                ? EXPENSE_CATEGORIES.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))
-                : INCOME_CATEGORIES.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))
-              }
-              {customCategories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label className="modal-label">Дата</label>
-            <input
-              type="date"
-              value={editDate.toISOString().split('T')[0]}
-              onChange={(e) => setEditDate(new Date(e.target.value + 'T12:00:00'))}
-              max={new Date().toISOString().split('T')[0]}
-              className="modal-input"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSaveEdit}
-            className="modal-submit-button"
-          >
-            Сохранить
-          </motion.button>
-        </div>
-      </Modal>
+      {/* NEW Transaction Details Modal */}
+      <TransactionDetailModal
+        isOpen={!!selectedTransactionForModal}
+        onClose={() => setSelectedTransactionForModal(null)}
+        transaction={selectedTransactionForModal}
+        onSave={handleSaveEdit}
+        onDelete={(id) => openConfirm('Удалить транзакцию? Действие необратимо.', async () => {
+             await handleDeleteTransaction(id);
+        })}
+        customCategories={customCategories}
+        accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
+      />
 
       {/* Панель поиска и фильтров */}
       <TransactionSearch

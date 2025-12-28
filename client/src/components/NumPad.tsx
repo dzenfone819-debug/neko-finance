@@ -7,9 +7,10 @@ interface NumPadProps {
   onDelete: () => void;
   onConfirm: () => void;
   confirmLabel?: string;
+  extraInputNode?: React.ReactNode;
 }
 
-export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfirm, confirmLabel = 'Внести💵' }) => {
+export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfirm, confirmLabel = 'Внести💵', extraInputNode }) => {
   // Standard calculator layout
   // 7 8 9 ÷
   // 4 5 6 ×
@@ -43,6 +44,13 @@ export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfi
       <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('0')}>0</motion.button>
       <motion.button className="numpad-btn delete-btn" whileTap={{ scale: 0.9 }} onClick={onDelete}><Delete size={24} /></motion.button>
       <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('+')}>+</motion.button>
+
+      {/* Insert Extra Input Node here, spanning 4 columns */}
+      {extraInputNode && (
+         <div style={{ gridColumn: 'span 4', display: 'flex', justifyContent: 'center' }}>
+            {extraInputNode}
+         </div>
+      )}
 
       {/* Confirm Button usually spans bottom */}
       <motion.button
