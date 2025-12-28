@@ -1,0 +1,11 @@
+
+> client@0.0.0 dev
+> vite
+
+
+  VITE v7.2.6  ready in 412 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+8:03:42 PM [vite] (client) hmr update /src/App.tsx
+8:08:35 PM [vite] (client) hmr update /src/App.css
