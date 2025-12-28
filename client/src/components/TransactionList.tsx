@@ -1,240 +1,238 @@
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Filter, Edit2 } from 'lucide-react';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryName, getCategoryColor, getIconByName } from '../data/constants';
-import { ActionDrawer } from './ActionDrawer';
-import WebApp from '@twa-dev/sdk';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { StickyNote, Image as ImageIcon } from 'lucide-react';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from '../data/constants';
 
-interface Transaction {
-  id: number;
-  amount: number;
-  category: string;
-  date: string;
-  type?: 'expense' | 'income';
-  account_id?: number | null;
-  target_type?: 'account' | 'goal';
-}
-
-interface CustomCategory {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-}
-
-interface Props {
-  transactions: Transaction[];
-  onDelete: (id: number) => void;
-  onEdit?: (transaction: Transaction) => void;
+interface TransactionListProps {
+  transactions: any[];
+  onDelete?: (id: number) => void;
+  onEdit?: (transaction: any) => void;
   onFilterClick?: () => void;
+  onTransactionClick?: (transaction: any) => void;
   hasActiveFilters?: boolean;
-  customCategories?: CustomCategory[];
-  accounts?: { id: number | string; name?: string; color?: string; type?: string }[];
+  customCategories?: any[];
+  accounts?: any[];
 }
 
-export const TransactionList: React.FC<Props> = ({ 
+export const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions, 
-  onDelete, 
-  onEdit, 
-  onFilterClick, 
-  hasActiveFilters, 
-  customCategories = [] 
-  , accounts = []
+  onFilterClick,
+  onTransactionClick,
+  hasActiveFilters,
+  customCategories = [],
+  accounts = []
 }) => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const longPressTimer = useRef<number | null>(null);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
-  };
-
-  const handleTouchStart = (t: Transaction) => {
-    longPressTimer.current = window.setTimeout(() => {
-      WebApp.HapticFeedback.impactOccurred('medium');
-      setSelectedTransaction(t);
-      setDrawerOpen(true);
-    }, 500); // 500ms long press
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  // Also support right click for desktop testing
-  const handleContextMenu = (e: React.MouseEvent, t: Transaction) => {
-    e.preventDefault();
-    setSelectedTransaction(t);
-    setDrawerOpen(true);
-  };
-
-  return (
-    <div style={{ width: '100%', paddingBottom: 20 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: 10, marginRight: 10, marginBottom: 10 }}>
-        <h3 style={{ color: 'var(--text-main)', margin: 0, fontSize: 18, fontWeight: '800' }}>История операций</h3>
+  if (transactions.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '40px 20px' }}>
+        <p style={{ fontSize: 16 }}>Нет операций за этот период 😺</p>
         {onFilterClick && (
-          <button
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
             onClick={onFilterClick}
             style={{
-              background: hasActiveFilters ? 'linear-gradient(135deg, var(--primary) 0%, #E891C8 100%)' : 'var(--bg-input)',
-              border: '2px solid var(--border-color)',
+              marginTop: 15,
+              padding: '8px 16px',
+              background: hasActiveFilters ? 'var(--primary)' : 'var(--bg-input)',
+              color: hasActiveFilters ? '#fff' : 'var(--text-main)',
+              border: '1px solid var(--border-color)',
               borderRadius: 12,
-              padding: '8px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-              color: hasActiveFilters ? 'white' : 'var(--text-main)',
-              fontWeight: 700,
-              fontSize: 14,
-              fontFamily: 'Nunito, sans-serif',
-              boxShadow: hasActiveFilters ? '0 2px 8px rgba(210, 145, 188, 0.3)' : 'none',
-              transition: 'all 0.2s'
+              fontSize: 13,
+              cursor: 'pointer'
             }}
           >
-            <Filter size={16} />
-            {hasActiveFilters && 'Активны'}
-          </button>
+            {hasActiveFilters ? 'Фильтры активны' : 'Найти транзакцию'}
+          </motion.button>
         )}
       </div>
+    );
+  }
 
-      {/* List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <AnimatePresence initial={false}>
-          {transactions.map((t) => {
-            const isIncome = t.type === 'income';
-            
-            const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
-            const cat = allCats.find(c => c.id === t.category);
-            const customCat = customCategories.find(c => c.id === t.category);
-            
-            const categoryName = customCat ? customCat.name : getCategoryName(t.category);
-            const categoryColor = customCat ? customCat.color : getCategoryColor(t.category);
-            const categoryIcon = customCat ? getIconByName(customCat.icon, 20) : (cat?.icon || null);
-            
+  // Группировка транзакций по дате
+  const groupedTransactions = transactions.reduce((groups: any, transaction: any) => {
+    const date = new Date(transaction.date);
+    const dateKey = date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(transaction);
+    return groups;
+  }, {});
+
+  const getCategoryInfo = (catId: string, type: 'expense' | 'income') => {
+    // 1. Поиск в стандартных категориях
+    let cat = type === 'expense' 
+      ? EXPENSE_CATEGORIES.find(c => c.id === catId) 
+      : INCOME_CATEGORIES.find(c => c.id === catId);
+    
+    // 2. Поиск в кастомных категориях
+    if (!cat && customCategories) {
+      cat = customCategories.find(c => c.id === catId);
+    }
+
+    if (!cat) {
+        // Fallback
+        return { name: catId, icon: '❓', color: '#ccc' };
+    }
+    
+    return cat;
+  };
+
+  const getAccountInfo = (accountId: number) => {
+    return accounts.find(a => a.id === accountId);
+  }
+
+  return (
+    <div className="transaction-list">
+      {onFilterClick && (
+        <div style={{ padding: '0 0 10px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
+            onClick={onFilterClick}
+            style={{
+              padding: '6px 12px',
+              background: hasActiveFilters ? 'var(--primary)' : 'var(--bg-input)',
+              color: hasActiveFilters ? '#fff' : 'var(--text-main)',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+          >
+            🔍 {hasActiveFilters ? 'Фильтры вкл.' : 'Поиск'}
+          </motion.button>
+        </div>
+      )}
+
+      {Object.entries(groupedTransactions).map(([date, dateTransactions]: [string, any]) => (
+        <div key={date} className="date-group" style={{ marginBottom: 20 }}>
+          <div className="date-header" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, paddingLeft: 4 }}>{date}</div>
+          {dateTransactions.map((t: any) => {
+            const catInfo = getCategoryInfo(t.category, t.type || 'expense');
+            const accountInfo = t.account_id ? getAccountInfo(t.account_id) : null;
+
             return (
-              <motion.div
-                key={t.id}
+              <motion.div 
+                key={t.id} 
+                className="transaction-item"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                layout
-                onTouchStart={() => handleTouchStart(t)}
-                onTouchEnd={handleTouchEnd}
-                onTouchMove={handleTouchEnd} // Cancel on scroll
-                onContextMenu={(e) => handleContextMenu(e, t)}
-                style={{
+                whileTap={{ scale: 0.98, backgroundColor: 'var(--bg-input)' }}
+                onClick={() => onTransactionClick && onTransactionClick(t)}
+                style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  background: 'var(--bg-input)', 
-                  padding: '12px 16px', 
+                  background: 'var(--bg-card)',
+                  padding: '12px',
                   borderRadius: 16,
+                  marginBottom: 8,
                   cursor: 'pointer',
-                  userSelect: 'none',
-                  position: 'relative',
-                  transition: 'background-color 0.2s'
+                  boxShadow: '0 2px 4px var(--shadow-color)'
                 }}
-                whileTap={{ scale: 0.98, backgroundColor: 'var(--bg-card)' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ 
-                    background: categoryColor, 
-                    padding: 8, 
-                    borderRadius: '50%', 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFF',
-                    minWidth: 36,
-                    height: 36,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                  }}>
-                    {categoryIcon || <div style={{width: 20, height: 20}} />}
+                  <div 
+                    className="transaction-icon"
+                    style={{ 
+                      backgroundColor: catInfo.color, 
+                      color: '#fff',
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 18
+                    }}
+                  >
+                    {typeof catInfo.icon === 'string' ? getIconByName(catInfo.icon) : catInfo.icon}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: 14 }}>
-                      {categoryName}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDate(t.date)}</span>
-                      {/* Account tag */}
-                      {t.account_id !== undefined && t.account_id !== null ? (
-                        (() => {
-                          const acc = accounts?.find(a => a && a.id !== undefined && a.id !== null && a.id.toString() === t.account_id!.toString());
-                          const name = acc?.name || `#${t.account_id}`;
-                          const color = acc?.color || 'gray';
-                          return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-                              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{name}</span>
-                            </div>
-                          )
-                        })()
-                      ) : (
-                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>—</span>
+                  
+                  <div className="transaction-details" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div className="transaction-category" style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ lineHeight: 1 }}>{catInfo.name}</span>
+                      {/* Note icon (minimalist) */}
+                      {t.note && (
+                        <StickyNote size={14} style={{ opacity: 0.65, color: 'var(--text-secondary)' }} />
                       )}
+                      {/* Photo icon (minimalist) - show only if photo_urls present */}
+                      {t.photo_urls && (() => {
+                        try {
+                          const parsed = typeof t.photo_urls === 'string' ? JSON.parse(t.photo_urls) : t.photo_urls;
+                          return Array.isArray(parsed) && parsed.length > 0 ? <ImageIcon size={14} style={{ opacity: 0.65, color: 'var(--text-secondary)' }} /> : null;
+                        } catch (e) { return null; }
+                      })()}
                     </div>
+                    {accountInfo && (
+                      (() => {
+                        // parse tags for display near account name
+                        let parsedTags: string[] = [];
+                        try {
+                          parsedTags = t.tags ? (typeof t.tags === 'string' ? JSON.parse(t.tags) : t.tags) : [];
+                          if (!Array.isArray(parsedTags)) parsedTags = [];
+                        } catch (e) { parsedTags = []; }
+
+                        return (
+                          <div className="transaction-account" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span aria-hidden style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: 999,
+                              backgroundColor: accountInfo.color || '#ccc',
+                              display: 'inline-block',
+                              boxShadow: '0 0 0 1px rgba(0,0,0,0.06) inset'
+                            }} />
+                            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{accountInfo.name}</span>
+                            {parsedTags.length > 0 && (
+                              <div style={{ display: 'flex', gap: 6, marginLeft: 6, flexWrap: 'wrap' }}>
+                                {parsedTags.slice(0, 3).map((tag: string) => (
+                                  <span key={tag} style={{
+                                    fontSize: 11,
+                                    color: 'var(--text-secondary)',
+                                    background: 'var(--bg-input)',
+                                    padding: '2px 6px',
+                                    borderRadius: 999,
+                                    display: 'inline-block'
+                                  }}>#{tag}</span>
+                                ))}
+                                {parsedTags.length > 3 && (
+                                  <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>+{parsedTags.length - 3}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()
+                    )}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: '800', color: isIncome ? 'var(--accent-success)' : 'var(--text-main)', fontSize: 15 }}>
-                    {isIncome ? '+' : '-'}{t.amount} ₽
-                  </span>
+                <div 
+                  className="transaction-amount"
+                  style={{ 
+                    fontWeight: 800, 
+                    fontSize: 15,
+                    color: t.type === 'income' ? 'var(--accent-success)' : 'var(--text-main)' 
+                  }}
+                >
+                  {t.type === 'income' ? '+' : '-'}{t.amount.toLocaleString()} ₽
                 </div>
               </motion.div>
             );
           })}
-        </AnimatePresence>
-        
-        {transactions.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            color: 'var(--text-secondary)', 
-            fontSize: 14, 
-            marginTop: 20,
-            padding: 20,
-            background: 'var(--bg-input)',
-            borderRadius: 16
-          }}>
-            История пуста 🕸️
-          </div>
-        )}
-      </div>
-
-      {/* Action Drawer */}
-      <ActionDrawer 
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="Операция"
-        actions={[
-          {
-            icon: <Edit2 size={20} />,
-            label: 'Редактировать',
-            onClick: () => {
-              if (selectedTransaction && onEdit) {
-                onEdit(selectedTransaction);
-              }
-            }
-          },
-          {
-            icon: <Trash2 size={20} />,
-            label: 'Удалить',
-            isDestructive: true,
-            onClick: () => {
-              if (selectedTransaction) {
-                onDelete(selectedTransaction.id);
-              }
-            }
-          }
-        ]}
-      />
+        </div>
+      ))}
     </div>
   );
-};
+}

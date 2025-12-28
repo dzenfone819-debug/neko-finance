@@ -110,6 +110,11 @@ html, body, #root {
   transition: background-color 0.3s ease;
 }
 
+.app-container.mini-app {
+  top: 80px;
+  height: calc(100vh - 80px);
+}
+
 /* Only apply solid background in light mode to cover default body */
 body:not(.dark-theme) .app-container {
   background-color: var(--bg-color);
@@ -379,10 +384,16 @@ body:not(.dark-theme) .app-container {
   transition: background-color 0.3s ease;
 }
 
+.numpad-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .numpad-grid { 
   display: grid; 
   grid-template-columns: repeat(4, 1fr); 
-  grid-template-rows: repeat(4, minmax(45px, 1fr)) minmax(48px, 55px);
+  grid-template-rows: repeat(4, minmax(45px, 1fr));
   gap: 6px;
   max-height: 250px;
 }
@@ -427,29 +438,296 @@ body:not(.dark-theme) .app-container {
     color: #F87171;
 }
 
-
-.numpad-confirm { 
-  grid-column: span 2; 
+/* Confirm Button styling moved here for reuse */
+.submit-btn-wide {
+  width: 100%;
   background: linear-gradient(135deg, var(--primary) 0%, #E891C8 100%);
-  color: white; 
-  font-size: 15px; 
-  font-weight: 800; 
-  border: none; 
-  border-radius: 14px; 
+  color: white;
+  font-size: 16px;
+  font-weight: 800;
+  border: none;
+  border-radius: 14px;
   box-shadow: 0 4px 16px rgba(210, 145, 188, 0.4);
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 48px;
+  min-height: 50px;
+  margin-top: 10px;
 }
-.dark-theme .numpad-confirm {
+.dark-theme .submit-btn-wide {
   background: linear-gradient(135deg, var(--primary) 0%, #9C27B0 100%);
   box-shadow: 0 4px 16px rgba(187, 134, 252, 0.4);
 }
-
-
-.numpad-confirm:active {
+.submit-btn-wide:active {
   transform: scale(0.98);
-  box-shadow: 0 2px 8px rgba(210, 145, 188, 0.3);
+}
+
+
+/* --- TRANSACTION EXTRAS --- */
+.transaction-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.extras-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px;
+}
+
+.extra-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.extra-btn.active {
+  color: var(--primary);
+  background: var(--bg-input);
+}
+
+.extra-btn:active {
+  transform: scale(0.95);
+}
+
+.separator {
+  color: var(--border-color);
+  font-size: 10px;
+}
+
+.extras-content {
+  background: var(--bg-input);
+  border-radius: 12px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.extras-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.note-textarea {
+  min-height: 24px;
+}
+
+.tag-text-input {
+  flex: 1;
+  min-width: 60px;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.tag-chip-item {
+  background: var(--bg-card);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+.tag-chip-item button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+}
+
+.tag-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.tags-suggestions {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-top: 8px;
+  padding-bottom: 4px;
+}
+
+.suggestion-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.photo-badge {
+  background: var(--primary);
+  color: white;
+  font-size: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.photos-preview-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.photo-thumbnail {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.photo-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-photo {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.extras-preview {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.preview-chip {
+  background: var(--bg-input);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* --- TRANSACTION DETAIL MODAL --- */
+.detail-modal {
+  padding-top: 10px;
+}
+.detail-icon {
+  font-size: 24px;
+}
+.detail-info-grid {
+  background: var(--bg-input);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-main);
+  font-size: 14px;
+}
+.detail-row-icon {
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.note-row .note-text {
+  background: var(--bg-card);
+  padding: 10px;
+  border-radius: 12px;
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-main);
+}
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.detail-tag {
+  background: var(--bg-card);
+  color: var(--primary);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.detail-photos {
+  margin-top: 16px;
+}
+.detail-photos-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.detail-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+.detail-photos-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 /* --- BOTTOM TAB BAR --- */
@@ -509,18 +787,25 @@ body:not(.dark-theme) .app-container {
   transform: scale(1.1);
 }
 
+/* ... (Remaining styles unchanged, Modal, etc.) ... */
 /* --- MODAL --- */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: var(--modal-overlay);
   display: flex;
-  justify-content: center; /* Center on desktop, stretch on mobile */
-  align-items: stretch; /* Full height */
+  justify-content: center; /* Center horizontally */
+  align-items: stretch; /* default: full height for sheet modals */
   z-index: 1000;
   /* Respect iOS safe area */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* When overlay has center modifier, align items center for vertical centering */
+.modal-overlay.center {
+  align-items: center;
+  padding: 20px; /* give space on small screens */
 }
 
 .modal-content {
@@ -537,6 +822,16 @@ body:not(.dark-theme) .app-container {
   overflow-y: auto;
   transition: background-color 0.3s ease;
   box-sizing: border-box;
+}
+
+/* Centered modal variant */
+.modal-content.modal-center {
+  width: min(640px, 92%);
+  max-width: 640px;
+  border-radius: 16px;
+  padding: 16px;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
 }
 
 /* Ensure inputs inside modal don't overflow on small mobile webviews */
@@ -1202,10 +1497,6 @@ body:not(.dark-theme) .app-container {
 /* --- HEATMAP --- */
 :root {
   /* Light Theme Heatmap (Salmon/Red/Pink gradient) */
-  /* All text is dark or white depending on contrast. 
-     User wants 'readable' text. Mid-tones usually allow white text or dark text.
-     Let's pick colors that are 'warm' and vibrant. 
-  */
   --hm-0: var(--bg-input);
   --hm-1: #FFD6E0; /* Very light pink */
   --hm-2: #FF9AA2; /* Light Salmon */
@@ -1216,7 +1507,7 @@ body:not(.dark-theme) .app-container {
   --hm-text-0: var(--text-secondary);
   --hm-text-1: #555;
   --hm-text-2: #333;
-  --hm-text-3: #FFF; /* Mid-tone starts getting dark enough for white text? Or stick to black? #FF6B6B usually white text is OK. */
+  --hm-text-3: #FFF; 
   --hm-text-4: #FFF;
   --hm-text-5: #FFF;
 }
@@ -1244,4 +1535,3 @@ body:not(.dark-theme) .app-container {
 .heatmap-cell-3 { background-color: var(--hm-3); color: var(--hm-text-3); }
 .heatmap-cell-4 { background-color: var(--hm-4); color: var(--hm-text-4); }
 .heatmap-cell-5 { background-color: var(--hm-5); color: var(--hm-text-5); }
-

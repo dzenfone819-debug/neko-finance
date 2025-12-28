@@ -1,13 +1,14 @@
+// ... (Existing code) ...
 const API_URL = '';
 
-// Вспомогательная функция для добавления параметров
 const getQuery = (month?: number, year?: number) => {
   if (month !== undefined && year !== undefined) {
-    return `?month=${month}&year=${year}`; // +1 к месяцу не надо, будем передавать человеческий (1-12)
+    return `?month=${month}&year=${year}`;
   }
   return '';
 }
 
+// ... (Other functions unchanged) ...
 export const fetchBalance = async (userId: number, month?: number, year?: number) => {
   const query = getQuery(month, year);
   const response = await fetch(`${API_URL}/balance${query}`, { 
@@ -32,10 +33,19 @@ export const fetchTransactions = async (userId: number, month?: number, year?: n
   return await response.json();
 };
 
-// ... Остальные функции (add, delete, settings, limits) без изменений ...
-// (Обязательно оставь их!)
-export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account', date?: string) => {
-  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date };
+export const addTransaction = async (
+  userId: number, 
+  amount: number, 
+  category: string, 
+  type: 'expense' | 'income', 
+  accountId?: number, 
+  targetType: 'account' | 'goal' = 'account', 
+  date?: string,
+  note?: string,
+  tags?: string[],
+  photo_urls?: string[]
+) => {
+  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date, note, tags, photo_urls };
   console.log('🔵 API addTransaction payload:', payload);
   const response = await fetch(`${API_URL}/add-expense`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
@@ -46,25 +56,89 @@ export const addTransaction = async (userId: number, amount: number, category: s
     console.error('❌ API error response:', error);
     throw new Error('Failed to add: ' + error);
   }
-  const result = await response.json();
-  console.log('✅ API addTransaction result:', result);
-  return result;
+  return await response.json();
 };
+
+export const uploadFile = async (file: File) => {
+  // Compress images in-browser before upload to reduce traffic and server load
+  const compressImage = async (input: File, maxWidth = 1280, quality = 0.7): Promise<File> => {
+    try {
+      if (!input.type.startsWith('image/')) return input;
+
+      // createImageBitmap is faster and more memory efficient when available
+      const bitmap = await createImageBitmap(input);
+      let { width, height } = bitmap;
+
+      if (width > maxWidth) {
+        const ratio = maxWidth / width;
+        width = Math.round(maxWidth);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return input;
+      ctx.drawImage(bitmap, 0, 0, width, height);
+
+      // Detect WebP support
+      const supportsWebP = (() => {
+        try {
+          const c = document.createElement('canvas');
+          return c.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+        } catch (e) {
+          return false;
+        }
+      })();
+
+      const mime = supportsWebP ? 'image/webp' : input.type;
+
+      const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, mime, quality));
+      if (!blob) return input;
+
+      const ext = input.name.includes('.') ? input.name.substring(input.name.lastIndexOf('.')) : '';
+      const newName = supportsWebP ? input.name.replace(ext, '.webp') : input.name;
+      return new File([blob], newName, { type: mime });
+    } catch (e) {
+      // If anything fails, return original
+      return input;
+    }
+  };
+
+  const fileToUpload = await compressImage(file, 1280, 0.7);
+
+  const formData = new FormData();
+  formData.append('file', fileToUpload);
+
+  const response = await fetch(`${API_URL}/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to upload file');
+  }
+  return await response.json(); // returns { url: ... }
+};
+
 export const deleteTransaction = async (userId: number, transactionId: number) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'DELETE', headers: { 'x-user-id': userId.toString() }
   }); if (!response.ok) throw new Error('Failed to delete'); return true;
 };
 
-export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income') => {
+export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income', note?: string, tags?: string[], photo_urls?: string[]) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ amount, category, date, type })
+    body: JSON.stringify({ amount, category, date, type, note, tags, photo_urls })
   });
   if (!response.ok) throw new Error('Failed to update');
   return await response.json();
 };
+
+// ... (Rest of the file unchanged) ...
 
 export const fetchBudget = async (userId: number, month?: number, year?: number) => {
   const query = getQuery(month, year);
@@ -90,11 +164,8 @@ export const setCategoryLimit = async (userId: number, category: string, limit: 
 };
 
 export const deleteCategoryLimit = async (userId: number, category: string, month?: number, year?: number) => {
-  // Вместо удаления записи, устанавливаем лимит в 0 для этого месяца
   await setCategoryLimit(userId, category, 0, month, year);
 };
-
-// ========== КАСТОМНЫЕ КАТЕГОРИИ ==========
 
 export const fetchCustomCategories = async (userId: number) => {
   const response = await fetch(`${API_URL}/custom-categories`, {
@@ -103,7 +174,6 @@ export const fetchCustomCategories = async (userId: number) => {
   return await response.json();
 };
 
-// ========== CATEGORY OVERRIDES ==========
 export const fetchCategoryOverrides = async (userId: number) => {
   const response = await fetch(`${API_URL}/category-overrides`, {
     headers: { 'x-user-id': userId.toString() }
@@ -146,8 +216,6 @@ export const deleteCustomCategory = async (userId: number, categoryId: string) =
   return await response.json();
 };
 
-// ========== СЧЕТА ==========
-
 export const fetchAccounts = async (userId: number) => {
   const response = await fetch(`${API_URL}/accounts`, { 
     headers: { 'x-user-id': userId.toString() } 
@@ -180,8 +248,6 @@ export const deleteAccount = async (userId: number, accountId: number) => {
   });
   return await response.json();
 };
-
-// ========== КОПИЛКИ (SAVINGS GOALS) ==========
 
 export const fetchGoals = async (userId: number) => {
   const response = await fetch(`${API_URL}/goals`, {
@@ -216,8 +282,6 @@ export const deleteGoal = async (userId: number, goalId: number) => {
   return await response.json();
 };
 
-// ========== СВЯЗАННЫЕ АККАУНТЫ ==========
-
 export const linkAccount = async (userId: number, primaryUserId: number) => {
   const response = await fetch(`${API_URL}/link-account`, {
     method: 'POST',
@@ -244,8 +308,6 @@ export const getLinkedAccounts = async (userId: number) => {
   if (!response.ok) throw new Error('Failed to get linked accounts');
   return await response.json();
 };
-
-// ========== ПЕРЕВОДЫ ==========
 
 export const transfer = async (userId: number, from_type: string, from_id: number, to_type: string, to_id: number, amount: number, description?: string) => {
   const response = await fetch(`${API_URL}/transfer`, {

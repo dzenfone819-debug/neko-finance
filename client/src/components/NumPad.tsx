@@ -1,58 +1,44 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Delete } from 'lucide-react'; // Иконка стирания
+import { Delete } from 'lucide-react'; 
 
 interface NumPadProps {
   onNumberClick: (num: string) => void;
   onDelete: () => void;
-  onConfirm: () => void;
-  confirmLabel?: string;
+  // onConfirm removed as it's now external
+  extraContent?: React.ReactNode;
+  // Optional confirmLabel for backward compatibility if needed, but not used in new layout
+  confirmLabel?: string; 
+  onConfirm?: () => void; // Keep prop definition to avoid TS errors if parent passes it, but we won't use it in render if we want external button
 }
 
-export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, onConfirm, confirmLabel = 'Внести💵' }) => {
-  // Standard calculator layout
-  // 7 8 9 ÷
-  // 4 5 6 ×
-  // 1 2 3 -
-  // . 0 ⌫ +
-  // = (confirm)
-
+export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, extraContent }) => {
   return (
-    <div className="numpad-grid">
-      {/* 7 8 9 / */}
-      {/* 4 5 6 * */}
-      {/* 1 2 3 - */}
-      {/* . 0 DEL + */}
+    <div className="numpad-wrapper">
+      <div className="numpad-grid">
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('7')}>7</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('8')}>8</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('9')}>9</motion.button>
+        <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('/')}>÷</motion.button>
+
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('4')}>4</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('5')}>5</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('6')}>6</motion.button>
+        <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('*')}>×</motion.button>
+
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('1')}>1</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('2')}>2</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('3')}>3</motion.button>
+        <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('-')}>−</motion.button>
+
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('.')}>.</motion.button>
+        <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('0')}>0</motion.button>
+        <motion.button className="numpad-btn delete-btn" whileTap={{ scale: 0.9 }} onClick={onDelete}><Delete size={24} /></motion.button>
+        <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('+')}>+</motion.button>
+      </div>
       
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('7')}>7</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('8')}>8</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('9')}>9</motion.button>
-      <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('/')}>÷</motion.button>
-
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('4')}>4</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('5')}>5</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('6')}>6</motion.button>
-      <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('*')}>×</motion.button>
-
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('1')}>1</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('2')}>2</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('3')}>3</motion.button>
-      <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('-')}>−</motion.button>
-
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('.')}>.</motion.button>
-      <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('0')}>0</motion.button>
-      <motion.button className="numpad-btn delete-btn" whileTap={{ scale: 0.9 }} onClick={onDelete}><Delete size={24} /></motion.button>
-      <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('+')}>+</motion.button>
-
-      {/* Confirm Button usually spans bottom */}
-      <motion.button
-        className="numpad-confirm"
-        style={{ gridColumn: 'span 4' }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onConfirm}
-      >
-        {confirmLabel}
-      </motion.button>
+      {/* Сюда вставляем строку с доп. опциями */}
+      {extraContent}
     </div>
   );
 };
