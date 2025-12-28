@@ -1,8 +1,12 @@
 const fastify = require('fastify')({ logger: true })
 const cors = require('@fastify/cors')
+const multipart = require('@fastify/multipart')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const fs = require('fs')
+const util = require('util')
+const { pipeline } = require('stream')
+const pump = util.promisify(pipeline)
 
 // Подключаем переменные окружения
 const BOT_TOKEN = process.env.BOT_TOKEN
@@ -15,6 +19,9 @@ console.log('📁 Используется путь к БД:', dbPath)
 
 // CORS должен быть первым
 fastify.register(cors, { origin: true })
+
+// Подключаем multipart для загрузки файлов
+fastify.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } }) // 5MB limit
 
 // Подключаем бота
 const { startBot } = require('./bot')
@@ -65,13 +72,30 @@ db.serialize(() => {
       date TEXT,
       user_id INTEGER,
       type TEXT DEFAULT 'expense', -- Тип транзакции (expense/income)
-      account_id INTEGER -- Счет, на который относится транзакция
+      account_id INTEGER, -- Счет, на который относится транзакция
+      note TEXT,
+      tags TEXT, -- JSON array of strings
+      photo_urls TEXT -- JSON array of strings
     )
   `)
   
   // Миграция для старых баз (добавляем колонки, если их нет)
   db.run("ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT 'expense'", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN account_id INTEGER", () => {})
+  db.run("ALTER TABLE transactions ADD COLUMN note TEXT", () => {})
+  db.run("ALTER TABLE transactions ADD COLUMN tags TEXT", () => {})
+  db.run("ALTER TABLE transactions ADD COLUMN photo_urls TEXT", () => {})
+
+  // Таблица тегов для автодополнения и частоты использования
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tags (
+      user_id INTEGER,
+      tag TEXT,
+      usage_count INTEGER DEFAULT 1,
+      last_used_at TEXT,
+      PRIMARY KEY (user_id, tag)
+    )
+  `)
 
   // Настройки пользователя (Общий лимит)
   db.run(`
@@ -353,8 +377,8 @@ fastify.post('/log-client', (request, reply) => {
 
 // Добавить операцию (Расход или Доход)
 fastify.post('/add-expense', (request, reply) => {
-  // Теперь принимаем TYPE, ACCOUNT_ID, TARGET_TYPE (account или goal) и DATE
-  const { amount, category, type, account_id, target_type, date } = request.body
+  // Теперь принимаем TYPE, ACCOUNT_ID, TARGET_TYPE (account или goal), DATE, NOTE, TAGS, PHOTOS
+  const { amount, category, type, account_id, target_type, date, note, tags, photo_urls } = request.body
   const userId = request.headers['x-primary-user-id']
 
   console.log('📥 /add-expense FULL request.body:', JSON.stringify(request.body, null, 2));
@@ -367,15 +391,33 @@ fastify.post('/add-expense', (request, reply) => {
   const finalTargetType = target_type || 'account'
   // Используем переданную дату или текущую
   const finalDate = date || new Date().toISOString()
+  const finalNote = note || ''
+  const finalTags = tags ? JSON.stringify(tags) : '[]'
+  const finalPhotos = photo_urls ? JSON.stringify(photo_urls) : '[]'
 
-  const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id) VALUES (?, ?, ?, ?, ?, ?)`
+  const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id, note, tags, photo_urls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   
-  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null], function(err) {
+  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null, finalNote, finalTags, finalPhotos], function(err) {
     if (err) {
       console.error('❌ Database error:', err);
       reply.code(500).send({ error: err.message })
     } else {
       console.log('✅ Transaction saved with ID:', this.lastID);
+
+      // Обновляем статистику тегов
+      if (tags && Array.isArray(tags) && tags.length > 0) {
+        const now = new Date().toISOString();
+        tags.forEach(tag => {
+            db.run(`
+                INSERT INTO tags (user_id, tag, usage_count, last_used_at)
+                VALUES (?, ?, 1, ?)
+                ON CONFLICT(user_id, tag)
+                DO UPDATE SET usage_count = usage_count + 1, last_used_at = ?
+            `, [userId, tag, now, now], (err) => {
+                if (err) console.error('Error updating tag stats:', err);
+            });
+        });
+      }
       
       // Обновляем баланс в зависимости от типа (account или goal)
       if (account_id) {
@@ -540,7 +582,7 @@ fastify.get('/transactions', (request, reply) => {
   getDateFilter(request.query, userId)
     .then(filter => {
       const sql = `
-        SELECT id, amount, category, date, type, account_id
+        SELECT id, amount, category, date, type, account_id, note, tags, photo_urls
         FROM transactions 
         WHERE user_id = ? ${filter.sql}
         ORDER BY date DESC, id DESC 
@@ -550,12 +592,62 @@ fastify.get('/transactions', (request, reply) => {
       
       db.all(sql, [userId, ...filter.params], (err, rows) => {
         if (err) return reply.code(500).send({ error: err.message })
-        return reply.send(rows)
+        // Parse JSON fields
+        const parsedRows = rows.map(row => ({
+            ...row,
+            tags: row.tags ? JSON.parse(row.tags) : [],
+            photo_urls: row.photo_urls ? JSON.parse(row.photo_urls) : []
+        }))
+        return reply.send(parsedRows)
       })
     })
     .catch(err => {
       return reply.code(500).send({ error: err.message })
     })
+})
+
+// Загрузка файла
+fastify.post('/upload', async (request, reply) => {
+    const data = await request.file()
+    if (!data) {
+        return reply.code(400).send({ error: 'No file uploaded' })
+    }
+
+    const uploadDir = path.join(__dirname, 'public', 'uploads')
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true })
+    }
+
+    // Generate unique filename
+    const ext = path.extname(data.filename)
+    const filename = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}${ext}`
+    const filepath = path.join(uploadDir, filename)
+
+    try {
+        await pump(data.file, fs.createWriteStream(filepath))
+        // Return URL relative to server root
+        return reply.send({ url: `/uploads/${filename}` })
+    } catch (err) {
+        console.error('Upload error:', err)
+        return reply.code(500).send({ error: 'File upload failed' })
+    }
+})
+
+// Получить популярные теги
+fastify.get('/tags', (request, reply) => {
+    const userId = request.headers['x-primary-user-id']
+    if (!userId) return reply.code(400).send({ error: 'User ID is required' })
+
+    const limit = request.query.limit || 10
+
+    db.all(
+        "SELECT tag FROM tags WHERE user_id = ? ORDER BY usage_count DESC, last_used_at DESC LIMIT ?",
+        [userId, limit],
+        (err, rows) => {
+            if (err) return reply.code(500).send({ error: err.message })
+            return reply.send(rows.map(r => r.tag))
+        }
+    )
 })
 
 // Удаление
@@ -573,16 +665,32 @@ fastify.delete('/transactions/:id', (request, reply) => {
 fastify.put('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
-  const { amount, category, date, type } = request.body
+  const { amount, category, date, type, note, tags, photo_urls } = request.body
   
+  const finalNote = note || ''
+  const finalTags = tags ? JSON.stringify(tags) : '[]'
+  const finalPhotos = photo_urls ? JSON.stringify(photo_urls) : '[]'
+
   const sql = `UPDATE transactions 
-               SET amount = ?, category = ?, date = ?, type = ?
+               SET amount = ?, category = ?, date = ?, type = ?, note = ?, tags = ?, photo_urls = ?
                WHERE id = ? AND user_id = ?`
   
-  db.run(sql, [amount, category, date, type, id, userId], function(err) {
+  db.run(sql, [amount, category, date, type, finalNote, finalTags, finalPhotos, id, userId], function(err) {
     if (err) {
       return reply.code(500).send({ error: err.message })
     } else {
+        // Update tags stats if tags changed (simplified: just add usage, don't decrement removed ones for now)
+      if (tags && Array.isArray(tags)) {
+        const now = new Date().toISOString();
+        tags.forEach(tag => {
+            db.run(`
+                INSERT INTO tags (user_id, tag, usage_count, last_used_at)
+                VALUES (?, ?, 1, ?)
+                ON CONFLICT(user_id, tag)
+                DO UPDATE SET usage_count = usage_count + 1, last_used_at = ?
+            `, [userId, tag, now, now], (err) => {});
+        });
+      }
       return reply.send({ status: 'updated', id, changes: this.changes })
     }
   })

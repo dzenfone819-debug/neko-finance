@@ -452,6 +452,55 @@ body:not(.dark-theme) .app-container {
   box-shadow: 0 2px 8px rgba(210, 145, 188, 0.3);
 }
 
+/* --- TRIGGER ROW (Transaction Details) --- */
+.numpad-details-trigger {
+  grid-column: span 4;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.details-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.details-content.has-details {
+  opacity: 1;
+}
+
+.details-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.details-text-active {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.details-icon {
+  color: var(--text-secondary);
+  display: flex;
+}
+
+.details-active-indicator {
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 14px;
+}
+
 /* --- BOTTOM TAB BAR --- */
 .bottom-tab-bar { 
   position: absolute; 

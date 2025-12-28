@@ -1,0 +1,11 @@
+
+> server@1.0.0 start
+> node server.js
+
+📁 Используется путь к БД: /app/database.db
+{"level":30,"time":1766922115153,"pid":3269,"hostname":"devbox","msg":"Server listening at http://127.0.0.1:3000"}
+Сервер запущен
+✅ Подключено к SQLite
+📁 БД находится по пути: /app/database.db
+⚠️  BOT_TOKEN или GEMINI_KEY не установлены
+{"level":30,"time":1766922115153,"pid":3269,"hostname":"devbox","msg":"Server listening at http://192.168.0.2:3000"}

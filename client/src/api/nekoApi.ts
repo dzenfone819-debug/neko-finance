@@ -34,8 +34,19 @@ export const fetchTransactions = async (userId: number, month?: number, year?: n
 
 // ... Остальные функции (add, delete, settings, limits) без изменений ...
 // (Обязательно оставь их!)
-export const addTransaction = async (userId: number, amount: number, category: string, type: 'expense' | 'income', accountId?: number, targetType: 'account' | 'goal' = 'account', date?: string) => {
-  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date };
+export const addTransaction = async (
+  userId: number,
+  amount: number,
+  category: string,
+  type: 'expense' | 'income',
+  accountId?: number,
+  targetType: 'account' | 'goal' = 'account',
+  date?: string,
+  note?: string,
+  tags?: string[],
+  photo_urls?: string[]
+) => {
+  const payload = { amount, category, type, account_id: accountId, target_type: targetType, date, note, tags, photo_urls };
   console.log('🔵 API addTransaction payload:', payload);
   const response = await fetch(`${API_URL}/add-expense`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
@@ -56,15 +67,47 @@ export const deleteTransaction = async (userId: number, transactionId: number) =
   }); if (!response.ok) throw new Error('Failed to delete'); return true;
 };
 
-export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income') => {
+export const updateTransaction = async (
+  userId: number,
+  transactionId: number,
+  amount: number,
+  category: string,
+  date: string,
+  type: 'expense' | 'income',
+  note?: string,
+  tags?: string[],
+  photo_urls?: string[]
+) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ amount, category, date, type })
+    body: JSON.stringify({ amount, category, date, type, note, tags, photo_urls })
   });
   if (!response.ok) throw new Error('Failed to update');
   return await response.json();
 };
+
+export const uploadFile = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_URL}/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) throw new Error('Upload failed');
+  const result = await response.json();
+  return result.url; // Relative URL returned by server
+}
+
+export const fetchPopularTags = async (userId: number, limit: number = 10) => {
+  const response = await fetch(`${API_URL}/tags?limit=${limit}`, {
+    headers: { 'x-user-id': userId.toString() }
+  });
+  if (!response.ok) return [];
+  return await response.json();
+}
 
 export const fetchBudget = async (userId: number, month?: number, year?: number) => {
   const query = getQuery(month, year);

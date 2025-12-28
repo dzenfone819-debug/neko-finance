@@ -18,6 +18,7 @@ import { AccountsView } from './components/AccountsView'
 import { AnalyticsView } from './components/AnalyticsView'
 import { SettingsView } from './components/SettingsView'
 import { Modal } from './components/Modal'
+import { TransactionDetailsModal } from './components/TransactionDetailsModal'
 import { NekoAvatar } from './components/NekoAvatar'
 import TransactionSearch from './components/TransactionSearch'
 import { ConfirmModal } from './components/ConfirmModal'
@@ -125,6 +126,12 @@ function App() {
   const [editAmount, setEditAmount] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editDate, setEditDate] = useState(new Date())
+
+  // Состояния для деталей транзакции (Заметка, Теги, Фото)
+  const [txNote, setTxNote] = useState('');
+  const [txTags, setTxTags] = useState<string[]>([]);
+  const [txPhotos, setTxPhotos] = useState<string[]>([]);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Confirmation modal state (centralized)
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -447,10 +454,29 @@ function App() {
       const targetId = selectedAccount.id;
       console.log('📤 Sending transaction:', { userId, value, selectedCategory, transType, targetId, targetType, date: transactionDate.toISOString(), accountsCount: accounts.length, goalsCount: goals.length });
       api.logToServer('📤 BEFORE API.addTransaction', { userId, value, selectedCategory, transType, targetId, targetType, date: transactionDate.toISOString(), accountsCount: accounts.length, goalsCount: goals.length });
-      const result = await api.addTransaction(userId, value, selectedCategory, transType, targetId, targetType, transactionDate.toISOString());
+
+      const result = await api.addTransaction(
+          userId,
+          value,
+          selectedCategory,
+          transType,
+          targetId,
+          targetType,
+          transactionDate.toISOString(),
+          txNote,
+          txTags,
+          txPhotos
+      );
+
       console.log('✅ Transaction result:', result);
       WebApp.HapticFeedback.notificationOccurred('success');
-      setIsHappy(true); setAmount(''); 
+      setIsHappy(true);
+      setAmount('');
+      // Reset details
+      setTxNote('');
+      setTxTags([]);
+      setTxPhotos([]);
+
       loadData(userId, currentDate);
       // Обновляем все транзакции для аналитики
       if (allTransactions.length > 0) {
@@ -1158,7 +1184,9 @@ function App() {
                 onNumberClick={handleNumberClick} 
                 onDelete={handleDelete} 
                 onConfirm={handleConfirm} 
-                confirmLabel={isExpression ? "=" : "Внести💵"} 
+                confirmLabel={isExpression ? "=" : "Внести💵"}
+                onOpenDetails={() => setShowDetailsModal(true)}
+                hasDetails={!!txNote || txTags.length > 0 || txPhotos.length > 0}
               />
             </div>
           </>
@@ -1465,6 +1493,20 @@ function App() {
         message={confirmMessage}
         onCancel={handleConfirmModalCancel}
         onConfirm={handleConfirmModalConfirm}
+      />
+
+      <TransactionDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        onSave={(note, tags, photos) => {
+            setTxNote(note);
+            setTxTags(tags);
+            setTxPhotos(photos);
+        }}
+        initialNote={txNote}
+        initialTags={txTags}
+        initialPhotos={txPhotos}
+        userId={userId}
       />
     </div>
   )
