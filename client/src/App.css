@@ -122,16 +122,21 @@ body:not(.dark-theme) .app-container {
 
 /* --- HEADER --- */
 .header-section {
-  min-height: 80px;
+  /* base sizes that will be multiplied by --ui-scale so they affect layout */
+  --header-min: clamp(56px, 8vh, 80px);
+  --header-pad-v: clamp(6px, 2vh, 8px);
+  --header-pad-h: clamp(12px, 4vw, 16px);
+  min-height: calc(var(--header-min) * var(--ui-scale));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  flex-shrink: 0;
-  padding: 8px 16px;
-  /* Ensure header is transparent to show stars */
+  /* allow header to shrink so content moves up when scaled */
+  flex-shrink: 1;
+  padding: calc(var(--header-pad-v) * var(--ui-scale)) calc(var(--header-pad-h) * var(--ui-scale));
   background: transparent;
+  transition: padding 160ms ease, min-height 160ms ease;
 }
 
 .neko-avatar {
@@ -141,7 +146,7 @@ body:not(.dark-theme) .app-container {
 }
 
 .amount-display {
-  font-size: 24px;
+  font-size: clamp(18px, 4.5vw, 24px);
   font-weight: 800;
   color: var(--text-main);
   display: flex;
@@ -151,8 +156,72 @@ body:not(.dark-theme) .app-container {
 }
 
 .currency { 
-  font-size: 18px; 
+  font-size: clamp(14px, 3.5vw, 18px);
   color: var(--primary); 
+}
+
+/* Vertical compression: scale main content to fit smaller viewport heights */
+.app-container {
+  --ui-scale: 1;
+}
+
+@media (max-height: 820px) {
+  .app-container { --ui-scale: 0.96; }
+}
+@media (max-height: 760px) {
+  .app-container { --ui-scale: 0.92; }
+}
+@media (max-height: 700px) {
+  .app-container { --ui-scale: 0.88; }
+}
+@media (max-height: 640px) {
+  .app-container { --ui-scale: 0.84; }
+}
+@media (max-height: 580px) {
+  .app-container { --ui-scale: 0.78; }
+}
+
+/* Apply scale to the content area only so header can compress via flex-shrink/clamp rules */
+.content-area {
+  transform-origin: top center;
+  transition: transform 140ms ease, padding 140ms ease;
+  transform: scale(var(--ui-scale));
+}
+
+/* Slightly reduce internal paddings so scaled content fits better */
+.input-tab-content {
+  padding: calc(8px * var(--ui-scale)) calc(14px * var(--ui-scale)) calc(6px * var(--ui-scale)) calc(14px * var(--ui-scale));
+  gap: calc(6px * var(--ui-scale));
+}
+
+/* Make buttons and type selector more height-friendly when scaled */
+.type-button {
+  padding: calc(6px * var(--ui-scale)) calc(18px * var(--ui-scale));
+  font-size: calc(14px * var(--ui-scale));
+}
+
+/* Ensure amount display scales visually */
+.amount-display {
+  --amount-size: clamp(18px, 4.5vw, 24px);
+  font-size: calc(var(--amount-size) * var(--ui-scale));
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1;
+}
+
+/* Scale avatar and header elements with ui-scale for consistent compression */
+.header-section .neko-avatar {
+  transform-origin: center;
+  transform: scale(var(--ui-scale));
+  transition: transform 160ms ease;
+}
+
+.header-section .currency {
+  transform-origin: center;
+  transform: scale(var(--ui-scale));
 }
 
 /* --- CONTENT AREA --- */

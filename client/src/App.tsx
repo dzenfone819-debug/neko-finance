@@ -52,6 +52,8 @@ function App() {
     return localStorage.getItem('app-theme') as 'light' | 'dark' || 'light';
   });
   const [isMiniApp, setIsMiniApp] = useState(false);
+  // Detect if running inside Telegram's WebApp wrapper
+  const isTelegramWebApp = typeof window !== 'undefined' && !!(window as any).Telegram && !!(window as any).Telegram.WebApp;
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -663,8 +665,10 @@ function App() {
   const displayedStandardCategories = currentCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden);
   const displayedCustomCategories = customCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden && (c.type || 'expense') === transType);
   
+  const applyMiniAppClass = isMiniApp && !isTelegramWebApp;
+
   return (
-    <div className={`app-container${isMiniApp ? ' mini-app' : ''}`}>
+    <div className={`app-container${applyMiniAppClass ? ' mini-app' : ''}`}>
       {/* ... (Date Picker Modal & ModalInput omitted for brevity, same as before) ... */}
       {showDatePicker && (
         <div 
