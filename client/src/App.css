@@ -451,7 +451,7 @@ body:not(.dark-theme) .app-container {
   cursor: pointer;
   transition: all 0.2s;
   min-height: 50px;
-  margin-top: 10px;
+  margin-top: 0;
 }
 .dark-theme .submit-btn-wide {
   background: linear-gradient(135deg, var(--primary) 0%, #9C27B0 100%);
@@ -475,7 +475,6 @@ body:not(.dark-theme) .app-container {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 6px;
 }
 
 .extra-btn {
