@@ -539,11 +539,9 @@ function App() {
         if (!userId) return;
         WebApp.HapticFeedback.impactOccurred('medium');
         try {
-          const month = currentDate.getMonth() + 1;
-          const year = currentDate.getFullYear();
           const isCustom = customCategories.some(cat => cat.id === categoryId);
           if (isCustom) await api.deleteCustomCategory(userId, categoryId);
-          else await api.deleteCategoryLimit(userId, categoryId, month, year);
+          else await api.deleteCategoryLimit(userId, categoryId);
           // If deleted category had local overrides, remove them too
           removeCategoryOverride(categoryId);
           WebApp.HapticFeedback.notificationOccurred('success');
@@ -663,7 +661,7 @@ function App() {
   };
 
   const displayedStandardCategories = currentCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden);
-  const displayedCustomCategories = customCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden && (c.type || 'expense') === transType);
+  const displayedCustomCategories = customCategories.map(c => applyOverridesToCategory(c)).filter(c => !c.hidden && (c.type || 'expense') === transType && Object.prototype.hasOwnProperty.call(catLimits, c.id));
   
   const applyMiniAppClass = isMiniApp && !isTelegramWebApp;
 
@@ -792,7 +790,7 @@ function App() {
               <div className="categories-wrapper">
                 <div className="categories-scroll">
                   {transType === 'expense' 
-                    ? displayedStandardCategories.map((cat) => (
+                    ? displayedStandardCategories.filter(cat => Object.prototype.hasOwnProperty.call(catLimits, cat.id)).map((cat) => (
                         <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
                           <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
                           <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>

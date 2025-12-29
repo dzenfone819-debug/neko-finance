@@ -1,2 +1,4 @@
-# Ignore uploaded files
+# Ignore user-uploaded files directory
 uploads/
+
+# Keep this file so the uploads folder is not accidentally committed by build scripts

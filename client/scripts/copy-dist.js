@@ -21,8 +21,8 @@ async function copy() {
     try {
       const destEntries = await fs.promises.readdir(dest, { withFileTypes: true });
       for (const entry of destEntries) {
-        // Preserve uploads folder to avoid removing user-uploaded files
-        if (entry.name === 'uploads') continue;
+        // Preserve uploads folder and git keep/ignore files to avoid removing user-uploaded files
+        if (entry.name === 'uploads' || entry.name === '.gitignore' || entry.name === '.gitkeep') continue;
         const entryPath = path.join(dest, entry.name);
         await fs.promises.rm(entryPath, { recursive: true, force: true });
       }

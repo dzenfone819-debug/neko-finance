@@ -163,8 +163,13 @@ export const setCategoryLimit = async (userId: number, category: string, limit: 
   });
 };
 
-export const deleteCategoryLimit = async (userId: number, category: string, month?: number, year?: number) => {
-  await setCategoryLimit(userId, category, 0, month, year);
+export const deleteCategoryLimit = async (userId: number, category: string) => {
+  const response = await fetch(`${API_URL}/limits/${encodeURIComponent(category)}`, {
+    method: 'DELETE',
+    headers: { 'x-user-id': userId.toString() }
+  });
+  if (!response.ok) throw new Error('Failed to delete category limit');
+  return await response.json();
 };
 
 export const fetchCustomCategories = async (userId: number) => {
