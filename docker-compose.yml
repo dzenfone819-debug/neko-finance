@@ -13,6 +13,8 @@ services:
       - DB_PATH=/data/database.db
     volumes:
       - neko_data:/data
+      # Persist uploaded files so they survive image rebuilds
+      - ./server/public/uploads:/app/server/public/uploads
 
   # Умный швейцар Caddy (торчит наружу и дает HTTPS)
   caddy:
@@ -31,5 +33,7 @@ services:
 
 volumes:
   neko_data:
+  # If you prefer a named volume instead of a host bind, you can use:
+  # uploads_data:
   caddy_data:
   caddy_config:
