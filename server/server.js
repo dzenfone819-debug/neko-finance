@@ -52,7 +52,7 @@ function getPrimaryUserId(userId) {
 
 // Создание таблиц и миграции
 db.serialize(() => {
-  // ... (предыдущие таблицы) ...
+  // Таблица связей пользователей
   db.run(`
     CREATE TABLE IF NOT EXISTS user_links (
       telegram_id INTEGER PRIMARY KEY,
@@ -61,6 +61,7 @@ db.serialize(() => {
     )
   `)
   
+  // Транзакции
   db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,15 +77,14 @@ db.serialize(() => {
     )
   `)
   
-  // Миграции
+  // Миграции для транзакций
   db.run("ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT 'expense'", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN account_id INTEGER", () => {})
-  // Новые поля
   db.run("ALTER TABLE transactions ADD COLUMN note TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN tags TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN photo_urls TEXT", () => {})
 
-  // ... (остальные таблицы без изменений) ...
+  // Настройки пользователя (Общий лимит)
   db.run(`
     CREATE TABLE IF NOT EXISTS user_settings (
       user_id INTEGER PRIMARY KEY,
@@ -92,17 +92,49 @@ db.serialize(() => {
     )
   `)
 
-  // Создаем таблицу category_limits, если её нет (упрощенно для контекста, полная логика в оригинале)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS category_limits (
-      user_id INTEGER,
-      category_id TEXT,
-      limit_amount REAL,
-      effective_date TEXT,
-      PRIMARY KEY (user_id, category_id, effective_date)
-    )
-  `)
+  // --- ВОССТАНОВЛЕННАЯ ЛОГИКА МИГРАЦИИ ЛИМИТОВ ---
+  // Лимиты категорий (с поддержкой истории по effective_date)
+  db.get("SELECT count(*) as count FROM pragma_table_info('category_limits') WHERE name='effective_date'", (err, row) => {
+    const migrationNeeded = row && row.count === 0;
 
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='category_limits'", (err, tableRow) => {
+      const tableExists = !!tableRow;
+
+      if (tableExists && migrationNeeded) {
+        console.log('🔄 Migrating category_limits to support history...');
+        db.serialize(() => {
+          db.run("ALTER TABLE category_limits RENAME TO category_limits_old");
+          db.run(`
+            CREATE TABLE category_limits (
+              user_id INTEGER,
+              category_id TEXT,
+              limit_amount REAL,
+              effective_date TEXT,
+              PRIMARY KEY (user_id, category_id, effective_date)
+            )
+          `);
+          db.run(`
+            INSERT INTO category_limits (user_id, category_id, limit_amount, effective_date)
+            SELECT user_id, category_id, limit_amount, '2000-01-01' FROM category_limits_old
+          `);
+          db.run("DROP TABLE category_limits_old");
+          console.log('✅ category_limits migration complete.');
+        });
+      } else {
+        db.run(`
+          CREATE TABLE IF NOT EXISTS category_limits (
+            user_id INTEGER,
+            category_id TEXT,
+            limit_amount REAL,
+            effective_date TEXT,
+            PRIMARY KEY (user_id, category_id, effective_date)
+          )
+        `);
+      }
+    });
+  });
+
+  // История общего бюджета
   db.run(`
     CREATE TABLE IF NOT EXISTS global_budget_limits (
       user_id INTEGER,
@@ -110,7 +142,14 @@ db.serialize(() => {
       effective_date TEXT,
       PRIMARY KEY (user_id, effective_date)
     )
-  `)
+  `, () => {
+    // Миграция данных из user_settings в global_budget_limits
+    db.run(`
+      INSERT OR IGNORE INTO global_budget_limits (user_id, limit_amount, effective_date)
+      SELECT user_id, budget_limit, '2000-01-01' FROM user_settings WHERE budget_limit > 0
+    `);
+  })
+  // ------------------------------------------------
 
   db.run(`
     CREATE TABLE IF NOT EXISTS custom_categories (
@@ -232,11 +271,10 @@ fastify.post('/upload', async (req, reply) => {
   
   await pump(data.file, fs.createWriteStream(filepath))
   
-  // Возвращаем относительный путь
   return reply.send({ url: `/uploads/${filename}` })
 })
 
-// Добавить операцию (Расход или Доход)
+// Добавить операцию
 fastify.post('/add-expense', (request, reply) => {
   const { amount, category, type, account_id, target_type, date, note, tags, photo_urls } = request.body
   const userId = request.headers['x-primary-user-id']
@@ -247,7 +285,6 @@ fastify.post('/add-expense', (request, reply) => {
   const finalTargetType = target_type || 'account'
   const finalDate = date || new Date().toISOString()
 
-  // tags и photo_urls ожидаем как массивы, сохраняем как JSON string
   const tagsStr = Array.isArray(tags) ? JSON.stringify(tags) : (tags || '[]')
   const photosStr = Array.isArray(photo_urls) ? JSON.stringify(photo_urls) : (photo_urls || '[]')
 
@@ -258,7 +295,6 @@ fastify.post('/add-expense', (request, reply) => {
       console.error('❌ Database error:', err);
       reply.code(500).send({ error: err.message })
     } else {
-      // Обновляем баланс
       if (account_id) {
         const table = finalTargetType === 'goal' ? 'savings_goals' : 'accounts'
         const amountCol = finalTargetType === 'goal' ? 'current_amount' : 'balance'
@@ -271,7 +307,7 @@ fastify.post('/add-expense', (request, reply) => {
   })
 })
 
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (calculateBudgetPeriod, getBudgetSettings, getDateFilter)
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 function calculateBudgetPeriod(mode, periodDay, month, year) {
   if (mode === 'monthly') {
     const startDate = new Date(year, month - 1, 1);
@@ -362,7 +398,6 @@ fastify.get('/transactions', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   getDateFilter(request.query, userId).then(filter => {
-    // Выбираем новые поля
     const sql = `
       SELECT id, amount, category, date, type, account_id, note, tags, photo_urls
       FROM transactions
@@ -387,7 +422,7 @@ fastify.delete('/transactions/:id', (request, reply) => {
   })
 })
 
-// ОБНОВЛЕНИЕ ТРАНЗАКЦИИ (Простое, без пересчета баланса пока что)
+// ОБНОВЛЕНИЕ ТРАНЗАКЦИИ
 fastify.put('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
@@ -404,18 +439,12 @@ fastify.put('/transactions/:id', (request, reply) => {
   })
 })
 
-// ... Остальные эндпоинты (settings, limits, accounts, goals, reminders) остаются как есть ...
-// Для экономии места и токенов я не буду переписывать весь файл, если он не меняется.
-// Но в overwrite_file я должен предоставить ПОЛНЫЙ файл.
-// Поэтому я скопирую все остальные функции.
-
 // SETTINGS (Global Budget)
 fastify.get('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { month, year } = request.query;
-  const now = new Date();
-  const m = month ? parseInt(month) : (now.getMonth() + 1);
-  const y = year ? parseInt(year) : now.getFullYear();
+  const m = month ? parseInt(month) : (new Date().getMonth() + 1);
+  const y = year ? parseInt(year) : new Date().getFullYear();
 
   getBudgetSettings(userId).then(settings => {
     const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
@@ -428,9 +457,8 @@ fastify.get('/settings', (request, reply) => {
 fastify.post('/settings', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { budget, month, year } = request.body
-  const now = new Date();
-  const m = month ? parseInt(month) : (now.getMonth() + 1);
-  const y = year ? parseInt(year) : now.getFullYear();
+  const m = month ? parseInt(month) : (new Date().getMonth() + 1);
+  const y = year ? parseInt(year) : new Date().getFullYear();
 
   getBudgetSettings(userId).then(settings => {
     const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
@@ -444,9 +472,8 @@ fastify.get('/limits', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   getDateFilter(request.query, userId).then(filter => {
     const { month, year } = request.query;
-    const now = new Date();
-    const m = month ? parseInt(month) : (now.getMonth() + 1);
-    const y = year ? parseInt(year) : now.getFullYear();
+    const m = month ? parseInt(month) : (new Date().getMonth() + 1);
+    const y = year ? parseInt(year) : new Date().getFullYear();
     getBudgetSettings(userId).then(settings => {
       const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
       const targetDate = period.startDate.toISOString();
@@ -469,9 +496,8 @@ fastify.get('/limits', (request, reply) => {
 fastify.post('/limits', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { category, limit, month, year } = request.body
-  const now = new Date();
-  const m = month ? parseInt(month) : (now.getMonth() + 1);
-  const y = year ? parseInt(year) : now.getFullYear();
+  const m = month ? parseInt(month) : (new Date().getMonth() + 1);
+  const y = year ? parseInt(year) : new Date().getFullYear();
   getBudgetSettings(userId).then(settings => {
     const period = calculateBudgetPeriod(settings.budget_mode, settings.custom_period_day, m, y);
     const effectiveDate = period.startDate.toISOString();
