@@ -232,42 +232,17 @@ body:not(.dark-theme) .app-container {
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* INPUT TAB SPECIFIC */
-.input-scrollable-area {
+/* INPUT TAB SPECIFIC (UNIFIED) */
+.input-unified-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 8px 16px;
+  gap: 12px;
+  padding: 12px 16px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 20px;
-}
-
-/* Amount Display in Input Area */
-.amount-display-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: auto;
-  margin-top: 4px;
-}
-
-.amount-display-large {
-  font-size: clamp(32px, 8vw, 48px);
-  font-weight: 900;
-  color: var(--text-main);
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  line-height: 1;
-  text-shadow: 0 2px 10px var(--shadow-color);
-}
-
-.currency-large {
-  font-size: clamp(18px, 5vw, 24px);
-  color: var(--primary);
-  font-weight: 800;
+  /* Extra bottom padding so submit button clears the tab bar */
+  padding-bottom: calc(var(--tab-bar-height) + 30px);
 }
 
 /* SCROLLABLE CONTENT FOR OTHER TABS */
@@ -283,7 +258,7 @@ body:not(.dark-theme) .app-container {
   justify-content: center;
   gap: 12px;
   flex-shrink: 0;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .type-button {
@@ -466,22 +441,12 @@ body:not(.dark-theme) .app-container {
   text-align: center;
 }
 
-/* --- NUMPAD & FIXED BOTTOM --- */
-.input-fixed-bottom {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  padding-bottom: calc(var(--tab-bar-height) + 8px);
-  background: var(--bg-content);
-  transition: background-color 0.3s ease;
-  border-top: 1px solid var(--border-color);
-  box-shadow: 0 -5px 20px var(--shadow-color);
-  z-index: 20;
-}
-
+/* --- NUMPAD --- */
 .numpad-wrapper {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 8px;
 }
 
 /* COMPACT NUMPAD GRID */

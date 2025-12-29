@@ -762,103 +762,81 @@ function App() {
       <div className={`content-area ${activeTab !== 'input' ? 'stats-mode' : ''}`}>
         
         {activeTab === 'input' && (
-          <>
-            <div className="input-scrollable-area">
-              <div className="amount-display-container">
-                <motion.div className="amount-display-large">
-                  <span style={{color: transType === 'income' ? 'var(--accent-success)' : 'var(--text-main)'}}>
-                    {(() => {
-                        if (!amount) return '0';
-                        const numericPattern = /^\d+(?:\.\d+)?$/;
-                        if (numericPattern.test(amount)) {
-                          const num = parseFloat(amount);
-                          if (/^\d+\.\d{2}$/.test(amount)) return formatCurrency(num, 2);
-                          return formatCurrency(num);
-                        }
-                        return amount;
-                      })()}
-                  </span>
-                  <span className="currency-large">₽</span>
-                </motion.div>
-              </div>
-
-              <div className="transaction-type-selector">
-                <button onClick={() => toggleTransType('expense')} className={`type-button ${transType === 'expense' ? 'type-button-expense-active' : ''}`}><ArrowDownCircle size={18} /> Расход</button>
-                <button onClick={() => toggleTransType('income')} className={`type-button ${transType === 'income' ? 'type-button-income-active' : ''}`}><ArrowUpCircle size={18} /> Доход</button>
-              </div>
-
-              {(accounts.length > 0 || goals.length > 0) && (
-                <div className="account-selector-section">
-                  <div className="account-selector-scroll">
-                    {accounts.map((acc) => {
-                      const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
-                      return (
-                      <motion.button key={`acc-${acc.id}`} whileTap={{ scale: 0.95 }} onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setSelectedAccount({type: 'account', id: acc.id}); }} className={`account-button ${isSelected ? 'account-button-selected' : ''}`} style={{ borderColor: isSelected ? acc.color : undefined, backgroundColor: isSelected ? acc.color : undefined }}>{acc.name}</motion.button>
-                      );
-                    })}
-                    {goals.map((goal) => {
-                      const isSelected = selectedAccount?.type === 'goal' && selectedAccount?.id === goal.id;
-                      return (
-                      <motion.button key={`goal-${goal.id}`} whileTap={{ scale: 0.95 }} onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setSelectedAccount({type: 'goal', id: goal.id}); }} className={`account-button account-button-goal ${isSelected ? 'account-button-goal-selected' : ''}`} style={{ borderColor: isSelected ? (goal.color || '#FFB6C1') : undefined, backgroundColor: isSelected ? (goal.color || '#FFB6C1') : undefined }}>💰 {goal.name}</motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="categories-wrapper">
-                <div className="categories-scroll">
-                  {transType === 'expense' 
-                    ? displayedStandardCategories.map((cat) => (
-                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
-                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
-                          <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
-                        </motion.button>
-                      ))
-                    : displayedStandardCategories.map((cat) => (
-                        <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
-                          <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
-                          <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
-                        </motion.button>
-                      ))
-                  }
-                  {displayedCustomCategories.map((cat) => (
-                    <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
-                      <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : getIconByName(cat.icon || 'Package', 20)}</div>
-                      <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
+          <div className="input-unified-container">
+            <div className="transaction-type-selector">
+              <button onClick={() => toggleTransType('expense')} className={`type-button ${transType === 'expense' ? 'type-button-expense-active' : ''}`}><ArrowDownCircle size={18} /> Расход</button>
+              <button onClick={() => toggleTransType('income')} className={`type-button ${transType === 'income' ? 'type-button-income-active' : ''}`}><ArrowUpCircle size={18} /> Доход</button>
             </div>
-            
-            <div className="input-fixed-bottom">
-              <NumPad 
-                onNumberClick={handleNumberClick} 
-                onDelete={handleDelete} 
-                extraContent={
-                  <>
-                    <TransactionExtras 
-                      note={note} setNote={setNote}
-                      tags={tags} setTags={setTags}
-                      photos={photos} setPhotos={setPhotos}
-                      showPhotosPreview={false}
-                      pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
-                      pendingPreviews={pendingPreviews} setPendingPreviews={setPendingPreviews}
-                      existingTags={allTags}
-                    />
-                    <motion.button
-                      className="submit-btn-wide"
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleConfirm}
-                    >
-                      {isExpression ? "=" : "Внести💵"} 
-                    </motion.button>
-                  </>
+
+            {(accounts.length > 0 || goals.length > 0) && (
+              <div className="account-selector-section">
+                <div className="account-selector-scroll">
+                  {accounts.map((acc) => {
+                    const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
+                    return (
+                    <motion.button key={`acc-${acc.id}`} whileTap={{ scale: 0.95 }} onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setSelectedAccount({type: 'account', id: acc.id}); }} className={`account-button ${isSelected ? 'account-button-selected' : ''}`} style={{ borderColor: isSelected ? acc.color : undefined, backgroundColor: isSelected ? acc.color : undefined }}>{acc.name}</motion.button>
+                    );
+                  })}
+                  {goals.map((goal) => {
+                    const isSelected = selectedAccount?.type === 'goal' && selectedAccount?.id === goal.id;
+                    return (
+                    <motion.button key={`goal-${goal.id}`} whileTap={{ scale: 0.95 }} onClick={() => { WebApp.HapticFeedback.impactOccurred('light'); setSelectedAccount({type: 'goal', id: goal.id}); }} className={`account-button account-button-goal ${isSelected ? 'account-button-goal-selected' : ''}`} style={{ borderColor: isSelected ? (goal.color || '#FFB6C1') : undefined, backgroundColor: isSelected ? (goal.color || '#FFB6C1') : undefined }}>💰 {goal.name}</motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="categories-wrapper">
+              <div className="categories-scroll">
+                {transType === 'expense'
+                  ? displayedStandardCategories.map((cat) => (
+                      <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
+                        <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
+                        <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
+                      </motion.button>
+                    ))
+                  : displayedStandardCategories.map((cat) => (
+                      <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
+                        <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
+                        <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
+                      </motion.button>
+                    ))
                 }
-              />
+                {displayedCustomCategories.map((cat) => (
+                  <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
+                    <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : getIconByName(cat.icon || 'Package', 20)}</div>
+                    <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          </>
+
+            <NumPad
+              onNumberClick={handleNumberClick}
+              onDelete={handleDelete}
+              extraContent={
+                <>
+                  <TransactionExtras
+                    note={note} setNote={setNote}
+                    tags={tags} setTags={setTags}
+                    photos={photos} setPhotos={setPhotos}
+                    showPhotosPreview={false}
+                    pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
+                    pendingPreviews={pendingPreviews} setPendingPreviews={setPendingPreviews}
+                    existingTags={allTags}
+                  />
+                  <motion.button
+                    className="submit-btn-wide"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleConfirm}
+                  >
+                    {isExpression ? "=" : "Внести💵"}
+                  </motion.button>
+                </>
+              }
+            />
+          </div>
         )}
 
         {activeTab === 'stats' && (

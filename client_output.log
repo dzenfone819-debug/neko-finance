@@ -9,3 +9,5 @@
   ➜  Network: use --host to expose
 8:03:42 PM [vite] (client) hmr update /src/App.tsx
 8:08:35 PM [vite] (client) hmr update /src/App.css
+7:32:55 AM [vite] (client) hmr update /src/App.tsx
+7:33:11 AM [vite] (client) hmr update /src/App.css
