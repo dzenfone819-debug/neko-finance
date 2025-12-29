@@ -64,9 +64,9 @@ export const BudgetView: React.FC<Props> = ({
       <div style={{ marginBottom: 15 }}>
         <div onClick={onClick} style={{ cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="budget-left" style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
               {icon && <div style={{ color: 'var(--text-main)' }}>{icon}</div>}
-              <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{title}</span>
+              <span className="budget-title" style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{title}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ color: isOver ? 'var(--accent-danger)' : 'var(--text-main)' }}>

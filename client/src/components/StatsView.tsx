@@ -391,13 +391,14 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 0',
-                    borderBottom: '1px solid var(--border-color)'
+                    borderBottom: '1px solid var(--border-color)',
+                    marginBottom: 15
                   }}
                 >
-                  <div style={{display: 'flex', alignItems: 'center', gap: 10, flex: 1}}>
-                    <div style={{width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0}} />
-                    <span style={{fontWeight: 600, color: 'var(--text-main)', fontSize: 14}}>{getDisplayCategoryName(entry.name)}</span>
-                  </div>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0}}>
+                      <div style={{width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0}} />
+                      <span className="stats-category-name" style={{fontWeight: 600, color: 'var(--text-main)', fontSize: 14}}>{getDisplayCategoryName(entry.name)}</span>
+                    </div>
                   <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                     <span style={{
                       fontWeight: 700,

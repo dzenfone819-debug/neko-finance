@@ -681,14 +681,14 @@ function App() {
                 onClick={(e) => e.stopPropagation()}
                 style={{ background: 'var(--bg-card)', borderRadius: 24, padding: 30, maxWidth: 320, width: '100%', boxShadow: '0 20px 60px var(--shadow-color)' }}
             >
-                <input type="date" value={transactionDate.toISOString().split('T')[0]} onChange={(e) => setTransactionDate(new Date(e.target.value + 'T12:00:00'))} max={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: 16, borderRadius: 16, border: '2px solid var(--border-color)', fontSize: 16, background: 'var(--bg-input)' }} />
+                <input type="date" value={transactionDate.toISOString().split('T')[0]} onChange={(e) => setTransactionDate(new Date(e.target.value + 'T12:00:00'))} max={new Date().toISOString().split('T')[0]} style={{ width: '88%', padding: 16, borderRadius: 16, border: '2px solid var(--border-color)', fontSize: 16, background: 'var(--bg-input)' }} />
                 <button onClick={() => setShowDatePicker(false)} style={{ width: '100%', marginTop: 20, padding: 14, background: 'var(--primary)', border: 'none', borderRadius: 14, color: 'white', fontWeight: 'bold' }}>Готово</button>
             </motion.div>
         </div>
       )}
       <ModalInput isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleModalSave} title={editTarget?.type === 'total' ? 'Общий бюджет' : 'Лимит категории'} initialValue={editTarget?.type === 'total' ? budgetLimit : (editTarget?.id ? catLimits[editTarget.id] || 0 : 0)} />
 
-      <div className="header-section">
+      <div className="header-section" style={{ marginBottom: activeTab !== 'input' ? 10 : undefined }}>
         {/* ... (Header logic) ... */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, width: '100%', paddingLeft: 15, paddingRight: 15, boxSizing: 'border-box' }}>
           <div style={{ marginLeft: 0 }}>
@@ -846,7 +846,9 @@ function App() {
         {activeTab === 'stats' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
             <StatsView data={statsData} total={totalSpent} transactions={transactions} budgetLimit={budgetLimit} customCategories={customCategories} periodType={periodType} periodStartDay={periodStartDay} currentMonth={currentDate} />
+            {/* Divider removed per request
             <div style={{ height: 1, background: 'var(--border-color)', margin: '20px 0' }} />
+            */}
             <TransactionList 
               transactions={filteredTransactions} 
               onDelete={(id) => openConfirm('Удалить транзакцию?', async () => { await handleDeleteTransaction(id); })}

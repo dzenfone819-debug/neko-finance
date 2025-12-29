@@ -439,6 +439,36 @@ body:not(.dark-theme) .app-container {
   text-align: center;
 }
 
+/* Truncate long category names in transaction items */
+.transaction-category { min-width: 0; }
+.transaction-category .category-name {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Truncate long titles in budget view bars */
+.budget-left { min-width: 0; }
+.budget-title {
+  display: inline-block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Truncate names in the stats / % list */
+.stats-category-name {
+  display: inline-block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* --- NUMPAD & FIXED BOTTOM --- */
 .input-bottom {
   flex-shrink: 0;
@@ -1006,6 +1036,35 @@ body:not(.dark-theme) .app-container {
   flex-direction: column;
   gap: 12px;
   padding-bottom: 40px;
+}
+
+/* Ensure modal content positioned for absolute close button */
+.modal-content { position: relative; }
+
+/* Position close button so it's always visible on small screens */
+.modal-close { position: absolute; top: 12px; right: 12px; z-index: 30; }
+
+/* Style tweaks for detail modal (sheet) to fit narrow mobile widths */
+.modal-content.detail-modal {
+  align-self: flex-end;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 16px 16px 0 0;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+
+@media (max-width: 420px) {
+  .modal-content {
+    padding: 12px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-content.detail-modal {
+    max-height: calc(100dvh - 56px);
+  }
+  .detail-photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
 }
 
 .modal-input, .modal-select {

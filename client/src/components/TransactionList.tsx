@@ -160,8 +160,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   </div>
                   
                   <div className="transaction-details" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <div className="transaction-category" style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ lineHeight: 1 }}>{catInfo.name}</span>
+                    <div className="transaction-category" style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span className="category-name" style={{ lineHeight: 1 }}>{catInfo.name}</span>
                       {/* Note icon (minimalist) */}
                       {t.note && (
                         <StickyNote size={14} style={{ opacity: 0.65, color: 'var(--text-secondary)' }} />
