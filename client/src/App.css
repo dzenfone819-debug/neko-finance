@@ -123,9 +123,9 @@ body:not(.dark-theme) .app-container {
 /* --- HEADER --- */
 .header-section {
   /* base sizes that will be multiplied by --ui-scale so they affect layout */
-  --header-min: clamp(56px, 8vh, 80px);
-  --header-pad-v: clamp(6px, 2vh, 8px);
-  --header-pad-h: clamp(12px, 4vw, 16px);
+  --header-min: clamp(50px, 7vh, 70px);
+  --header-pad-v: clamp(4px, 1.5vh, 6px);
+  --header-pad-h: clamp(10px, 3vw, 14px);
   min-height: calc(var(--header-min) * var(--ui-scale));
   display: flex;
   flex-direction: column;
@@ -133,7 +133,7 @@ body:not(.dark-theme) .app-container {
   justify-content: center;
   position: relative;
   /* allow header to shrink so content moves up when scaled */
-  flex-shrink: 1;
+  flex-shrink: 0;
   padding: calc(var(--header-pad-v) * var(--ui-scale)) calc(var(--header-pad-h) * var(--ui-scale));
   background: transparent;
   transition: padding 160ms ease, min-height 160ms ease;
@@ -143,10 +143,12 @@ body:not(.dark-theme) .app-container {
   line-height: 1;
   margin-bottom: 0;
   transition: transform 0.2s;
+  /* Make avatar slightly smaller on mobile to save space */
+  transform: scale(0.9);
 }
 
 .amount-display {
-  font-size: clamp(18px, 4.5vw, 24px);
+  font-size: clamp(18px, 11vw, 24px);
   font-weight: 800;
   color: var(--text-main);
   display: flex;
@@ -161,32 +163,8 @@ body:not(.dark-theme) .app-container {
 }
 
 /* Vertical compression: scale main content to fit smaller viewport heights */
-.app-container {
-  --ui-scale: 1;
-}
-
-@media (max-height: 820px) {
-  .app-container { --ui-scale: 0.96; }
-}
-@media (max-height: 760px) {
-  .app-container { --ui-scale: 0.92; }
-}
-@media (max-height: 700px) {
-  .app-container { --ui-scale: 0.88; }
-}
-@media (max-height: 640px) {
-  .app-container { --ui-scale: 0.84; }
-}
-@media (max-height: 580px) {
-  .app-container { --ui-scale: 0.78; }
-}
 
 /* Apply scale to the content area only so header can compress via flex-shrink/clamp rules */
-.content-area {
-  transform-origin: top center;
-  transition: transform 140ms ease, padding 140ms ease;
-  transform: scale(var(--ui-scale));
-}
 
 /* Slightly reduce internal paddings so scaled content fits better */
 .input-tab-content {
@@ -196,26 +174,14 @@ body:not(.dark-theme) .app-container {
 
 /* Make buttons and type selector more height-friendly when scaled */
 .type-button {
-  padding: calc(6px * var(--ui-scale)) calc(18px * var(--ui-scale));
-  font-size: calc(14px * var(--ui-scale));
-}
-
-/* Ensure amount display scales visually */
-.amount-display {
-  --amount-size: clamp(18px, 4.5vw, 24px);
-  font-size: calc(var(--amount-size) * var(--ui-scale));
-  font-weight: 800;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  line-height: 1;
+  padding: calc(4px * var(--ui-scale)) calc(14px * var(--ui-scale));
+  font-size: calc(13px * var(--ui-scale));
 }
 
 /* Scale avatar and header elements with ui-scale for consistent compression */
 .header-section .neko-avatar {
   transform-origin: center;
-  transform: scale(var(--ui-scale));
+  transform: scale(calc(0.9 * var(--ui-scale)));
   transition: transform 160ms ease;
 }
 
@@ -240,14 +206,42 @@ body:not(.dark-theme) .app-container {
 }
 
 /* INPUT TAB SPECIFIC */
-.input-tab-content {
+.input-scrollable-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
-  padding: 8px 14px 6px 14px;
+  gap: 7px;
+  padding: 8px 16px;
   overflow-y: auto;
   overflow-x: hidden;
+  /* extra bottom padding to accommodate the numpad inside the scrollable area */
+  padding-bottom: calc(var(--tab-bar-height) + 220px);
+}
+
+/* Amount Display in Input Area */
+.amount-display-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: auto;
+  margin-top: 4px;
+}
+
+.amount-display-large {
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 900;
+  color: var(--text-main);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+  text-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.currency-large {
+  font-size: clamp(18px, 5vw, 24px);
+  color: var(--primary);
+  font-weight: 800;
 }
 
 /* SCROLLABLE CONTENT FOR OTHER TABS */
@@ -261,36 +255,37 @@ body:not(.dark-theme) .app-container {
 .transaction-type-selector {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   flex-shrink: 0;
+  margin-bottom: 4px;
 }
 
 .type-button {
   background: var(--bg-input);
   border: none;
-  border-radius: 18px;
-  padding: 6px 18px;
+  border-radius: 16px;
+  padding: 6px 16px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   color: var(--text-secondary);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px var(--shadow-color);
+  box-shadow: 0 1px 3px var(--shadow-color);
 }
 
 .type-button-expense-active {
   background: var(--accent-danger);
   color: white;
-  box-shadow: 0 4px 8px rgba(255, 173, 173, 0.3);
+  box-shadow: 0 3px 6px rgba(255, 173, 173, 0.3);
 }
 
 .type-button-income-active {
   background: var(--accent-success);
   color: white;
-  box-shadow: 0 4px 8px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 3px 6px rgba(74, 222, 128, 0.3);
 }
 
 /* --- ACCOUNT SELECTOR --- */
@@ -299,19 +294,19 @@ body:not(.dark-theme) .app-container {
 }
 
 .section-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-main);
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   padding-left: 2px;
+  opacity: 0.7;
 }
 
 .account-selector-scroll {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -321,18 +316,18 @@ body:not(.dark-theme) .app-container {
 }
 
 .account-button {
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 10px;
   border: 1px solid var(--primary);
   background: var(--bg-input);
   color: var(--text-main);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
   transition: all 0.2s ease;
-  min-width: 75px;
+  min-width: 60px;
   text-align: center;
   outline: none;
 }
@@ -355,17 +350,17 @@ body:not(.dark-theme) .app-container {
 }
 
 .account-selector-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-main);
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   padding: 0 2px;
 }
 
 .account-scroll {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   overflow-x: auto;
   padding: 4px 2px;
   margin: 0 -2px;
@@ -378,17 +373,17 @@ body:not(.dark-theme) .app-container {
 }
 
 .account-btn {
-  padding: 12px 18px;
+  padding: 10px 16px;
   border-radius: 12px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  min-width: 90px;
+  min-width: 80px;
   text-align: center;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  box-shadow: 0 2px 6px var(--shadow-color);
 }
 
 /* --- CATEGORIES --- */
@@ -398,7 +393,7 @@ body:not(.dark-theme) .app-container {
 
 .categories-scroll { 
   display: flex; 
-  gap: 10px; 
+  gap: 8px; 
   overflow-x: auto; 
   padding: 4px 2px;
   margin: 0 -2px;
@@ -416,8 +411,8 @@ body:not(.dark-theme) .app-container {
   border: 2px solid transparent; 
   border-radius: 12px; 
   padding: 6px 0; 
-  width: 68px; 
-  min-width: 68px; 
+  width: 64px; 
+  min-width: 64px; 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
@@ -428,8 +423,8 @@ body:not(.dark-theme) .app-container {
 
 .category-icon { 
   color: var(--text-main); 
-  margin-bottom: 3px; 
-  transform: scale(0.85); 
+  margin-bottom: 2px; 
+  transform: scale(0.8); 
 }
 
 .category-label { 
@@ -444,36 +439,40 @@ body:not(.dark-theme) .app-container {
   text-align: center;
 }
 
-/* --- NUMPAD --- */
-.numpad-container {
+/* --- NUMPAD & FIXED BOTTOM --- */
+.input-bottom {
   flex-shrink: 0;
-  padding: 6px 14px;
-  padding-bottom: calc(var(--tab-bar-height) + 8px);
+  padding: 20px 16px;
+  padding-bottom: calc(var(--tab-bar-height) - 45px);
   background: var(--bg-content);
   transition: background-color 0.3s ease;
+  box-shadow: 0 -5px 20px var(--shadow-color);
+  z-index: 20;
+  border-radius: 20px;
 }
 
 .numpad-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
+/* COMPACT NUMPAD GRID */
 .numpad-grid { 
   display: grid; 
   grid-template-columns: repeat(4, 1fr); 
-  grid-template-rows: repeat(4, minmax(45px, 1fr));
-  gap: 6px;
-  max-height: 250px;
+  grid-template-rows: repeat(4, minmax(36px, 1fr));
+  gap: 4px;
+  max-height: 200px; /* Reduced max height */
 }
 
 .numpad-btn { 
   background: var(--bg-input); 
   border: none; 
-  font-size: 20px; 
+  font-size: 18px; 
   font-weight: 700; 
   color: var(--text-main); 
-  border-radius: 12px; 
+  border-radius: 10px; 
   cursor: pointer; 
   display: flex; 
   justify-content: center; 
@@ -485,7 +484,7 @@ body:not(.dark-theme) .app-container {
 .operator-btn {
   background: var(--bg-input);
   color: var(--primary);
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .operator-btn:active {
@@ -512,14 +511,14 @@ body:not(.dark-theme) .app-container {
   width: 100%;
   background: linear-gradient(135deg, var(--primary) 0%, #E891C8 100%);
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: 0 4px 16px rgba(210, 145, 188, 0.4);
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 50px;
+  min-height: 42px;
   margin-top: 0;
 }
 .dark-theme .submit-btn-wide {
@@ -535,8 +534,8 @@ body:not(.dark-theme) .app-container {
 .transaction-extras {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 5px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .extras-toolbar {
@@ -553,7 +552,7 @@ body:not(.dark-theme) .app-container {
   align-items: center;
   gap: 4px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   padding: 4px 8px;

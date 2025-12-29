@@ -690,7 +690,7 @@ function App() {
 
       <div className="header-section">
         {/* ... (Header logic) ... */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, width: '100%', paddingLeft: 15, paddingRight: 15, boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, width: '100%', paddingLeft: 15, paddingRight: 15, boxSizing: 'border-box' }}>
           <div style={{ marginLeft: 0 }}>
             <MonthSelector currentDate={currentDate} onChange={handleDateChange} />
           </div>
@@ -699,7 +699,7 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 15, marginBottom: 15, width: '100%', paddingLeft: 15, paddingRight: 15, boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 15, marginBottom: 10, width: '100%', paddingLeft: 15, paddingRight: 15, boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <motion.div animate={isError ? { rotate: [0, -20, 20, 0] } : isHappy ? { scale: 1.1, y: [0, -10, 0] } : { scale: 1, y: 0 }}>
               <NekoAvatar mood={getNekoMood()} theme={theme} />
@@ -745,23 +745,26 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-          <div style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: 12, padding: '5px 35px', textAlign: 'center', boxShadow: '0 2px 8px var(--shadow-color)' }}>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.7, marginBottom: 3 }}>РАСХОД</div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text-main)' }}>{totalSpent.toLocaleString()}</div>
+        {activeTab !== 'input' && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: 12, padding: '5px 35px', textAlign: 'center', boxShadow: '0 2px 8px var(--shadow-color)' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.7, marginBottom: 3 }}>РАСХОД</div>
+              <div style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text-main)' }}>{totalSpent.toLocaleString()}</div>
+            </div>
+            <div style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: 12, padding: '5px 35px', textAlign: 'center', boxShadow: '0 2px 8px var(--shadow-color)' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.7, marginBottom: 3 }}>ДОХОД</div>
+              <div style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text-main)' }}>{totalIncome.toLocaleString()}</div>
+            </div>
           </div>
-          <div style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: 12, padding: '5px 35px', textAlign: 'center', boxShadow: '0 2px 8px var(--shadow-color)' }}>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.7, marginBottom: 3 }}>ДОХОД</div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text-main)' }}>{totalIncome.toLocaleString()}</div>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className={`content-area ${activeTab !== 'input' ? 'stats-mode' : ''}`}>
         
         {activeTab === 'input' && (
           <>
-            <div className="input-tab-content">
+            <div className="input-scrollable-area">
+
               <div className="transaction-type-selector">
                 <button onClick={() => toggleTransType('expense')} className={`type-button ${transType === 'expense' ? 'type-button-expense-active' : ''}`}><ArrowDownCircle size={18} /> Расход</button>
                 <button onClick={() => toggleTransType('income')} className={`type-button ${transType === 'income' ? 'type-button-income-active' : ''}`}><ArrowUpCircle size={18} /> Доход</button>
@@ -769,7 +772,6 @@ function App() {
 
               {(accounts.length > 0 || goals.length > 0) && (
                 <div className="account-selector-section">
-                  <label className="section-label">{transType === 'expense' ? 'Со счета/копилки:' : 'На счет/копилку:'}</label>
                   <div className="account-selector-scroll">
                     {accounts.map((acc) => {
                       const isSelected = selectedAccount?.type === 'account' && selectedAccount?.id === acc.id;
@@ -790,7 +792,7 @@ function App() {
               <div className="categories-wrapper">
                 <div className="categories-scroll">
                   {transType === 'expense' 
-                    ? displayedStandardCategories.filter(cat => catLimits[cat.id] !== undefined && catLimits[cat.id] >= 0).map((cat) => (
+                    ? displayedStandardCategories.map((cat) => (
                         <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => { setSelectedCategory(cat.id); WebApp.HapticFeedback.selectionChanged(); }} className="category-btn" style={{ background: selectedCategory === cat.id ? cat.color : 'var(--bg-input)', boxShadow: selectedCategory === cat.id ? '0 2px 8px var(--shadow-color)' : 'none', filter: selectedCategory === cat.id ? 'var(--category-filter)' : 'none' }}>
                           <div className="category-icon" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.icon && (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon)}</div>
                           <span className="category-label" style={{color: selectedCategory === cat.id ? (theme === 'dark' ? '#FFF' : '#6B4C75') : 'var(--text-main)'}}>{cat.name}</span>
@@ -811,33 +813,32 @@ function App() {
                   ))}
                 </div>
               </div>
-            </div>
-            
-            <div className="numpad-container">
-              <NumPad 
-                onNumberClick={handleNumberClick} 
-                onDelete={handleDelete} 
-                extraContent={
-                  <>
-                    <TransactionExtras 
-                      note={note} setNote={setNote}
-                      tags={tags} setTags={setTags}
-                      photos={photos} setPhotos={setPhotos}
-                      showPhotosPreview={false}
-                      pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
-                      pendingPreviews={pendingPreviews} setPendingPreviews={setPendingPreviews}
-                      existingTags={allTags}
-                    />
-                    <motion.button
-                      className="submit-btn-wide"
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleConfirm}
-                    >
-                      {isExpression ? "=" : "Внести💵"} 
-                    </motion.button>
-                  </>
-                }
-              />
+              <div className="input-bottom">
+                <NumPad
+                  onNumberClick={handleNumberClick}
+                  onDelete={handleDelete}
+                  extraContent={
+                    <>
+                      <TransactionExtras
+                        note={note} setNote={setNote}
+                        tags={tags} setTags={setTags}
+                        photos={photos} setPhotos={setPhotos}
+                        showPhotosPreview={false}
+                        pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
+                        pendingPreviews={pendingPreviews} setPendingPreviews={setPendingPreviews}
+                        existingTags={allTags}
+                      />
+                      <motion.button
+                        className="submit-btn-wide"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleConfirm}
+                      >
+                        {isExpression ? "=" : "Внести💵"}
+                      </motion.button>
+                    </>
+                  }
+                />
+              </div>
             </div>
           </>
         )}
