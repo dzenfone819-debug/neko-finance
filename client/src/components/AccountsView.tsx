@@ -255,7 +255,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
       </div>
 
       {/* ТАБЫ */}
-      <div style={{ display: 'flex', gap: 10, padding: '10px 15px', background: 'var(--bg-input)', borderBottom: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', gap: 10, padding: '10px 15px', background: 'var(--bg-input)', borderRadius: 10, borderBottom: '1px solid var(--border-color)' }}>
         <button
           onClick={() => setActiveTab('accounts')}
           style={{

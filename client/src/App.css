@@ -372,6 +372,18 @@ body:not(.dark-theme) .app-container {
   display: none;
 }
 
+/* Fallback for icon buttons: show emoji if SVG is empty/not rendered */
+.photo-remove svg:empty + .icon-fallback,
+.photo-edit svg:empty + .icon-fallback {
+  display: inline-block !important;
+  font-size: 12px;
+  line-height: 1;
+}
+.photo-remove .icon-fallback,
+.photo-edit .icon-fallback {
+  display: none;
+}
+
 .account-btn {
   padding: 10px 16px;
   border-radius: 12px;

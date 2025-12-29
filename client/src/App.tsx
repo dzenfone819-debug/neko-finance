@@ -898,10 +898,12 @@ function App() {
       {/* DETAIL MODAL */}
       <TransactionDetailModal
         isOpen={!!selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
+        onClose={() => { setSelectedTransaction(null); if (userId) loadData(userId, currentDate); }}
         transaction={selectedTransaction}
         onDelete={(id) => openConfirm('Удалить транзакцию?', async () => { await handleDeleteTransaction(id); })}
         onEdit={handleEditTransaction}
+        userId={userId}
+        existingTags={allTags}
         accountName={
             selectedTransaction?.account_id ? 
             (accounts.find(a => a.id === selectedTransaction.account_id) || goals.find(g => g.id === selectedTransaction.account_id))?.name 

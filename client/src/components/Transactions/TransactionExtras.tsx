@@ -235,7 +235,7 @@ export const TransactionExtras: React.FC<TransactionExtrasProps> = ({
           )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-            <button className="btn" onClick={() => setActiveModal('none')}>Готово</button>
+            <button className="btn" onClick={() => { if (tagInput.trim()) addTag(tagInput); setActiveModal('none'); }}>Готово</button>
           </div>
         </div>
       </Modal>
