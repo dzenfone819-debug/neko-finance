@@ -482,7 +482,6 @@ function App() {
       setPendingPreviews([]);
 
       loadData(userId, currentDate);
-      if (allTransactions.length > 0) loadAllTransactions(userId);
       setTimeout(() => setIsHappy(false), 3000);
     } catch (e) { 
       console.error(e);
