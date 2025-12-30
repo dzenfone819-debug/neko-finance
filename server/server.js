@@ -362,15 +362,31 @@ fastify.get('/transactions', (request, reply) => {
   if (!userId) return reply.code(400).send({ error: 'User ID is required' })
 
   getDateFilter(request.query, userId).then(filter => {
+    let { limit, offset } = request.query;
+    
+    // Default limit 30 if not specified
+    // If limit is '0', 'all', or '-1', then no limit
+    let limitSql = '';
+    const params = [userId, ...filter.params];
+
+    if (limit === '0' || limit === 'all' || limit === '-1') {
+       limitSql = '';
+    } else {
+       const lim = limit ? parseInt(limit) : 30;
+       const off = offset ? parseInt(offset) : 0;
+       limitSql = `LIMIT ? OFFSET ?`;
+       params.push(lim, off);
+    }
+
     // Выбираем новые поля
     const sql = `
       SELECT id, amount, category, date, type, account_id, note, tags, photo_urls
       FROM transactions 
       WHERE user_id = ? ${filter.sql}
       ORDER BY date DESC, id DESC 
-      LIMIT 100 
+      ${limitSql}
     `
-    db.all(sql, [userId, ...filter.params], (err, rows) => {
+    db.all(sql, params, (err, rows) => {
       if (err) return reply.code(500).send({ error: err.message })
       return reply.send(rows)
     })

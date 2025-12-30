@@ -25,8 +25,14 @@ export const fetchStats = async (userId: number, month?: number, year?: number) 
   return await response.json();
 };
 
-export const fetchTransactions = async (userId: number, month?: number, year?: number) => {
-  const query = getQuery(month, year);
+export const fetchTransactions = async (userId: number, month?: number, year?: number, limit?: number, offset?: number) => {
+  let query = getQuery(month, year);
+  if (limit !== undefined) {
+    query += query ? `&limit=${limit}` : `?limit=${limit}`;
+  }
+  if (offset !== undefined) {
+    query += query ? `&offset=${offset}` : `?offset=${offset}`;
+  }
   const response = await fetch(`${API_URL}/transactions${query}`, { 
     headers: { 'x-user-id': userId.toString() } 
   });

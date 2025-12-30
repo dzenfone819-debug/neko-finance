@@ -12,6 +12,8 @@ interface TransactionListProps {
   hasActiveFilters?: boolean;
   customCategories?: any[];
   accounts?: any[];
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({ 
@@ -20,7 +22,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   onTransactionClick,
   hasActiveFilters,
   customCategories = [],
-  accounts = []
+  accounts = [],
+  onLoadMore,
+  hasMore
 }) => {
 
   if (transactions.length === 0) {
@@ -233,6 +237,27 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           })}
         </div>
       ))}
+
+      {hasMore && onLoadMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+            <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onLoadMore}
+                style={{
+                    padding: '10px 20px',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 12,
+                    color: 'var(--text-main)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px var(--shadow-color)'
+                }}
+            >
+                Загрузить еще
+            </motion.button>
+        </div>
+      )}
     </div>
   );
 }
