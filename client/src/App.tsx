@@ -99,8 +99,13 @@ function App() {
   const [budgetLimit, setBudgetLimit] = useState(0)
   const [catLimits, setCatLimits] = useState<Record<string, number>>({})
   const [statsData, setStatsData] = useState<{name: string, value: number}[]>([])
+  // 'transactions' now holds the visible paginated list
   const [transactions, setTransactions] = useState<any[]>([])
+  // 'allTransactions' holds the full history for stats (limit=0)
   const [allTransactions, setAllTransactions] = useState<any[]>([])
+  const [transactionOffset, setTransactionOffset] = useState(0)
+  const [hasMoreTransactions, setHasMoreTransactions] = useState(false)
+
   const [isHappy, setIsHappy] = useState(false)
   const [isError, setIsError] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
@@ -225,10 +230,15 @@ function App() {
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
 
-      const [balData, stats, hist, bud, lims, accs, gls, customCats] = await Promise.all([
+      // Parallel fetch of base data
+      // For transactions:
+      // 1. Fetch ALL transactions (limit=0) for Analytics & StatsView
+      // 2. Fetch first page (limit=30) for TransactionList
+      const [balData, stats, allHist, firstPage, bud, lims, accs, gls, customCats] = await Promise.all([
         api.fetchBalance(uid, month, year),
         api.fetchStats(uid, month, year),
-        api.fetchTransactions(uid, month, year),
+        api.fetchTransactions(uid, month, year, 0), // Full history
+        api.fetchTransactions(uid, month, year, 30, 0), // First 30
         api.fetchBudget(uid, month, year),
         api.fetchCategoryLimits(uid, month, year),
         api.fetchAccounts(uid),
@@ -240,7 +250,12 @@ function App() {
       setTotalIncome(balData.total_income || 0);
       setCurrentBalance(balData.balance);
       setStatsData(stats);
-      setTransactions(hist);
+
+      setAllTransactions(allHist);
+      setTransactions(firstPage);
+      setTransactionOffset(30);
+      setHasMoreTransactions(firstPage.length === 30); // Simple heuristic
+
       setBudgetLimit(bud);
       setCatLimits(lims);
       setAccounts(accs);
@@ -270,8 +285,24 @@ function App() {
       if (!selectedAccount && accs.length > 0) {
         setSelectedAccount({type: 'account', id: accs[0].id});
       }
-      syncToCloud(hist, accs, gls, bud, customCats, lims);
+      syncToCloud(allHist, accs, gls, bud, customCats, lims);
     } catch (e) { console.error(e) }
+  }
+
+  const loadMoreTransactions = async () => {
+    if (!userId || !hasMoreTransactions) return;
+    try {
+        const month = currentDate.getMonth() + 1;
+        const year = currentDate.getFullYear();
+        const nextBatch = await api.fetchTransactions(userId, month, year, 30, transactionOffset);
+        if (nextBatch.length > 0) {
+            setTransactions(prev => [...prev, ...nextBatch]);
+            setTransactionOffset(prev => prev + 30);
+            if (nextBatch.length < 30) setHasMoreTransactions(false);
+        } else {
+            setHasMoreTransactions(false);
+        }
+    } catch(e) { console.error(e); }
   }
 
   const setCategoryOverride = (categoryId: string, data: any) => {
@@ -334,6 +365,30 @@ function App() {
     return () => { cancelled = true; clearInterval(id); }
   }, [userId]);
 
+  // Polling for real-time balance updates (Sync between users)
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    const checkBalance = async () => {
+        try {
+            const month = currentDate.getMonth() + 1;
+            const year = currentDate.getFullYear();
+            const balData = await api.fetchBalance(userId, month, year);
+            if (cancelled) return;
+
+            // If total expense/income changed, reload data
+            if (Math.abs(balData.total_expense - totalSpent) > 0.01 || Math.abs((balData.total_income || 0) - totalIncome) > 0.01) {
+                console.log('🔄 Balance changed, reloading data...');
+                loadData(userId, currentDate);
+            }
+        } catch (e) { console.error('Error polling balance', e); }
+    };
+
+    const intervalId = setInterval(checkBalance, 10000); // Check every 10 seconds
+    return () => { cancelled = true; clearInterval(intervalId); }
+  }, [userId, currentDate, totalSpent, totalIncome]); // Depend on current state to compare
+
   const handleSaveBudgetPeriodSettings = async (newPeriodType: 'calendar_month' | 'custom_period', newStartDay: number) => {
     if (!userId) return;
     try {
@@ -350,18 +405,8 @@ function App() {
     if (userId) loadData(userId, newDate);
   }
 
-  const loadAllTransactions = async (uid: number) => {
-    try {
-      const allTrans = await api.fetchTransactions(uid);
-      setAllTransactions(allTrans);
-    } catch (e) { console.error(e); }
-  }
-
-  useEffect(() => {
-    if ((activeTab === 'analytics' || activeTab === 'input') && userId && allTransactions.length === 0) {
-      loadAllTransactions(userId);
-    }
-  }, [activeTab, userId])
+  // loadAllTransactions is now integrated into loadData, but we keep this empty or remove calls to it
+  // Removing the useEffect that called loadAllTransactions since loadData now fetches everything
 
   const toggleTransType = (type: 'expense' | 'income') => {
     WebApp.HapticFeedback.selectionChanged();
@@ -843,7 +888,8 @@ function App() {
 
         {activeTab === 'stats' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
-            <StatsView data={statsData} total={totalSpent} transactions={transactions} budgetLimit={budgetLimit} customCategories={customCategories} periodType={periodType} periodStartDay={periodStartDay} currentMonth={currentDate} />
+            {/* StatsView now uses allTransactions for correct charts */}
+            <StatsView data={statsData} total={totalSpent} transactions={allTransactions} budgetLimit={budgetLimit} customCategories={customCategories} periodType={periodType} periodStartDay={periodStartDay} currentMonth={currentDate} />
             {/* Divider removed per request
             <div style={{ height: 1, background: 'var(--border-color)', margin: '20px 0' }} />
             */}
@@ -859,6 +905,8 @@ function App() {
               hasActiveFilters={hasActiveFilters}
               customCategories={customCategories}
               accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
+              onLoadMore={loadMoreTransactions}
+              hasMore={hasMoreTransactions}
             />
             <div style={{ height: 80 }} /> 
           </div>
