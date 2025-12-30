@@ -33,7 +33,7 @@ export const NumPad: React.FC<NumPadProps> = ({ onNumberClick, onDelete, extraCo
 
         <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('.')}>.</motion.button>
         <motion.button className="numpad-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('0')}>0</motion.button>
-        <motion.button className="numpad-btn delete-btn" whileTap={{ scale: 0.9 }} onClick={onDelete}><Delete size={24} /></motion.button>
+        <motion.button className="numpad-btn delete-btn" whileTap={{ scale: 0.9 }} onClick={onDelete} aria-label="Удалить"><Delete size={24} /></motion.button>
         <motion.button className="numpad-btn operator-btn" whileTap={{ scale: 0.9 }} onClick={() => onNumberClick('+')}>+</motion.button>
       </div>
       

@@ -146,7 +146,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                  <div style={{ fontSize: 12, opacity: 0.7 }}>{accountName || 'Счет'}</div>
                </div>
             </div>
-            <button className="modal-close" onClick={onClose}><X /></button>
+            <button className="modal-close" onClick={onClose} aria-label="Закрыть"><X /></button>
           </div>
 
           <div className="detail-amount" style={{ 
@@ -223,11 +223,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   {localPhotos[slot] ? (
                     <>
                       <img src={localPhotos[slot]} alt={`photo-${slot}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onClick={() => { setViewerIndex(slot); setViewerOpen(true); }} />
-                      <button className="photo-remove" onClick={async (e) => { e.stopPropagation(); const newPhotos = localPhotos.slice(); newPhotos.splice(slot,1); setLocalPhotos(newPhotos); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, newPhotos); } catch (err) { console.error(err); } }} style={{ position: 'absolute', top: 6, right: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
+                      <button className="photo-remove" onClick={async (e) => { e.stopPropagation(); const newPhotos = localPhotos.slice(); newPhotos.splice(slot,1); setLocalPhotos(newPhotos); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, newPhotos); } catch (err) { console.error(err); } }} aria-label="Удалить фото" style={{ position: 'absolute', top: 6, right: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
                         <X size={16} strokeWidth={2} />
                         <span className="icon-fallback" aria-hidden style={{ display: 'none' }}>✖</span>
                       </button>
-                      <button className="photo-edit" onClick={(e) => { e.stopPropagation(); if (fileInputRef.current) { fileInputRef.current.dataset.idx = String(slot); fileInputRef.current.click(); } }} style={{ position: 'absolute', top: 6, left: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
+                      <button className="photo-edit" onClick={(e) => { e.stopPropagation(); if (fileInputRef.current) { fileInputRef.current.dataset.idx = String(slot); fileInputRef.current.click(); } }} aria-label="Изменить фото" style={{ position: 'absolute', top: 6, left: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
                         <Edit2 size={16} strokeWidth={1.5} />
                         <span className="icon-fallback" aria-hidden style={{ display: 'none' }}>✎</span>
                       </button>
