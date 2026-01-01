@@ -1,4 +1,3 @@
-// ... (Existing code) ...
 const API_URL = '';
 
 const getQuery = (month?: number, year?: number) => {
@@ -8,7 +7,6 @@ const getQuery = (month?: number, year?: number) => {
   return '';
 }
 
-// ... (Other functions unchanged) ...
 export const fetchBalance = async (userId: number, month?: number, year?: number) => {
   const query = getQuery(month, year);
   const response = await fetch(`${API_URL}/balance${query}`, { 
@@ -137,7 +135,19 @@ export const deleteTransaction = async (userId: number, transactionId: number) =
   }); if (!response.ok) throw new Error('Failed to delete'); return true;
 };
 
-export const updateTransaction = async (userId: number, transactionId: number, amount: number, category: string, date: string, type: 'expense' | 'income', note?: string, tags?: string[], photo_urls?: string[], account_id?: number, target_type?: 'account' | 'goal') => {
+export const updateTransaction = async (
+  userId: number,
+  transactionId: number,
+  amount: number,
+  category: string,
+  date: string,
+  type: 'expense' | 'income',
+  note?: string,
+  tags?: string[],
+  photo_urls?: string[],
+  account_id?: number,
+  target_type?: 'account' | 'goal'
+) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },

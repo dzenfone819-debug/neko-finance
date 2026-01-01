@@ -246,7 +246,21 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                      <Edit2 size={14} style={{ opacity: 0.6 }} />
                    </span>
                  </div>
-                 <div style={{ fontSize: 12, opacity: 0.7 }}>{accountName || 'Счет'}</div>
+                 <div onClick={() => { setAccountPickerOpen(true); WebApp.HapticFeedback.impactOccurred('light'); }} style={{ fontSize: 12, opacity: 0.7, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                   {(() => {
+                     let name = 'Счет';
+                     if (currentTargetType === 'goal') {
+                       const g = availableGoals.find(g => g.id === currentAccountId);
+                       if (g) name = `🐷 ${g.name}`;
+                     } else {
+                       const a = availableAccounts.find(a => a.id === currentAccountId);
+                       if (a) name = `💳 ${a.name}`;
+                       else if (accountName) name = accountName;
+                     }
+                     return <span>{name}</span>;
+                   })()}
+                   <Edit2 size={10} style={{ opacity: 0.5 }} />
+                 </div>
                </div>
             </div>
             <button className="modal-close" onClick={onClose}><X /></button>
