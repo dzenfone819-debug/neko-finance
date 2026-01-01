@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, StickyNote, Image, Tag, Trash2, Edit2 } from 'lucide-react';
 import { Modal } from './Modal';
-import { getIconByName } from '../data/constants';
+import { getIconByName, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../data/constants';
 import * as api from '../api/nekoApi';
 import WebApp from '@twa-dev/sdk';
 
@@ -51,6 +51,12 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const [localTags, setLocalTags] = useState<string[]>(tags.slice());
   const [localPhotos, setLocalPhotos] = useState<string[]>(photos.slice());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [customCats, setCustomCats] = useState<any[]>([]);
+  const [currentCategoryId, setCurrentCategoryId] = useState<string>(transaction.category);
+  const [currentCategoryName, setCurrentCategoryName] = useState<string>(() => transaction.category);
+  const [currentCategoryIcon, setCurrentCategoryIcon] = useState<any>(categoryIcon);
+  const [currentCategoryColor, setCurrentCategoryColor] = useState<string | undefined>(categoryColor);
   const displayDate = localDateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   const displayTime = localDateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
@@ -61,7 +67,22 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     setLocalAmount(transaction.amount || 0);
     setEditAmount(transaction.amount ? transaction.amount.toString() : '');
     setLocalDateObj(new Date(transaction.date));
+    setCurrentCategoryId(transaction.category);
+    setCurrentCategoryName(transaction.category);
+    setCurrentCategoryIcon(categoryIcon);
+    setCurrentCategoryColor(categoryColor);
   }, [transaction]);
+
+  useEffect(() => {
+    const loadCustom = async () => {
+      if (!userId) return;
+      try {
+        const res = await api.fetchCustomCategories(userId);
+        setCustomCats(res || []);
+      } catch (e) { console.error('Failed to load custom categories', e); }
+    }
+    loadCustom();
+  }, [userId]);
 
   useEffect(() => {
     if (isEditingAmount && amountInputRef.current) {
@@ -133,16 +154,21 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                <div 
                  className="detail-icon"
                  style={{ 
-                   backgroundColor: categoryColor || '#eee', 
+                   backgroundColor: currentCategoryColor || categoryColor || '#eee', 
                    width: 40, height: 40, borderRadius: 12,
                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                    color: '#fff', fontSize: 20
                  }}
                >
-                 {typeof categoryIcon === 'string' ? getIconByName(categoryIcon) : categoryIcon}
+                 {typeof currentCategoryIcon === 'string' ? getIconByName(currentCategoryIcon) : currentCategoryIcon}
                </div>
                <div>
-                 <div className="modal-title" style={{ fontSize: 18 }}>{transaction.category}</div>
+                 <div className="modal-title" style={{ fontSize: 18 }}>
+                   <span onClick={() => { setCategoryPickerOpen(true); WebApp.HapticFeedback.impactOccurred('light'); }} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                     <span>{currentCategoryName}</span>
+                     <Edit2 size={14} style={{ opacity: 0.6 }} />
+                   </span>
+                 </div>
                  <div style={{ fontSize: 12, opacity: 0.7 }}>{accountName || 'Счет'}</div>
                </div>
             </div>
@@ -367,6 +393,50 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
                 <button className="btn" onClick={async () => { if (tagInput.trim()) { const trimmed = tagInput.trim().replace(/^#/, ''); if (!localTags.includes(trimmed)) { const newTags = [...localTags, trimmed]; setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } } } setTagsModalOpen(false); }}>Готово</button>
+              </div>
+            </div>
+          </Modal>
+
+          {/* Category picker - custom mobile-style selector */}
+          <Modal variant="center" isOpen={categoryPickerOpen} onClose={() => setCategoryPickerOpen(false)} title="Выбрать категорию">
+            <div style={{ maxWidth: 420, width: '100%' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' }}>
+                {((transaction.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES) as any[]).concat(customCats.filter(c => (c.type || 'expense') === transaction.type)).map(c => {
+                  const cid = c.id || c.name;
+                  const isSelected = cid === currentCategoryId;
+                  const icon = c.icon || '📦';
+                  const color = c.color || '#ddd';
+                  return (
+                    <button key={cid} onClick={async () => {
+                      setCategoryPickerOpen(false);
+                      const newCatId = cid;
+                      const name = c.name || cid;
+                      try {
+                        if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, newCatId, localDateObj.toISOString(), transaction.type, noteInput, localTags, localPhotos);
+                        setCurrentCategoryId(newCatId);
+                        setCurrentCategoryName(name);
+                        setCurrentCategoryIcon(c.icon);
+                        setCurrentCategoryColor(color);
+                        WebApp.HapticFeedback.notificationOccurred('success');
+                      } catch (err) {
+                        console.error(err);
+                        WebApp.HapticFeedback.notificationOccurred('error');
+                      }
+                    }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      padding: 10, minWidth: 86, borderRadius: 12, border: isSelected ? '2px solid rgba(0,0,0,0.12)' : '1px solid rgba(0,0,0,0.06)', background: 'var(--bg-input)'
+                    }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: color, color: '#fff', fontSize: 20 }}>
+                        {typeof icon === 'string' ? getIconByName(icon) : icon}
+                      </div>
+                      <div style={{ fontSize: 13, textAlign: 'center' }}>{c.name}</div>
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                <button className="btn" onClick={() => setCategoryPickerOpen(false)}>Отмена</button>
               </div>
             </div>
           </Modal>
