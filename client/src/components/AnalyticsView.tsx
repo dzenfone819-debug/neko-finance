@@ -418,7 +418,7 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, cus
                       color: 'var(--text-main)'
                     }}
                     itemStyle={{ color: 'var(--text-main)' }}
-                    formatter={(value: number | undefined) => [`${(value ?? 0).toLocaleString()}₽`, 'Баланс']}
+                    formatter={(value: any) => [`${(Number(value) || 0).toLocaleString()}₽`, 'Баланс']}
                     labelFormatter={(label) => `День ${label}`}
                   />
                   <Line 
