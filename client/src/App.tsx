@@ -496,7 +496,7 @@ function App() {
   }
   
   const openEditTotal = () => { WebApp.HapticFeedback.impactOccurred('light'); setEditTarget({ type: 'total' }); setModalOpen(true); }
-  const openEditCategory = (catId: string) => { WebApp.HapticFeedback.impactOccurred('light'); setEditTarget({ type: 'category', id: catId }); setModalOpen(true); }
+  // legacy: openEditCategory removed (use openEditCategoryModal for full editor)
   const handleModalSave = async (val: number) => {
     if (!userId || !editTarget) return;
     try {
@@ -566,8 +566,9 @@ function App() {
         const limit = newCategoryLimit && !isNaN(parseFloat(newCategoryLimit)) ? parseFloat(newCategoryLimit) : 0;
         if (editingCategoryId) {
           setCategoryOverride(editingCategoryId, { name: newCategoryName, icon: newCategoryIcon, color: newCategoryColor, limit: limit });
-          if (customCategories.some(c => c.id === editingCategoryId)) {
-            if (addCategoryType === 'expense' || limit > 0) await api.setCategoryLimit(userId, editingCategoryId, limit, month, year);
+          // Always update limit on server for edited category when relevant
+          if (addCategoryType === 'expense' || limit > 0) {
+            await api.setCategoryLimit(userId, editingCategoryId, limit, month, year);
           }
         } else {
           if (isCustomCategory) {
@@ -877,7 +878,7 @@ function App() {
         {activeTab === 'stats' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto', paddingRight: 5 }}>
             {/* StatsView now uses allTransactions for correct charts */}
-            <StatsView data={statsData} total={totalSpent} transactions={allTransactions} budgetLimit={budgetLimit} customCategories={customCategories} periodType={periodType} periodStartDay={periodStartDay} currentMonth={currentDate} />
+            <StatsView data={statsData} total={totalSpent} transactions={allTransactions} budgetLimit={budgetLimit} customCategories={customCategories} categoryOverrides={categoryOverrides} periodType={periodType} periodStartDay={periodStartDay} currentMonth={currentDate} />
             {/* Divider removed per request
             <div style={{ height: 1, background: 'var(--border-color)', margin: '20px 0' }} />
             */}
@@ -906,7 +907,7 @@ function App() {
 
         {activeTab === 'budget' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-            <BudgetView stats={statsData} limits={catLimits} totalLimit={budgetLimit} customCategories={customCategories} onEditCategory={openEditCategory} onEditTotal={openEditTotal} onAddCategory={() => handleAddCategory('expense')} onAddIncomeCategory={() => handleAddCategory('income')} onDeleteCategory={handleDeleteCategory} transactions={allTransactions} accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]} categoryOverrides={categoryOverrides} onSetCategoryOverride={setCategoryOverride} onOpenEditCategory={openEditCategoryModal} />
+            <BudgetView stats={statsData} limits={catLimits} totalLimit={budgetLimit} customCategories={customCategories} onEditCategory={openEditCategoryModal} onEditTotal={openEditTotal} onAddCategory={() => handleAddCategory('expense')} onAddIncomeCategory={() => handleAddCategory('income')} onDeleteCategory={handleDeleteCategory} transactions={allTransactions} accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]} categoryOverrides={categoryOverrides} onSetCategoryOverride={setCategoryOverride} onOpenEditCategory={openEditCategoryModal} />
             <div style={{ height: 80 }} />
           </div>
         )}
@@ -961,7 +962,7 @@ function App() {
       <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title={addCategoryType === 'income' ? "Новая категория" : "Новый лимит"}>
           {/* ... Content same as before ... */}
           <div className="modal-body">
-          {addCategoryType === 'expense' && (
+          {addCategoryType === 'expense' && !editingCategoryId && (
             <div style={{ marginBottom: 15 }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsCustomCategory(false)} style={{ flex: 1, padding: '10px', background: !isCustomCategory ? '#667eea' : 'var(--bg-input)', color: !isCustomCategory ? 'white' : 'var(--text-main)', border: 'none', borderRadius: 8, fontWeight: 'bold', cursor: 'pointer' }}>Стандартные</motion.button>
@@ -970,7 +971,7 @@ function App() {
             </div>
           )}
           
-          {addCategoryType === 'expense' && !isCustomCategory ? (
+          {addCategoryType === 'expense' && !isCustomCategory && !editingCategoryId ? (
             <div style={{ marginBottom: 15 }}>
               <label className="modal-label">Выберите категорию</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>

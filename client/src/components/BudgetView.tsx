@@ -317,16 +317,25 @@ export const BudgetView: React.FC<Props> = ({
               const stat = stats.find(s => s.name === cat.id);
               const spent = stat ? stat.value : 0;
               const limit = limits[cat.id] || 0;
+              const override = categoryOverrides?.[cat.id] || {};
+              const name = override.name || cat.name;
+              const color = override.color || cat.color;
+              const icon = override.icon ? getIconByName(override.icon, 20) : cat.icon;
+
+              const onClick = () => {
+                if (onOpenEditCategory) onOpenEditCategory(cat.id);
+                else onEditCategory(cat.id);
+              };
 
               return (
                 <div key={cat.id}>
                   {renderBar(
-                    cat.name, 
-                    spent, 
-                    limit, 
-                    cat.color, 
-                    () => onEditCategory(cat.id), 
-                    cat.icon,
+                    name,
+                    spent,
+                    limit,
+                    color,
+                    onClick,
+                    icon,
                     () => onDeleteCategory(cat.id)
                   )}
                 </div>
@@ -341,16 +350,25 @@ export const BudgetView: React.FC<Props> = ({
                 const stat = stats.find(s => s.name === cat.id);
                 const spent = stat ? stat.value : 0;
                 const limit = limits[cat.id] || 0;
+                const override = categoryOverrides?.[cat.id] || {};
+                const name = override.name || cat.name;
+                const color = override.color || cat.color;
+                const icon = override.icon ? getIconByName(override.icon, 20) : (typeof cat.icon === 'string' ? getIconByName(cat.icon, 20) : cat.icon);
+
+                const onClick = () => {
+                  if (onOpenEditCategory) onOpenEditCategory(cat.id);
+                  else onEditCategory(cat.id);
+                };
 
                 return (
                   <div key={cat.id}>
                     {renderBar(
-                      cat.name, 
-                      spent, 
-                      limit, 
-                      cat.color, 
-                      () => onEditCategory(cat.id), 
-                      getIconByName(cat.icon, 20),
+                      name,
+                      spent,
+                      limit,
+                      color,
+                      onClick,
+                      icon,
                       () => onDeleteCategory(cat.id)
                     )}
                   </div>

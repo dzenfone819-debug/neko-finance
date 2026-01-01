@@ -18,6 +18,7 @@ interface StatsViewProps {
   transactions?: any[];
   budgetLimit?: number;
   customCategories?: CustomCategory[];
+  categoryOverrides?: Record<string, any>;
   periodType?: 'calendar_month' | 'custom_period';
   periodStartDay?: number;
   currentMonth?: Date;
@@ -25,17 +26,21 @@ interface StatsViewProps {
 
 const RADIAN = Math.PI / 180;
 
-export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0, customCategories = [], periodType = 'calendar_month', periodStartDay = 1, currentMonth = new Date() }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions = [], budgetLimit = 0, customCategories = [], categoryOverrides = {}, periodType = 'calendar_month', periodStartDay = 1, currentMonth = new Date() }) => {
   const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month'>('month');
 
   // Функция для получения названия категории с учетом кастомных
   const getDisplayCategoryName = (categoryId: string) => {
+    const override = categoryOverrides?.[categoryId] || {};
+    if (override.name) return override.name;
     const customCat = customCategories.find(c => c.id === categoryId);
     if (customCat) return customCat.name;
     return getCategoryName(categoryId);
   };
 
   const getCategoryIcon = (categoryId: string) => {
+    const override = categoryOverrides?.[categoryId] || {};
+    if (override.icon) return getIconByName(override.icon, 14);
     const customCat = customCategories.find(c => c.id === categoryId);
     if (customCat) {
       return getIconByName(customCat.icon, 14);
@@ -49,6 +54,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
   };
 
   const getCategoryColor = (categoryId: string, index: number) => {
+    const override = categoryOverrides?.[categoryId] || {};
+    if (override.color) return override.color;
     const customCat = customCategories.find(c => c.id === categoryId);
     if (customCat) return customCat.color;
     const cat = CATEGORIES.find(c => c.id === categoryId);
@@ -377,8 +384,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
               {budgetLimit > 0 ? '% от бюджета по категориям' : 'Распределение по категориям'}
             </div>
             {(periodData.length > 0 ? periodData : data).map((entry, index) => {
+              const override = categoryOverrides?.[entry.name] || {};
               const cat = CATEGORIES.find(c => c.id === entry.name);
-              const color = cat ? cat.color : COLORS[index % COLORS.length];
+              const color = override.color || (cat ? cat.color : COLORS[index % COLORS.length]);
               const percentage = getCategoryPercentage(entry.value);
               return (
                 <motion.div
