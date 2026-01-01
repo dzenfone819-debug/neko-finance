@@ -146,7 +146,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                  <div style={{ fontSize: 12, opacity: 0.7 }}>{accountName || 'Счет'}</div>
                </div>
             </div>
-            <button className="modal-close" onClick={onClose}><X /></button>
+            <button className="modal-close" onClick={onClose} aria-label="Закрыть"><X /></button>
           </div>
 
           <div className="detail-amount" style={{ 
@@ -223,11 +223,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   {localPhotos[slot] ? (
                     <>
                       <img src={localPhotos[slot]} alt={`photo-${slot}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onClick={() => { setViewerIndex(slot); setViewerOpen(true); }} />
-                      <button className="photo-remove" onClick={async (e) => { e.stopPropagation(); const newPhotos = localPhotos.slice(); newPhotos.splice(slot,1); setLocalPhotos(newPhotos); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, newPhotos); } catch (err) { console.error(err); } }} style={{ position: 'absolute', top: 6, right: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
+                      <button className="photo-remove" onClick={async (e) => { e.stopPropagation(); const newPhotos = localPhotos.slice(); newPhotos.splice(slot,1); setLocalPhotos(newPhotos); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, newPhotos); } catch (err) { console.error(err); } }} style={{ position: 'absolute', top: 6, right: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }} aria-label="Удалить фото">
                         <X size={16} strokeWidth={2} />
                         <span className="icon-fallback" aria-hidden style={{ display: 'none' }}>✖</span>
                       </button>
-                      <button className="photo-edit" onClick={(e) => { e.stopPropagation(); if (fileInputRef.current) { fileInputRef.current.dataset.idx = String(slot); fileInputRef.current.click(); } }} style={{ position: 'absolute', top: 6, left: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
+                      <button className="photo-edit" onClick={(e) => { e.stopPropagation(); if (fileInputRef.current) { fileInputRef.current.dataset.idx = String(slot); fileInputRef.current.click(); } }} style={{ position: 'absolute', top: 6, left: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }} aria-label="Изменить фото">
                         <Edit2 size={16} strokeWidth={1.5} />
                         <span className="icon-fallback" aria-hidden style={{ display: 'none' }}>✎</span>
                       </button>
@@ -281,9 +281,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           <Modal variant="center" isOpen={datePickerOpen} onClose={() => setDatePickerOpen(false)} title="Выбрать дату">
             <div className="picker-modal" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'stretch', width: '100%', maxWidth: 360, boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button className="icon-btn" onClick={() => { const m = new Date(calendarMonth); m.setMonth(m.getMonth() - 1); setCalendarMonth(m); }} style={{ background: 'transparent', border: 'none' }}>‹</button>
+                <button className="icon-btn" onClick={() => { const m = new Date(calendarMonth); m.setMonth(m.getMonth() - 1); setCalendarMonth(m); }} style={{ background: 'transparent', border: 'none' }} aria-label="Предыдущий месяц">‹</button>
                 <div style={{ fontWeight: 700 }}>{monthName(calendarMonth)}</div>
-                <button className="icon-btn" onClick={() => { const m = new Date(calendarMonth); m.setMonth(m.getMonth() + 1); setCalendarMonth(m); }} style={{ background: 'transparent', border: 'none' }}>›</button>
+                <button className="icon-btn" onClick={() => { const m = new Date(calendarMonth); m.setMonth(m.getMonth() + 1); setCalendarMonth(m); }} style={{ background: 'transparent', border: 'none' }} aria-label="Следующий месяц">›</button>
               </div>
               <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, textAlign: 'center', maxWidth: 320, margin: '0 auto', width: '100%' }}>
                 {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => <div key={d} className="calendar-weekday" style={{ fontSize: 12, opacity: 0.7 }}>{d}</div>)}
@@ -343,7 +343,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 {localTags.map(tag => (
                   <span key={tag} className="tag-chip-item">
                     #{tag}
-                    <button onClick={async () => { const newTags = localTags.filter(t => t !== tag); setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } }}><X size={12} /></button>
+                    <button onClick={async () => { const newTags = localTags.filter(t => t !== tag); setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } }} aria-label={`Удалить тег ${tag}`}><X size={12} /></button>
                   </span>
                 ))}
               </div>
