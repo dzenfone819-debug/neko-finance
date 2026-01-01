@@ -147,8 +147,6 @@ export const updateTransaction = async (userId: number, transactionId: number, a
   return await response.json();
 };
 
-// ... (Rest of the file unchanged) ...
-
 export const fetchBudget = async (userId: number, month?: number, year?: number) => {
   const query = getQuery(month, year);
   const response = await fetch(`${API_URL}/settings${query}`, { headers: { 'x-user-id': userId.toString() } });
