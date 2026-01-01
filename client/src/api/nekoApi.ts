@@ -25,13 +25,16 @@ export const fetchStats = async (userId: number, month?: number, year?: number) 
   return await response.json();
 };
 
-export const fetchTransactions = async (userId: number, month?: number, year?: number, limit?: number, offset?: number) => {
+export const fetchTransactions = async (userId: number, month?: number, year?: number, limit?: number, offset?: number, forceCalendarMode?: boolean) => {
   let query = getQuery(month, year);
   if (limit !== undefined) {
     query += query ? `&limit=${limit}` : `?limit=${limit}`;
   }
   if (offset !== undefined) {
     query += query ? `&offset=${offset}` : `?offset=${offset}`;
+  }
+  if (forceCalendarMode) {
+    query += query ? `&force_calendar_mode=true` : `?force_calendar_mode=true`;
   }
   const response = await fetch(`${API_URL}/transactions${query}`, { 
     headers: { 'x-user-id': userId.toString() } 
