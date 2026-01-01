@@ -930,7 +930,7 @@ function App() {
 
         {activeTab === 'budget' && (
           <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-            <BudgetView stats={statsData} limits={catLimits} totalLimit={budgetLimit} customCategories={customCategories} onEditCategory={openEditCategory} onEditTotal={openEditTotal} onAddCategory={() => handleAddCategory('expense')} onAddIncomeCategory={() => handleAddCategory('income')} onDeleteCategory={handleDeleteCategory} transactions={transactions} accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]} categoryOverrides={categoryOverrides} onSetCategoryOverride={setCategoryOverride} onOpenEditCategory={openEditCategoryModal} />
+            <BudgetView stats={statsData} limits={catLimits} totalLimit={budgetLimit} customCategories={customCategories} onEditCategory={openEditCategory} onEditTotal={openEditTotal} onAddCategory={() => handleAddCategory('expense')} onAddIncomeCategory={() => handleAddCategory('income')} onDeleteCategory={handleDeleteCategory} transactions={allTransactions} accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]} categoryOverrides={categoryOverrides} onSetCategoryOverride={setCategoryOverride} onOpenEditCategory={openEditCategoryModal} />
             <div style={{ height: 80 }} />
           </div>
         )}
