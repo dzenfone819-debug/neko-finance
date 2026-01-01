@@ -11,16 +11,17 @@ interface TransactionDetailModalProps {
   onClose: () => void;
   transaction: any;
   onDelete?: (id: number) => void;
-  onEdit?: (t: any) => void;
   accountName?: string;
   categoryIcon?: string | React.ReactNode;
   categoryColor?: string;
   userId?: number | null;
   existingTags?: string[];
+  availableCategoryIds?: string[];
+  categoryOverrides?: Record<string, any>;
 }
 
 export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
-  isOpen, onClose, transaction, onDelete, onEdit, accountName, categoryIcon, categoryColor, userId, existingTags = []
+  isOpen, onClose, transaction, onDelete, accountName, categoryIcon, categoryColor, userId, existingTags = [], availableCategoryIds = [], categoryOverrides = {}
 }) => {
   if (!isOpen || !transaction) return null;
 
@@ -68,10 +69,32 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     setEditAmount(transaction.amount ? transaction.amount.toString() : '');
     setLocalDateObj(new Date(transaction.date));
     setCurrentCategoryId(transaction.category);
-    setCurrentCategoryName(transaction.category);
-    setCurrentCategoryIcon(categoryIcon);
-    setCurrentCategoryColor(categoryColor);
+    // derive display values using overrides if present
+    const override = (categoryOverrides && categoryOverrides[transaction.category]) || {};
+    const std = ([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === transaction.category));
+    const custom = customCats.find(c => c.id === transaction.category);
+    const derivedName = override.name || (std ? std.name : (custom ? custom.name : transaction.category));
+    const derivedIcon = override.icon || (std ? std.icon : (custom ? custom.icon : categoryIcon));
+    const derivedColor = override.color || (std ? std.color : (custom ? custom.color : categoryColor));
+    setCurrentCategoryName(derivedName as string);
+    setCurrentCategoryIcon(derivedIcon);
+    setCurrentCategoryColor(derivedColor);
   }, [transaction]);
+
+  useEffect(() => {
+    // when overrides or custom list change while modal open, refresh displayed category meta
+    if (!transaction) return;
+    const id = transaction.category;
+    const override = (categoryOverrides && categoryOverrides[id]) || {};
+    const std = ([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === id));
+    const custom = customCats.find(c => c.id === id);
+    const derivedName = override.name || (std ? std.name : (custom ? custom.name : id));
+    const derivedIcon = override.icon || (std ? std.icon : (custom ? custom.icon : categoryIcon));
+    const derivedColor = override.color || (std ? std.color : (custom ? custom.color : categoryColor));
+    setCurrentCategoryName(derivedName as string);
+    setCurrentCategoryIcon(derivedIcon);
+    setCurrentCategoryColor(derivedColor);
+  }, [categoryOverrides, customCats]);
 
   useEffect(() => {
     const loadCustom = async () => {
@@ -137,6 +160,19 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       WebApp.HapticFeedback.notificationOccurred('error');
     }
   }
+
+  // Build picker list limited to user's available categories (from parent + custom categories)
+  const pickerCategories = (() => {
+    const avail = availableCategoryIds || [];
+    const stdList = (transaction.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES) as any[];
+    const filteredStd = avail.length === 0 ? [] : stdList.filter(c => avail.includes(c.id));
+    const filteredCustom = avail.length === 0 ? [] : customCats.filter(c => (c.type || 'expense') === transaction.type && avail.includes(c.id));
+    const merged = [...filteredStd, ...filteredCustom];
+    return merged.map(c => {
+      const ov = (categoryOverrides && categoryOverrides[c.id]) || {};
+      return { ...c, name: ov.name || c.name, icon: ov.icon || c.icon, color: ov.color || c.color };
+    });
+  })();
 
   return (
     <AnimatePresence>
@@ -245,7 +281,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             <div className="detail-photos-grid">
               {/** show up to 2 slots; thumbnails with delete X in corner, placeholders with + otherwise */}
               {[0,1].map((slot) => (
-                <div key={slot} className="photo-slot" style={{ width: 92, height: 92, borderRadius: 8, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-input)', cursor: 'pointer' }}>
+                  <div key={slot} className="photo-slot" style={{ width: 92, height: 92, borderRadius: 8, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-input)', cursor: 'pointer' }}>
                   {localPhotos[slot] ? (
                     <>
                       <img src={localPhotos[slot]} alt={`photo-${slot}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onClick={() => { setViewerIndex(slot); setViewerOpen(true); }} />
@@ -401,7 +437,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           <Modal variant="center" isOpen={categoryPickerOpen} onClose={() => setCategoryPickerOpen(false)} title="Выбрать категорию">
             <div style={{ maxWidth: 420, width: '100%' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' }}>
-                {((transaction.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES) as any[]).concat(customCats.filter(c => (c.type || 'expense') === transaction.type)).map(c => {
+                {pickerCategories.map(c => {
                   const cid = c.id || c.name;
                   const isSelected = cid === currentCategoryId;
                   const icon = c.icon || '📦';
@@ -442,13 +478,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           </Modal>
 
           <div className="detail-actions" style={{ marginTop: 'auto', display: 'flex', gap: 10, paddingTop: 20 }}>
-            <button 
-              onClick={() => { onEdit && onEdit(transaction); onClose(); }} 
-              className="action-btn edit-btn"
-              style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', background: 'var(--bg-input)', color: 'var(--text-main)', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-            >
-              <Edit2 size={16} /> Редактировать
-            </button>
+            <div style={{ flex: 1 }} />
             <button 
               onClick={() => { onDelete && onDelete(transaction.id); onClose(); }} 
               className="action-btn delete-btn"

@@ -138,12 +138,7 @@ function App() {
     period: 'all',
   })
 
-  // Состояния для редактирования транзакции
-  const [editingTransaction, setEditingTransaction] = useState<any | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [editAmount, setEditAmount] = useState('')
-  const [editCategory, setEditCategory] = useState('')
-  const [editDate, setEditDate] = useState(new Date())
+  // Состояния для редактирования транзакции (removed - editing now inline in detail modal)
 
   // Detail Modal
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
@@ -551,7 +546,7 @@ function App() {
       const std = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === categoryId);
       if (std) {
         setAddCategoryType(INCOME_CATEGORIES.some(c => c.id === categoryId) ? 'income' : 'expense');
-        setIsCustomCategory(INCOME_CATEGORIES.some(c => c.id === categoryId));
+        setIsCustomCategory(false);
         const override = categoryOverrides?.[categoryId] || {};
         setNewCategoryName(override.name || std.name || '');
         setNewCategoryIcon(override.icon || (typeof std.icon === 'string' ? std.icon : 'Package'));
@@ -646,28 +641,9 @@ function App() {
   const handleDelete = () => { WebApp.HapticFeedback.impactOccurred('medium'); setAmount(prev => prev.slice(0, -1)); setIsError(false); }
   const triggerError = () => { WebApp.HapticFeedback.notificationOccurred('error'); setIsError(true); setTimeout(() => setIsError(false), 500); }
 
-  const handleEditTransaction = (transaction: any) => {
-    WebApp.HapticFeedback.impactOccurred('light');
-    setEditingTransaction(transaction);
-    setEditAmount(transaction.amount.toString());
-    setEditCategory(transaction.category);
-    setEditDate(new Date(transaction.date));
-    setShowEditModal(true);
-  }
+  
 
-  const handleSaveEdit = async () => {
-    if (!userId || !editingTransaction) return;
-    const value = parseFloat(editAmount);
-    if (!editAmount || isNaN(value) || value <= 0) { triggerError(); return; }
-    try {
-      await api.updateTransaction(userId, editingTransaction.id, value, editCategory, editDate.toISOString(), editingTransaction.type);
-      WebApp.HapticFeedback.notificationOccurred('success');
-      setShowEditModal(false);
-      setEditingTransaction(null);
-      setEditAmount('');
-      loadData(userId, currentDate);
-    } catch (e) { console.error(e); triggerError(); }
-  }
+  // handleSaveEdit removed; save is performed inside TransactionDetailModal
 
   // ... (Filtering Logic) ...
   const filterTransactions = (transactionsList: any[]) => {
@@ -905,10 +881,9 @@ function App() {
             {/* Divider removed per request
             <div style={{ height: 1, background: 'var(--border-color)', margin: '20px 0' }} />
             */}
-            <TransactionList 
+              <TransactionList 
               transactions={filteredTransactions} 
               onDelete={(id) => openConfirm('Удалить транзакцию?', async () => { await handleDeleteTransaction(id); })}
-              onEdit={handleEditTransaction}
               onFilterClick={() => setShowSearchPanel(true)}
               onTransactionClick={(t) => {
                 WebApp.HapticFeedback.impactOccurred('light');
@@ -916,6 +891,7 @@ function App() {
               }}
               hasActiveFilters={hasActiveFilters}
               customCategories={customCategories}
+              categoryOverrides={categoryOverrides}
               accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
               onLoadMore={loadMoreTransactions}
               hasMore={hasMoreTransactions}
@@ -954,31 +930,32 @@ function App() {
       </div>
 
       {/* DETAIL MODAL */}
-      <TransactionDetailModal
+        <TransactionDetailModal
         isOpen={!!selectedTransaction}
         onClose={() => { setSelectedTransaction(null); if (userId) loadData(userId, currentDate); }}
         transaction={selectedTransaction}
         onDelete={(id) => openConfirm('Удалить транзакцию?', async () => { await handleDeleteTransaction(id); })}
-        onEdit={handleEditTransaction}
-        userId={userId}
+          userId={userId}
+          availableCategoryIds={[...new Set([...Object.keys(catLimits), ...customCategories.map(c => c.id)])]}
+          categoryOverrides={categoryOverrides}
         existingTags={allTags}
         accountName={
-            selectedTransaction?.account_id ? 
-            (accounts.find(a => a.id === selectedTransaction.account_id) || goals.find(g => g.id === selectedTransaction.account_id))?.name 
-            : 'Unknown'
+          selectedTransaction?.account_id ? 
+          (accounts.find(a => a.id === selectedTransaction.account_id) || goals.find(g => g.id === selectedTransaction.account_id))?.name 
+          : 'Unknown'
         }
         categoryIcon={selectedTransaction ? (() => {
-            const cat = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES, ...customCategories].find(c => c.id === selectedTransaction.category);
-            // Apply override if needed
-            const override = categoryOverrides?.[selectedTransaction.category] || {};
-            return override.icon || cat?.icon || '❓';
+          const cat = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES, ...customCategories].find(c => c.id === selectedTransaction.category);
+          // Apply override if needed
+          const override = categoryOverrides?.[selectedTransaction.category] || {};
+          return override.icon || cat?.icon || '❓';
         })() : '❓'}
         categoryColor={selectedTransaction ? (() => {
-            const cat = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES, ...customCategories].find(c => c.id === selectedTransaction.category);
-            const override = categoryOverrides?.[selectedTransaction.category] || {};
-            return override.color || cat?.color || '#ccc';
+          const cat = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES, ...customCategories].find(c => c.id === selectedTransaction.category);
+          const override = categoryOverrides?.[selectedTransaction.category] || {};
+          return override.color || cat?.color || '#ccc';
         })() : '#ccc'}
-      />
+        />
 
       {/* ... (Add Category, Edit Transaction, Search, Confirm modals unchanged) ... */}
       <Modal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} title={addCategoryType === 'income' ? "Новая категория" : "Новый лимит"}>
@@ -1018,26 +995,7 @@ function App() {
         </div>
       </Modal>
 
-      <Modal title="Редактировать" isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div style={{ padding: '0 4px' }}>
-          <div style={{ marginBottom: 20 }}>
-            <label className="modal-label">Сумма</label>
-            <input type="text" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} placeholder="0" className="modal-input" style={{ width: '100%', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label className="modal-label">Категория</label>
-            <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="modal-select">
-              {editingTransaction?.type === 'expense' ? EXPENSE_CATEGORIES.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>)) : INCOME_CATEGORIES.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-              {customCategories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-            </select>
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label className="modal-label">Дата</label>
-            <input type="date" value={editDate.toISOString().split('T')[0]} onChange={(e) => setEditDate(new Date(e.target.value + 'T12:00:00'))} max={new Date().toISOString().split('T')[0]} className="modal-input" style={{ width: '100%', boxSizing: 'border-box' }} />
-          </div>
-          <motion.button whileTap={{ scale: 0.95 }} onClick={handleSaveEdit} className="modal-submit-button">Сохранить</motion.button>
-        </div>
-      </Modal>
+      {/* Edit modal removed - editing is performed inline in the detail modal */}
 
       <TransactionSearch isOpen={showSearchPanel} onClose={() => setShowSearchPanel(false)} onApplyFilters={handleApplyFilters} categories={[...EXPENSE_CATEGORIES.map(c => ({ id: c.id, name: c.name })), ...INCOME_CATEGORIES.map(c => ({ id: c.id, name: c.name })), ...customCategories.map(c => ({ id: c.id, name: c.name }))]} />
       <ConfirmModal isOpen={confirmOpen} message={confirmMessage} onCancel={handleConfirmModalCancel} onConfirm={handleConfirmModalConfirm} />

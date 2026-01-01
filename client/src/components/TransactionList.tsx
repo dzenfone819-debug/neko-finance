@@ -11,6 +11,7 @@ interface TransactionListProps {
   onTransactionClick?: (transaction: any) => void;
   hasActiveFilters?: boolean;
   customCategories?: any[];
+  categoryOverrides?: Record<string, any>;
   accounts?: any[];
   onLoadMore?: () => void;
   hasMore?: boolean;
@@ -22,6 +23,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   onTransactionClick,
   hasActiveFilters,
   customCategories = [],
+  categoryOverrides = {},
   accounts = [],
   onLoadMore,
   hasMore
@@ -80,12 +82,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       cat = customCategories.find(c => c.id === catId);
     }
 
+    // Apply any overrides passed from parent
+    const override = (categoryOverrides && categoryOverrides[catId]) || {};
     if (!cat) {
-        // Fallback
+        if (Object.keys(override).length > 0) {
+          return { name: override.name || catId, icon: override.icon || '❓', color: override.color || '#ccc' };
+        }
         return { name: catId, icon: '❓', color: '#ccc' };
     }
-    
-    return cat;
+
+    return { ...cat, ...(override || {}) };
   };
 
   const getAccountInfo = (accountId: number) => {
