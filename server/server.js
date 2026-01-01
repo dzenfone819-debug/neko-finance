@@ -83,6 +83,7 @@ db.serialize(() => {
   db.run("ALTER TABLE transactions ADD COLUMN note TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN tags TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN photo_urls TEXT", () => {})
+  db.run("ALTER TABLE transactions ADD COLUMN target_type TEXT DEFAULT 'account'", () => {})
 
   // ... (остальные таблицы без изменений) ...
   db.run(`
@@ -251,9 +252,9 @@ fastify.post('/add-expense', (request, reply) => {
   const tagsStr = Array.isArray(tags) ? JSON.stringify(tags) : (tags || '[]')
   const photosStr = Array.isArray(photo_urls) ? JSON.stringify(photo_urls) : (photo_urls || '[]')
 
-  const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id, note, tags, photo_urls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id, target_type, note, tags, photo_urls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   
-  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null, note || '', tagsStr, photosStr], function(err) {
+  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null, finalTargetType, note || '', tagsStr, photosStr], function(err) {
     if (err) {
       console.error('❌ Database error:', err);
       reply.code(500).send({ error: err.message })
@@ -406,11 +407,22 @@ fastify.get('/transactions', (request, reply) => {
 fastify.delete('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
-  // First, fetch photo_urls for this transaction so we can remove files from disk
-  db.get("SELECT photo_urls FROM transactions WHERE id = ? AND user_id = ?", [id, userId], (err, row) => {
+  // First, fetch transaction for revert logic
+  db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [id, userId], (err, row) => {
     if (err) {
       console.error('DB error fetching transaction for deletion:', err);
       return reply.code(500).send({ error: err.message });
+    }
+    if (!row) return reply.code(404).send({ error: 'Transaction not found' });
+
+    // 1. Revert balance
+    if (row.account_id) {
+       const tType = row.target_type || 'account';
+       const table = tType === 'goal' ? 'savings_goals' : 'accounts';
+       const amountCol = tType === 'goal' ? 'current_amount' : 'balance';
+       // If it was expense, we add back. If income, we subtract.
+       const operator = (row.type === 'expense') ? '+' : '-';
+       db.run(`UPDATE ${table} SET ${amountCol} = ${amountCol} ${operator} ? WHERE id = ? AND user_id = ?`, [row.amount, row.account_id, userId]);
     }
 
     const photosJson = row && row.photo_urls ? row.photo_urls : '[]';
@@ -449,21 +461,82 @@ fastify.delete('/transactions/:id', (request, reply) => {
   });
 })
 
-// ОБНОВЛЕНИЕ ТРАНЗАКЦИИ (Простое, без пересчета баланса пока что)
+// ОБНОВЛЕНИЕ ТРАНЗАКЦИИ
 fastify.put('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
-  const { amount, category, date, type, note, tags, photo_urls } = request.body
+  // Note: We do NOT allow changing 'type' (income/expense) via UI, but if passed we should handle it or ignore it.
+  // The requirement says "no possibility to change income to expense or vice versa".
+  // We will assume 'type' might be passed but we trust the frontend or we should strictly use the old type if we want to enforce it.
+  // Ideally, we should update balances based on the old vs new state.
+
+  const { amount, category, date, type, note, tags, photo_urls, account_id, target_type } = request.body
   
   const tagsStr = Array.isArray(tags) ? JSON.stringify(tags) : tags
   const photosStr = Array.isArray(photo_urls) ? JSON.stringify(photo_urls) : photo_urls
 
-  const sql = `UPDATE transactions SET amount = ?, category = ?, date = ?, type = ?, note = ?, tags = ?, photo_urls = ? WHERE id = ? AND user_id = ?`
-  
-  db.run(sql, [amount, category, date, type, note, tagsStr, photosStr, id, userId], function(err) {
-    if (err) return reply.code(500).send({ error: err.message })
-    return reply.send({ status: 'updated' })
-  })
+  // 1. Fetch old transaction
+  db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [id, userId], (err, oldTx) => {
+    if (err) return reply.code(500).send({ error: err.message });
+    if (!oldTx) return reply.code(404).send({ error: 'Transaction not found' });
+
+    // Determine new values. If not provided in body, keep old.
+    // However, for 'account_id' and 'target_type', the frontend sends them if they changed.
+    // If 'account_id' is passed as null/undefined in body, does it mean "remove account" or "keep same"?
+    // Usually PUT implies replace, or PATCH implies partial. This looks like partial update in some contexts, but let's be safe.
+    // The frontend sends what it has.
+
+    const newAmount = (amount !== undefined) ? amount : oldTx.amount;
+    const newAccountId = (account_id !== undefined) ? account_id : oldTx.account_id;
+    const newTargetType = (target_type !== undefined) ? target_type : (oldTx.target_type || 'account');
+
+    // Enforce type cannot change (per requirements), or at least we don't expect it to.
+    // If it were to change, the math below handles it if we use oldTx.type vs newType.
+    // But let's assume type is constant for now as per "no possibility to change".
+    const txType = oldTx.type;
+
+    // 2. Logic to update balances
+    // We need to revert the OLD impact and apply the NEW impact.
+    // This handles:
+    //  - Amount change (diff applied)
+    //  - Account switch (old reverted, new applied)
+    //  - Target Type switch (old reverted, new applied)
+
+    const updates = [];
+
+    // Revert OLD
+    if (oldTx.account_id) {
+       const oldTType = oldTx.target_type || 'account';
+       const table = oldTType === 'goal' ? 'savings_goals' : 'accounts';
+       const amountCol = oldTType === 'goal' ? 'current_amount' : 'balance';
+       // Revert means: if it was expense (subtracted), we add it back. If income (added), we subtract.
+       const op = (oldTx.type === 'expense') ? '+' : '-';
+       updates.push({ sql: `UPDATE ${table} SET ${amountCol} = ${amountCol} ${op} ? WHERE id = ? AND user_id = ?`, params: [oldTx.amount, oldTx.account_id, userId] });
+    }
+
+    // Apply NEW
+    if (newAccountId) {
+       const table = newTargetType === 'goal' ? 'savings_goals' : 'accounts';
+       const amountCol = newTargetType === 'goal' ? 'current_amount' : 'balance';
+       // Apply means: if expense, subtract. If income, add.
+       const op = (txType === 'expense') ? '-' : '+';
+       updates.push({ sql: `UPDATE ${table} SET ${amountCol} = ${amountCol} ${op} ? WHERE id = ? AND user_id = ?`, params: [newAmount, newAccountId, userId] });
+    }
+
+    // Execute Balance Updates
+    // We do this serially or in parallel. Since sqlite is single threaded for writes usually, serial is fine.
+    // We ideally wrap in transaction but for simplicity in this codebase structure:
+    db.serialize(() => {
+      updates.forEach(u => db.run(u.sql, u.params));
+
+      // 3. Update Transaction Record
+      const sql = `UPDATE transactions SET amount = ?, category = ?, date = ?, type = ?, note = ?, tags = ?, photo_urls = ?, account_id = ?, target_type = ? WHERE id = ? AND user_id = ?`
+      db.run(sql, [newAmount, category || oldTx.category, date || oldTx.date, txType, note || oldTx.note, tagsStr, photosStr, newAccountId, newTargetType, id, userId], function(err2) {
+        if (err2) return reply.code(500).send({ error: err2.message })
+        return reply.send({ status: 'updated' })
+      })
+    });
+  });
 })
 
 // ... Остальные эндпоинты (settings, limits, accounts, goals, reminders) остаются как есть ...

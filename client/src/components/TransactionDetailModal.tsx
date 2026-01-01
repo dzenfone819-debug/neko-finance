@@ -58,8 +58,29 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const [currentCategoryName, setCurrentCategoryName] = useState<string>(() => transaction.category);
   const [currentCategoryIcon, setCurrentCategoryIcon] = useState<any>(categoryIcon);
   const [currentCategoryColor, setCurrentCategoryColor] = useState<string | undefined>(categoryColor);
+
+  // Account switching state
+  const [availableAccounts, setAvailableAccounts] = useState<any[]>([]);
+  const [availableGoals, setAvailableGoals] = useState<any[]>([]);
+  const [currentAccountId, setCurrentAccountId] = useState<number | undefined>(transaction.account_id);
+  const [currentTargetType, setCurrentTargetType] = useState<'account' | 'goal'>(transaction.target_type || 'account');
+  const [accountPickerOpen, setAccountPickerOpen] = useState(false);
+
   const displayDate = localDateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   const displayTime = localDateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+  useEffect(() => {
+    const fetchAccs = async () => {
+       if (!userId) return;
+       try {
+         const accs = await api.fetchAccounts(userId);
+         setAvailableAccounts(accs || []);
+         const goals = await api.fetchGoals(userId);
+         setAvailableGoals(goals || []);
+       } catch (e) { console.error('Failed to load accounts/goals', e); }
+    };
+    fetchAccs();
+  }, [userId]);
 
   useEffect(() => {
     setNoteInput(transaction.note || '');
@@ -69,6 +90,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     setEditAmount(transaction.amount ? transaction.amount.toString() : '');
     setLocalDateObj(new Date(transaction.date));
     setCurrentCategoryId(transaction.category);
+    setCurrentAccountId(transaction.account_id);
+    setCurrentTargetType(transaction.target_type || 'account');
+
     // derive display values using overrides if present
     const override = (categoryOverrides && categoryOverrides[transaction.category]) || {};
     const std = ([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === transaction.category));
@@ -142,17 +166,34 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     return rows;
   }
 
-  const saveAmountAndOrDate = async (amountStr?: string, dateObj?: Date) => {
+  const saveAmountAndOrDate = async (amountStr?: string, dateObj?: Date, newAccId?: number, newTType?: 'account' | 'goal') => {
     if (!userId) return;
     const amountVal = (typeof amountStr !== 'undefined') ? parseFloat(amountStr) : localAmount;
     if (isNaN(amountVal) || amountVal <= 0) { WebApp.HapticFeedback.notificationOccurred('error'); return; }
     const dateVal = dateObj ? dateObj : localDateObj;
+    const accId = (newAccId !== undefined) ? newAccId : currentAccountId;
+    const tType = (newTType !== undefined) ? newTType : currentTargetType;
+
     try {
-      await api.updateTransaction(userId, transaction.id, amountVal, transaction.category, dateVal.toISOString(), transaction.type, noteInput, localTags, localPhotos);
+      await api.updateTransaction(
+        userId,
+        transaction.id,
+        amountVal,
+        transaction.category,
+        dateVal.toISOString(),
+        transaction.type,
+        noteInput,
+        localTags,
+        localPhotos,
+        accId,
+        tType
+      );
       WebApp.HapticFeedback.notificationOccurred('success');
       setLocalAmount(amountVal);
       setEditAmount(amountVal.toString());
       setLocalDateObj(dateVal);
+      setCurrentAccountId(accId);
+      setCurrentTargetType(tType || 'account');
       setIsEditingAmount(false);
       setIsEditingDate(false);
     } catch (err) {
@@ -475,6 +516,47 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 <button className="btn" onClick={() => setCategoryPickerOpen(false)}>Отмена</button>
               </div>
             </div>
+          </Modal>
+
+          {/* Account Picker Modal */}
+          <Modal variant="center" isOpen={accountPickerOpen} onClose={() => setAccountPickerOpen(false)} title="Выбрать счет">
+             <div style={{ maxWidth: 400, width: '100%', display: 'flex', flexDirection: 'column', gap: 12, padding: 8 }}>
+               {availableAccounts.length > 0 && (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                   <div style={{ fontSize: 13, opacity: 0.6, marginLeft: 4 }}>Счета</div>
+                   {availableAccounts.map(acc => (
+                     <button key={`acc-${acc.id}`} onClick={() => {
+                       saveAmountAndOrDate(undefined, undefined, acc.id, 'account');
+                       setAccountPickerOpen(false);
+                     }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, background: currentAccountId === acc.id && currentTargetType === 'account' ? 'rgba(0,0,0,0.06)' : 'var(--bg-input)', border: 'none', width: '100%', textAlign: 'left' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: acc.color || '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>💳</div>
+                        <div>
+                           <div style={{ fontWeight: 600 }}>{acc.name}</div>
+                           <div style={{ fontSize: 12, opacity: 0.7 }}>{acc.balance.toLocaleString()} ₽</div>
+                        </div>
+                     </button>
+                   ))}
+                 </div>
+               )}
+               {availableGoals.length > 0 && (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                   <div style={{ fontSize: 13, opacity: 0.6, marginLeft: 4 }}>Копилки</div>
+                   {availableGoals.map(g => (
+                     <button key={`goal-${g.id}`} onClick={() => {
+                        saveAmountAndOrDate(undefined, undefined, g.id, 'goal');
+                        setAccountPickerOpen(false);
+                     }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, background: currentAccountId === g.id && currentTargetType === 'goal' ? 'rgba(0,0,0,0.06)' : 'var(--bg-input)', border: 'none', width: '100%', textAlign: 'left' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: g.color || '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{g.icon || '🐷'}</div>
+                        <div>
+                           <div style={{ fontWeight: 600 }}>{g.name}</div>
+                           <div style={{ fontSize: 12, opacity: 0.7 }}>{g.current_amount.toLocaleString()} / {g.target_amount.toLocaleString()}</div>
+                        </div>
+                     </button>
+                   ))}
+                 </div>
+               )}
+               <button className="btn" onClick={() => setAccountPickerOpen(false)} style={{ alignSelf: 'flex-end', marginTop: 8 }}>Отмена</button>
+             </div>
           </Modal>
 
           <div className="detail-actions" style={{ marginTop: 'auto', display: 'flex', gap: 10, paddingTop: 20 }}>
