@@ -32,6 +32,10 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, cus
   const [activeSection, setActiveSection] = useState<'compare' | 'top5' | 'chart' | 'heatmap'>('compare')
   const [periodType, setPeriodType] = useState<'calendar_month' | 'custom_period'>('calendar_month')
   const [periodStartDay, setPeriodStartDay] = useState<number>(1)
+  
+  // State for independent heatmap navigation
+  const [heatmapDate, setHeatmapDate] = useState<Date>(new Date())
+  const [heatmapTransactions, setHeatmapTransactions] = useState<Transaction[]>([])
 
   useEffect(() => {
     const loadBudgetPeriodSettings = async () => {
@@ -46,6 +50,28 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, cus
     }
     loadBudgetPeriodSettings()
   }, [])
+
+  // Fetch heatmap data separately when heatmapDate changes
+  useEffect(() => {
+    const fetchHeatmapData = async () => {
+      try {
+        const userId = WebApp.initDataUnsafe?.user?.id || 777
+        // Fetch full history (limit=0) for the specific calendar month (forceCalendarMode=true)
+        const data = await api.fetchTransactions(
+          userId, 
+          heatmapDate.getMonth() + 1, 
+          heatmapDate.getFullYear(), 
+          0, 
+          undefined, 
+          true // forceCalendarMode
+        )
+        setHeatmapTransactions(data)
+      } catch (e) {
+        console.error('Failed to fetch heatmap data', e)
+      }
+    }
+    fetchHeatmapData()
+  }, [heatmapDate])
 
   // Получаем границы текущего и предыдущего периодов
   const currentPeriod = getBudgetPeriod(currentMonth, periodType, periodStartDay)
@@ -418,7 +444,7 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, cus
                       color: 'var(--text-main)'
                     }}
                     itemStyle={{ color: 'var(--text-main)' }}
-                    formatter={(value: number) => [`${value.toLocaleString()}₽`, 'Баланс']}
+                    formatter={(value: any) => [`${(Number(value) || 0).toLocaleString()}₽`, 'Баланс']}
                     labelFormatter={(label) => `День ${label}`}
                   />
                   <Line 
@@ -454,9 +480,10 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, cus
                 Тепловая карта расходов
               </div>
               <CalendarHeatmap 
-                transactions={transactions}
-                currentMonth={currentMonth.getMonth()}
-                currentYear={currentMonth.getFullYear()}
+                transactions={heatmapTransactions}
+                currentMonth={heatmapDate.getMonth()}
+                currentYear={heatmapDate.getFullYear()}
+                onMonthChange={(m, y) => setHeatmapDate(new Date(y, m, 1))}
               />
             </div>
           </motion.div>

@@ -302,8 +302,17 @@ function getBudgetSettings(userId) {
 }
 
 const getDateFilter = async (query, userId) => {
-  const { month, year } = query;
+  const { month, year, force_calendar_mode } = query;
   if (month !== undefined && year !== undefined) {
+    // Если передан флаг force_calendar_mode, используем календарный месяц
+    if (force_calendar_mode === 'true') {
+      const period = calculateBudgetPeriod('monthly', 1, parseInt(month), parseInt(year));
+      return {
+        sql: ` AND date >= ? AND date <= ? `,
+        params: [period.startDate.toISOString(), period.endDate.toISOString()]
+      };
+    }
+    
     const settings = await getBudgetSettings(userId);
     const { budget_mode, custom_period_day } = settings;
     const period = calculateBudgetPeriod(budget_mode, custom_period_day, parseInt(month), parseInt(year));

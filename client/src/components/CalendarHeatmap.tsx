@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -14,11 +14,13 @@ interface Props {
   transactions: Transaction[];
   currentMonth: number;
   currentYear: number;
+  onMonthChange?: (month: number, year: number) => void;
 }
 
-export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Props) => {
-  const [viewMonth, setViewMonth] = useState(currentMonth);
-  const [viewYear, setViewYear] = useState(currentYear);
+export const CalendarHeatmap = ({ transactions, currentMonth, currentYear, onMonthChange }: Props) => {
+  // Use props directly for view state
+  const viewMonth = currentMonth;
+  const viewYear = currentYear;
 
   // Получаем данные о расходах по дням
   const dailyExpenses = useMemo(() => {
@@ -84,21 +86,27 @@ export const CalendarHeatmap = ({ transactions, currentMonth, currentYear }: Pro
   }
 
   const handlePrevMonth = () => {
+    let newMonth = viewMonth;
+    let newYear = viewYear;
     if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(viewYear - 1);
+      newMonth = 11;
+      newYear = viewYear - 1;
     } else {
-      setViewMonth(viewMonth - 1);
+      newMonth = viewMonth - 1;
     }
+    if (onMonthChange) onMonthChange(newMonth, newYear);
   };
 
   const handleNextMonth = () => {
+    let newMonth = viewMonth;
+    let newYear = viewYear;
     if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(viewYear + 1);
+      newMonth = 0;
+      newYear = viewYear + 1;
     } else {
-      setViewMonth(viewMonth + 1);
+      newMonth = viewMonth + 1;
     }
+    if (onMonthChange) onMonthChange(newMonth, newYear);
   };
 
   const monthNames = [
