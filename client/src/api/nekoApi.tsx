@@ -138,20 +138,22 @@ export const deleteTransaction = async (userId: number, transactionId: number) =
 export const updateTransaction = async (
   userId: number,
   transactionId: number,
-  amount: number,
-  category: string,
-  date: string,
-  type: 'expense' | 'income',
-  note?: string,
-  tags?: string[],
-  photo_urls?: string[],
-  account_id?: number,
-  target_type?: 'account' | 'goal'
+  data: {
+    amount?: number;
+    category?: string;
+    date?: string;
+    type?: 'expense' | 'income';
+    note?: string;
+    tags?: string[];
+    photo_urls?: string[];
+    account_id?: number;
+    target_type?: 'account' | 'goal';
+  }
 ) => {
   const response = await fetch(`${API_URL}/transactions/${transactionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
-    body: JSON.stringify({ amount, category, date, type, note, tags, photo_urls, account_id, target_type })
+    body: JSON.stringify(data)
   });
   if (!response.ok) throw new Error('Failed to update');
   return await response.json();

@@ -175,19 +175,17 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     const tType = (newTType !== undefined) ? newTType : currentTargetType;
 
     try {
-      await api.updateTransaction(
-        userId,
-        transaction.id,
-        amountVal,
-        transaction.category,
-        dateVal.toISOString(),
-        transaction.type,
-        noteInput,
-        localTags,
-        localPhotos,
-        accId,
-        tType
-      );
+      await api.updateTransaction(userId, transaction.id, {
+        amount: amountVal,
+        category: transaction.category,
+        date: dateVal.toISOString(),
+        type: transaction.type,
+        note: noteInput,
+        tags: localTags,
+        photo_urls: localPhotos,
+        account_id: accId,
+        target_type: tType
+      });
       WebApp.HapticFeedback.notificationOccurred('success');
       setLocalAmount(amountVal);
       setEditAmount(amountVal.toString());
@@ -340,7 +338,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   {localPhotos[slot] ? (
                     <>
                       <img src={localPhotos[slot]} alt={`photo-${slot}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onClick={() => { setViewerIndex(slot); setViewerOpen(true); }} />
-                      <button className="photo-remove" onClick={async (e) => { e.stopPropagation(); const newPhotos = localPhotos.slice(); newPhotos.splice(slot,1); setLocalPhotos(newPhotos); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, newPhotos); } catch (err) { console.error(err); } }} style={{ position: 'absolute', top: 6, right: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
+                      <button className="photo-remove" onClick={async (e) => { e.stopPropagation(); const newPhotos = localPhotos.slice(); newPhotos.splice(slot,1); setLocalPhotos(newPhotos); try { if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: localTags, photo_urls: newPhotos, account_id: currentAccountId, target_type: currentTargetType }); } catch (err) { console.error(err); } }} style={{ position: 'absolute', top: 6, right: 6, background: 'transparent', color: 'var(--text-main)', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none', padding: 0 }}>
                         <X size={16} strokeWidth={2} />
                         <span className="icon-fallback" aria-hidden style={{ display: 'none' }}>✖</span>
                       </button>
@@ -375,7 +373,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   newPhotos.push(url);
                 }
                 setLocalPhotos(newPhotos.slice(0,2));
-                if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, newPhotos.slice(0,2));
+                if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: localTags, photo_urls: newPhotos.slice(0,2), account_id: currentAccountId, target_type: currentTargetType });
                 WebApp.HapticFeedback.notificationOccurred('success');
               } catch (err) { console.error(err); WebApp.HapticFeedback.notificationOccurred('error'); }
               input.value = '';
@@ -448,7 +446,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 style={{ width: '100%', minHeight: 120, resize: 'vertical' }}
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                <button className="btn" onClick={async () => { try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, localTags, localPhotos); WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) { console.error(e); WebApp.HapticFeedback.notificationOccurred('error'); } setNoteModalOpen(false); }}>Готово</button>
+                <button className="btn" onClick={async () => { try { if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: localTags, photo_urls: localPhotos, account_id: currentAccountId, target_type: currentTargetType }); WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) { console.error(e); WebApp.HapticFeedback.notificationOccurred('error'); } setNoteModalOpen(false); }}>Готово</button>
               </div>
             </div>
           </Modal>
@@ -460,7 +458,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 {localTags.map(tag => (
                   <span key={tag} className="tag-chip-item">
                     #{tag}
-                    <button onClick={async () => { const newTags = localTags.filter(t => t !== tag); setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } }}><X size={12} /></button>
+                    <button onClick={async () => { const newTags = localTags.filter(t => t !== tag); setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: newTags, photo_urls: localPhotos, account_id: currentAccountId, target_type: currentTargetType }); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } }}><X size={12} /></button>
                   </span>
                 ))}
               </div>
@@ -471,19 +469,19 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   placeholder="тег..."
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const trimmed = tagInput.trim().replace(/^#/, ''); if (trimmed && !localTags.includes(trimmed)) { const newTags = [...localTags, trimmed]; setLocalTags(newTags); setTagInput(''); (async () => { try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (err) { console.error(err); } })(); } } }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const trimmed = tagInput.trim().replace(/^#/, ''); if (trimmed && !localTags.includes(trimmed)) { const newTags = [...localTags, trimmed]; setLocalTags(newTags); setTagInput(''); (async () => { try { if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: newTags, photo_urls: localPhotos, account_id: currentAccountId, target_type: currentTargetType }); WebApp.HapticFeedback.impactOccurred('light'); } catch (err) { console.error(err); } })(); } } }}
                 />
               </div>
               {existingTags.length > 0 && (
                 <div className="tags-suggestions" style={{ marginTop: 8 }}>
                   {existingTags.filter(t => t.toLowerCase().includes(tagInput.toLowerCase()) && !localTags.includes(t)).slice(0,5).map(tag => (
-                    <button key={tag} onClick={async () => { const newTags = [...localTags, tag]; setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } }} className="suggestion-chip">#{tag}</button>
+                    <button key={tag} onClick={async () => { const newTags = [...localTags, tag]; setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: newTags, photo_urls: localPhotos, account_id: currentAccountId, target_type: currentTargetType }); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } }} className="suggestion-chip">#{tag}</button>
                   ))}
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                <button className="btn" onClick={async () => { if (tagInput.trim()) { const trimmed = tagInput.trim().replace(/^#/, ''); if (!localTags.includes(trimmed)) { const newTags = [...localTags, trimmed]; setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, transaction.category, transaction.date, transaction.type, noteInput, newTags, localPhotos); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } } } setTagsModalOpen(false); }}>Готово</button>
+                <button className="btn" onClick={async () => { if (tagInput.trim()) { const trimmed = tagInput.trim().replace(/^#/, ''); if (!localTags.includes(trimmed)) { const newTags = [...localTags, trimmed]; setLocalTags(newTags); try { if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: transaction.category, date: transaction.date, type: transaction.type, note: noteInput, tags: newTags, photo_urls: localPhotos, account_id: currentAccountId, target_type: currentTargetType }); WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { console.error(e); } } } setTagsModalOpen(false); }}>Готово</button>
               </div>
             </div>
           </Modal>
@@ -503,7 +501,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       const newCatId = cid;
                       const name = c.name || cid;
                       try {
-                        if (userId) await api.updateTransaction(userId, transaction.id, transaction.amount, newCatId, localDateObj.toISOString(), transaction.type, noteInput, localTags, localPhotos);
+                        if (userId) await api.updateTransaction(userId, transaction.id, { amount: transaction.amount, category: newCatId, date: localDateObj.toISOString(), type: transaction.type, note: noteInput, tags: localTags, photo_urls: localPhotos, account_id: currentAccountId, target_type: currentTargetType });
                         setCurrentCategoryId(newCatId);
                         setCurrentCategoryName(name);
                         setCurrentCategoryIcon(c.icon);
