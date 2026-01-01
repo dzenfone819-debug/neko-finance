@@ -30,6 +30,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from './data/con
 import * as api from './api/nekoApi'
 import { cloudStorage } from './utils/cloudStorage'
 import { evaluateExpression, formatCurrency } from './utils/calculator'
+import { getBudgetPeriod } from './utils/budgetPeriod'
 
 function App() {
   const [activeTab, setActiveTab] = useState<'input' | 'stats' | 'accounts' | 'budget' | 'analytics' | 'settings'>('input')
@@ -205,7 +206,6 @@ function App() {
     let currentUserId = 777; 
     if (WebApp.initDataUnsafe.user) currentUserId = WebApp.initDataUnsafe.user.id;
     setUserId(currentUserId);
-    loadData(currentUserId, new Date());
     loadBudgetPeriodSettings(currentUserId);
   }, [])
 
@@ -227,8 +227,10 @@ function App() {
 
   const loadData = async (uid: number, date: Date) => {
     try {
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
+      // Calculate effective period based on settings
+      const { startDate } = getBudgetPeriod(date, periodType, periodStartDay);
+      const month = startDate.getMonth() + 1;
+      const year = startDate.getFullYear();
 
       // Parallel fetch of base data
       // For transactions:
@@ -292,8 +294,9 @@ function App() {
   const loadMoreTransactions = async () => {
     if (!userId || !hasMoreTransactions) return;
     try {
-        const month = currentDate.getMonth() + 1;
-        const year = currentDate.getFullYear();
+        const { startDate } = getBudgetPeriod(currentDate, periodType, periodStartDay);
+        const month = startDate.getMonth() + 1;
+        const year = startDate.getFullYear();
         const nextBatch = await api.fetchTransactions(userId, month, year, 30, transactionOffset);
         if (nextBatch.length > 0) {
             setTransactions(prev => [...prev, ...nextBatch]);
@@ -365,6 +368,13 @@ function App() {
     return () => { cancelled = true; clearInterval(id); }
   }, [userId]);
 
+  // Reload data when budget period settings or date change
+  useEffect(() => {
+    if (userId) {
+      loadData(userId, currentDate);
+    }
+  }, [userId, currentDate, periodType, periodStartDay]);
+
   // Polling for real-time balance updates (Sync between users)
   useEffect(() => {
     if (!userId) return;
@@ -372,8 +382,9 @@ function App() {
     
     const checkBalance = async () => {
         try {
-            const month = currentDate.getMonth() + 1;
-            const year = currentDate.getFullYear();
+            const { startDate } = getBudgetPeriod(currentDate, periodType, periodStartDay);
+            const month = startDate.getMonth() + 1;
+            const year = startDate.getFullYear();
             const balData = await api.fetchBalance(userId, month, year);
             if (cancelled) return;
             
@@ -387,7 +398,7 @@ function App() {
 
     const intervalId = setInterval(checkBalance, 10000); // Check every 10 seconds
     return () => { cancelled = true; clearInterval(intervalId); }
-  }, [userId, currentDate, totalSpent, totalIncome]); // Depend on current state to compare
+  }, [userId, currentDate, totalSpent, totalIncome, periodType, periodStartDay]); // Depend on current state to compare
 
   const handleSaveBudgetPeriodSettings = async (newPeriodType: 'calendar_month' | 'custom_period', newStartDay: number) => {
     if (!userId) return;
@@ -395,14 +406,14 @@ function App() {
       await api.setBudgetPeriodSettings(userId, newPeriodType, newStartDay);
       setPeriodType(newPeriodType);
       setPeriodStartDay(newStartDay);
-      loadData(userId, currentDate);
+      // loadData is triggered by useEffect on state change
       WebApp.HapticFeedback.notificationOccurred('success');
     } catch (error) { console.error(error); WebApp.HapticFeedback.notificationOccurred('error'); }
   };
 
   const handleDateChange = (newDate: Date) => {
     setCurrentDate(newDate);
-    if (userId) loadData(userId, newDate);
+    // loadData is triggered by useEffect on currentDate change
   }
 
   // loadAllTransactions is now integrated into loadData, but we keep this empty or remove calls to it
@@ -494,8 +505,9 @@ function App() {
   const handleModalSave = async (val: number) => {
     if (!userId || !editTarget) return;
     try {
-      const month = currentDate.getMonth() + 1;
-      const year = currentDate.getFullYear();
+      const { startDate } = getBudgetPeriod(currentDate, periodType, periodStartDay);
+      const month = startDate.getMonth() + 1;
+      const year = startDate.getFullYear();
       WebApp.HapticFeedback.notificationOccurred('success');
       if (editTarget.type === 'total') {
         await api.setBudget(userId, val, month, year);
@@ -553,8 +565,9 @@ function App() {
   const handleCreateCategory = async () => {
       if (!userId) return;
       try {
-        const month = currentDate.getMonth() + 1;
-        const year = currentDate.getFullYear();
+        const { startDate } = getBudgetPeriod(currentDate, periodType, periodStartDay);
+        const month = startDate.getMonth() + 1;
+        const year = startDate.getFullYear();
         const limit = newCategoryLimit && !isNaN(parseFloat(newCategoryLimit)) ? parseFloat(newCategoryLimit) : 0;
         if (editingCategoryId) {
           setCategoryOverride(editingCategoryId, { name: newCategoryName, icon: newCategoryIcon, color: newCategoryColor, limit: limit });
