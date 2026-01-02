@@ -11,18 +11,24 @@ interface Props {
 
 export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSave, onClose }) => {
   const [value, setValue] = useState('');
+  const [error, setError] = useState('');
 
   // При открытии окна подставляем текущее значение
   useEffect(() => {
-    if (isOpen) setValue(initialValue > 0 ? initialValue.toString() : '');
+    if (isOpen) {
+      setValue(initialValue > 0 ? initialValue.toString() : '');
+      setError('');
+    }
   }, [isOpen, initialValue]);
 
   const handleSave = () => {
     const num = parseFloat(value);
-    if (!isNaN(num) && num >= 0) {
-      onSave(num);
-      onClose();
+    if (isNaN(num) || num < 0) {
+      setError('Введите корректную положительную сумму');
+      return;
     }
+    onSave(num);
+    onClose();
   };
 
   return (
@@ -68,16 +74,63 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
             
             <div style={{ position: 'relative' }}>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setError('');
+                  
+                  // Разрешаем пустое значение (опционально)
+                  if (val === '') {
+                    setValue(val);
+                    return;
+                  }
+                  
+                  // Проверка на минус
+                  if (val.includes('-')) {
+                    setError('Бюджет не может быть отрицательным');
+                    return;
+                  }
+                  
+                  // Проверка на недопустимые символы
+                  const onlyDigitsAndDot = /^[0-9.]+$/;
+                  if (!onlyDigitsAndDot.test(val)) {
+                    setError('Введите корректное число');
+                    return;
+                  }
+                  
+                  // Проверка на несколько точек
+                  if ((val.match(/\./g) || []).length > 1) {
+                    setError('Введите корректное число');
+                    return;
+                  }
+                  
+                  // Проверка на знаки после запятой
+                  const parts = val.split('.');
+                  if (parts.length === 2 && parts[1].length > 2) {
+                    setError('Максимум 2 знака после запятой');
+                    return;
+                  }
+                  
+                  const num = parseFloat(val);
+                  
+                  // Проверка на NaN
+                  if (isNaN(num)) {
+                    setError('Введите корректное число');
+                    return;
+                  }
+                  
+                  // Если все проверки пройдены
+                  setValue(val);
+                }}
                 placeholder="0"
                 autoFocus
                 style={{
                   fontSize: 32, 
                   padding: '16px 20px', 
                   borderRadius: 16,
-                  border: '2px solid var(--border-color)', 
+                  border: error ? '2px solid #F87171' : '2px solid var(--border-color)', 
                   outline: 'none',
                   textAlign: 'center', 
                   color: 'var(--text-main)', 
@@ -88,8 +141,8 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
                   transition: 'all 0.3s ease',
                   boxShadow: '0 4px 12px var(--shadow-color)'
                 }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                onFocus={(e) => e.target.style.borderColor = error ? '#F87171' : 'var(--primary)'}
+                onBlur={(e) => e.target.style.borderColor = error ? '#F87171' : 'var(--border-color)'}
               />
               <span style={{
                 position: 'absolute',
@@ -102,6 +155,21 @@ export const ModalInput: React.FC<Props> = ({ isOpen, title, initialValue, onSav
                 pointerEvents: 'none'
               }}>₽</span>
             </div>
+            
+            {error && (
+              <div style={{
+                color: '#F87171',
+                fontSize: 13,
+                textAlign: 'center',
+                marginTop: -10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 12, marginTop: 5 }}>
               <motion.button
