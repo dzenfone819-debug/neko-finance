@@ -83,6 +83,30 @@ db.serialize(() => {
   db.run("ALTER TABLE transactions ADD COLUMN note TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN tags TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN photo_urls TEXT", () => {})
+  db.run("ALTER TABLE transactions ADD COLUMN target_type TEXT DEFAULT 'account'", () => {
+    // Migration: Attempt to backfill target_type for existing records that might be null (though we default to account)
+    // Actually, if we just added the column, it defaults to 'account', but let's be safe and try to detect goals.
+    // Logic: If account_id matches a goal ID but not an account ID, it's a goal.
+    // If matches both or neither, we default to account.
+    db.all("SELECT id, account_id, user_id FROM transactions WHERE target_type IS NULL OR target_type = 'account'", (err, rows) => {
+        if (err || !rows) return;
+        rows.forEach(tx => {
+            if (!tx.account_id) return;
+            // Check if it exists in accounts
+            db.get("SELECT id FROM accounts WHERE id = ? AND user_id = ?", [tx.account_id, tx.user_id], (errAcc, rowAcc) => {
+                if (!rowAcc) {
+                    // Not in accounts, maybe in goals?
+                    db.get("SELECT id FROM savings_goals WHERE id = ? AND user_id = ?", [tx.account_id, tx.user_id], (errGoal, rowGoal) => {
+                        if (rowGoal) {
+                            // It's a goal!
+                            db.run("UPDATE transactions SET target_type = 'goal' WHERE id = ?", [tx.id]);
+                        }
+                    });
+                }
+            });
+        });
+    });
+  })
 
   // ... (остальные таблицы без изменений) ...
   db.run(`
@@ -251,9 +275,10 @@ fastify.post('/add-expense', (request, reply) => {
   const tagsStr = Array.isArray(tags) ? JSON.stringify(tags) : (tags || '[]')
   const photosStr = Array.isArray(photo_urls) ? JSON.stringify(photo_urls) : (photo_urls || '[]')
 
-  const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id, note, tags, photo_urls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  // Добавляем target_type в INSERT
+  const query = `INSERT INTO transactions (amount, category, date, user_id, type, account_id, target_type, note, tags, photo_urls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   
-  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null, note || '', tagsStr, photosStr], function(err) {
+  db.run(query, [amount, category || 'general', finalDate, userId, finalType, account_id || null, finalTargetType, note || '', tagsStr, photosStr], function(err) {
     if (err) {
       console.error('❌ Database error:', err);
       reply.code(500).send({ error: err.message })
@@ -406,39 +431,56 @@ fastify.get('/transactions', (request, reply) => {
 fastify.delete('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
-  // First, fetch photo_urls for this transaction so we can remove files from disk
-  db.get("SELECT photo_urls FROM transactions WHERE id = ? AND user_id = ?", [id, userId], (err, row) => {
+  
+  // 1. Fetch transaction details (to revert balance & delete files)
+  db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [id, userId], (err, row) => {
     if (err) {
       console.error('DB error fetching transaction for deletion:', err);
       return reply.code(500).send({ error: err.message });
     }
+    if (!row) {
+        return reply.code(404).send({ error: 'Transaction not found' });
+    }
 
-    const photosJson = row && row.photo_urls ? row.photo_urls : '[]';
+    // 2. Revert Balance Logic
+    const oldAmount = row.amount;
+    const oldType = row.type || 'expense'; // 'expense' or 'income'
+    const accountId = row.account_id;
+    const targetType = row.target_type || 'account'; // 'account' or 'goal'
+
+    if (accountId) {
+        const table = targetType === 'goal' ? 'savings_goals' : 'accounts';
+        const amountCol = targetType === 'goal' ? 'current_amount' : 'balance';
+        
+        // Revert logic:
+        // If it was expense, we ADD back the amount.
+        // If it was income, we SUBTRACT the amount.
+        const operator = (oldType === 'expense') ? '+' : '-';
+        
+        db.run(`UPDATE ${table} SET ${amountCol} = ${amountCol} ${operator} ? WHERE id = ? AND user_id = ?`, [oldAmount, accountId, userId], (errUpd) => {
+            if (errUpd) console.error('Failed to revert balance on delete', errUpd);
+        });
+    }
+
+    // 3. Delete Files
+    const photosJson = row.photo_urls ? row.photo_urls : '[]';
     let photoList = [];
     try {
       photoList = typeof photosJson === 'string' ? JSON.parse(photosJson) : photosJson;
     } catch (e) {
       photoList = [];
     }
-
-    // Delete files from uploads dir
     if (Array.isArray(photoList) && photoList.length > 0) {
       photoList.forEach(p => {
         try {
-          // Expect urls like /uploads/filename or uploads/filename
           const fname = path.basename(p);
           const fullPath = path.join(UPLOADS_DIR, fname);
-          if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
-            console.log('Deleted upload file:', fullPath);
-          }
-        } catch (e) {
-          console.warn('Failed to delete upload', p, e);
-        }
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        } catch (e) { console.warn('Failed to delete upload', p, e); }
       });
     }
 
-    // Now delete the DB row
+    // 4. Delete Record
     db.run("DELETE FROM transactions WHERE id = ? AND user_id = ?", [id, userId], function(err2) {
       if (err2) {
         console.error('DB error deleting transaction:', err2);
@@ -449,7 +491,7 @@ fastify.delete('/transactions/:id', (request, reply) => {
   });
 })
 
-// ОБНОВЛЕНИЕ ТРАНЗАКЦИИ (Простое, без пересчета баланса пока что)
+// ОБНОВЛЕНИЕ ТРАНЗАКЦИИ
 fastify.put('/transactions/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const { id } = request.params
@@ -458,12 +500,52 @@ fastify.put('/transactions/:id', (request, reply) => {
   const tagsStr = Array.isArray(tags) ? JSON.stringify(tags) : tags
   const photosStr = Array.isArray(photo_urls) ? JSON.stringify(photo_urls) : photo_urls
 
-  const sql = `UPDATE transactions SET amount = ?, category = ?, date = ?, type = ?, note = ?, tags = ?, photo_urls = ? WHERE id = ? AND user_id = ?`
-  
-  db.run(sql, [amount, category, date, type, note, tagsStr, photosStr, id, userId], function(err) {
-    if (err) return reply.code(500).send({ error: err.message })
-    return reply.send({ status: 'updated' })
-  })
+  // 1. Fetch OLD transaction details
+  db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [id, userId], (err, oldRow) => {
+      if (err) return reply.code(500).send({ error: err.message });
+      if (!oldRow) return reply.code(404).send({ error: 'Transaction not found' });
+
+      // 2. Prepare Update SQL
+      // Note: We do NOT update account_id or target_type via this endpoint currently, per requirement to just change amount/date/category
+      // But we DO need to update the balance on the referenced account.
+      
+      const sql = `UPDATE transactions SET amount = ?, category = ?, date = ?, type = ?, note = ?, tags = ?, photo_urls = ? WHERE id = ? AND user_id = ?`
+      
+      db.run(sql, [amount, category, date, type, note, tagsStr, photosStr, id, userId], function(err2) {
+        if (err2) return reply.code(500).send({ error: err2.message })
+
+        // 3. Update Balance Logic
+        // We need to revert the old amount and apply the new amount.
+        // We assume the account_id and target_type haven't changed.
+        const accountId = oldRow.account_id;
+        const targetType = oldRow.target_type || 'account';
+        const table = targetType === 'goal' ? 'savings_goals' : 'accounts';
+        const amountCol = targetType === 'goal' ? 'current_amount' : 'balance';
+
+        if (accountId) {
+             // Step A: Revert OLD amount
+             // If old was expense, we ADD back. If income, SUBTRACT.
+             const oldOp = (oldRow.type || 'expense') === 'expense' ? '+' : '-';
+             
+             // Step B: Apply NEW amount
+             // If new is expense, we SUBTRACT. If income, ADD.
+             const newOp = (type || 'expense') === 'expense' ? '-' : '+';
+
+             // Optimization: We can do it in one query or two. Two is safer to read.
+             // Revert old
+             db.run(`UPDATE ${table} SET ${amountCol} = ${amountCol} ${oldOp} ? WHERE id = ? AND user_id = ?`, [oldRow.amount, accountId, userId], (errRev) => {
+                 if (errRev) console.error('Failed to revert balance on update', errRev);
+                 
+                 // Apply new
+                 db.run(`UPDATE ${table} SET ${amountCol} = ${amountCol} ${newOp} ? WHERE id = ? AND user_id = ?`, [amount, accountId, userId], (errApp) => {
+                    if (errApp) console.error('Failed to apply balance on update', errApp);
+                 });
+             });
+        }
+
+        return reply.send({ status: 'updated' })
+      })
+  });
 })
 
 // ... Остальные эндпоинты (settings, limits, accounts, goals, reminders) остаются как есть ...
