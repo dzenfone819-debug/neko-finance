@@ -91,6 +91,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         return { name: catId, icon: '❓', color: '#ccc' };
     }
 
+    // Для удаленных кастомных категорий используем только значения из базы (они уже актуальные)
+    // Overrides не применяем, так как значения были сохранены в базу перед удалением
+    if (cat && 'is_deleted' in cat && (cat.is_deleted === 1 || cat.is_deleted === true)) {
+      return cat; // Используем только значения из базы для удаленных категорий
+    }
+
     return { ...cat, ...(override || {}) };
   };
 

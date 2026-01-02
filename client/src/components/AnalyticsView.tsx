@@ -159,7 +159,13 @@ export const AnalyticsView: React.FC<Props> = ({ transactions, currentMonth, cus
   const getCategoryName = (id: string) => {
     // Проверяем кастомные категории
     const customCat = customCategories.find(c => c.id === id)
-    if (customCat) return customCat.name
+    // Для удаленных кастомных категорий используем только значения из базы
+    if (customCat) {
+      const isDeleted = ('is_deleted' in customCat) && (customCat.is_deleted === 1 || customCat.is_deleted === true);
+      if (isDeleted) return customCat.name; // Для удаленных используем только значение из базы
+      // Для активных категорий можно применить overrides, но в AnalyticsView их нет, так что просто возвращаем имя
+      return customCat.name;
+    }
     
     const categories: Record<string, string> = {
       groceries: 'Продукты', transport: 'Транспорт', entertainment: 'Развлечения',

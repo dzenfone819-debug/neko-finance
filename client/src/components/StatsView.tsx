@@ -31,17 +31,23 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
 
   // Функция для получения названия категории с учетом кастомных
   const getDisplayCategoryName = (categoryId: string) => {
+    const customCat = customCategories.find(c => c.id === categoryId);
+    // Для удаленных кастомных категорий используем только значения из базы
+    const isDeletedCustom = customCat && ('is_deleted' in customCat) && (customCat.is_deleted === 1 || customCat.is_deleted === true);
+    if (isDeletedCustom) return customCat.name;
     const override = categoryOverrides?.[categoryId] || {};
     if (override.name) return override.name;
-    const customCat = customCategories.find(c => c.id === categoryId);
     if (customCat) return customCat.name;
     return getCategoryName(categoryId);
   };
 
   const getCategoryIcon = (categoryId: string) => {
+    const customCat = customCategories.find(c => c.id === categoryId);
+    // Для удаленных кастомных категорий используем только значения из базы
+    const isDeletedCustom = customCat && ('is_deleted' in customCat) && (customCat.is_deleted === 1 || customCat.is_deleted === true);
+    if (isDeletedCustom) return getIconByName(customCat.icon, 14);
     const override = categoryOverrides?.[categoryId] || {};
     if (override.icon) return getIconByName(override.icon, 14);
-    const customCat = customCategories.find(c => c.id === categoryId);
     if (customCat) {
       return getIconByName(customCat.icon, 14);
     }
@@ -54,9 +60,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ data, total, transactions 
   };
 
   const getCategoryColor = (categoryId: string, index: number) => {
+    const customCat = customCategories.find(c => c.id === categoryId);
+    // Для удаленных кастомных категорий используем только значения из базы
+    const isDeletedCustom = customCat && ('is_deleted' in customCat) && (customCat.is_deleted === 1 || customCat.is_deleted === true);
+    if (isDeletedCustom) return customCat.color;
     const override = categoryOverrides?.[categoryId] || {};
     if (override.color) return override.color;
-    const customCat = customCategories.find(c => c.id === categoryId);
     if (customCat) return customCat.color;
     const cat = CATEGORIES.find(c => c.id === categoryId);
     return cat ? cat.color : COLORS[index % COLORS.length];

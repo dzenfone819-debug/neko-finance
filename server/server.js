@@ -121,11 +121,13 @@ db.serialize(() => {
       icon TEXT,
       color TEXT,
       created_at TEXT,
-      type TEXT DEFAULT 'expense'
+      type TEXT DEFAULT 'expense',
+      is_deleted INTEGER DEFAULT 0
     )
   `)
   
   db.run("ALTER TABLE custom_categories ADD COLUMN type TEXT DEFAULT 'expense'", () => {})
+  db.run("ALTER TABLE custom_categories ADD COLUMN is_deleted INTEGER DEFAULT 0", () => {})
 
   db.run(`
     CREATE TABLE IF NOT EXISTS accounts (
@@ -608,7 +610,13 @@ fastify.delete('/limits/:categoryId', (request, reply) => {
 // CUSTOM CATEGORIES
 fastify.get('/custom-categories', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
-  db.all("SELECT * FROM custom_categories WHERE user_id = ?", [userId], (err, rows) => reply.send(rows || []))
+  const includeDeleted = request.query.includeDeleted === 'true'
+  // По умолчанию возвращаем только не удаленные категории (is_deleted = 0 или NULL)
+  // Если includeDeleted=true, возвращаем все категории (для истории транзакций)
+  const query = includeDeleted 
+    ? "SELECT * FROM custom_categories WHERE user_id = ?"
+    : "SELECT * FROM custom_categories WHERE user_id = ? AND (is_deleted = 0 OR is_deleted IS NULL)"
+  db.all(query, [userId], (err, rows) => reply.send(rows || []))
 })
 
 fastify.post('/custom-categories', (request, reply) => {
@@ -623,12 +631,41 @@ fastify.post('/custom-categories', (request, reply) => {
   })
 })
 
+fastify.put('/custom-categories/:id', (request, reply) => {
+  const userId = request.headers['x-primary-user-id']
+  const categoryId = request.params.id
+  const { name, icon, color } = request.body
+  // Обновляем категорию (используется перед удалением для сохранения актуальных значений)
+  db.run("UPDATE custom_categories SET name = ?, icon = ?, color = ? WHERE id = ? AND user_id = ?", 
+    [name, icon, color, categoryId, userId], 
+    (err) => {
+      if (err) return reply.code(500).send({ error: err.message })
+      reply.send({ status: 'ok' })
+    }
+  )
+})
+
 fastify.delete('/custom-categories/:id', (request, reply) => {
   const userId = request.headers['x-primary-user-id']
   const categoryId = request.params.id
-  db.run("DELETE FROM custom_categories WHERE id = ? AND user_id = ?", [categoryId, userId], () => {
-    db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => reply.send({ status: 'ok' }))
-  })
+  const { name, icon, color } = request.body || {}
+  // Если переданы name, icon, color - обновляем их перед soft delete
+  // Это нужно для сохранения актуальных значений в истории транзакций
+  if (name && icon && color) {
+    db.run("UPDATE custom_categories SET name = ?, icon = ?, color = ?, is_deleted = 1 WHERE id = ? AND user_id = ?", 
+      [name, icon, color, categoryId, userId], 
+      () => {
+        // Удаляем лимиты для этой категории
+        db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => reply.send({ status: 'ok' }))
+      }
+    )
+  } else {
+    // Soft delete: устанавливаем is_deleted = 1 вместо удаления записи
+    db.run("UPDATE custom_categories SET is_deleted = 1 WHERE id = ? AND user_id = ?", [categoryId, userId], () => {
+      // Удаляем лимиты для этой категории
+      db.run("DELETE FROM category_limits WHERE user_id = ? AND category_id = ?", [userId, categoryId], () => reply.send({ status: 'ok' }))
+    })
+  }
 })
 
 // CATEGORY OVERRIDES

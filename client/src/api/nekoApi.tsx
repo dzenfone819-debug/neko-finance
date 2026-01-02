@@ -179,9 +179,12 @@ export const deleteCategoryLimit = async (userId: number, category: string) => {
   return await response.json();
 };
 
-export const fetchCustomCategories = async (userId: number) => {
-  const response = await fetch(`${API_URL}/custom-categories`, {
-    headers: { 'x-user-id': userId.toString() }
+export const fetchCustomCategories = async (userId: number, includeDeleted: boolean = false) => {
+  const url = includeDeleted 
+    ? `${API_URL}/custom-categories?includeDeleted=true`
+    : `${API_URL}/custom-categories`;
+  const response = await fetch(url, { 
+    headers: { 'x-user-id': userId.toString() } 
   });
   return await response.json();
 };
@@ -220,10 +223,27 @@ export const createCustomCategory = async (userId: number, name: string, icon: s
   return await response.json();
 };
 
-export const deleteCustomCategory = async (userId: number, categoryId: string) => {
+export const updateCustomCategory = async (userId: number, categoryId: string, name: string, icon: string, color: string) => {
+  const response = await fetch(`${API_URL}/custom-categories/${categoryId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: JSON.stringify({ name, icon, color })
+  });
+  return await response.json();
+};
+
+export const deleteCustomCategory = async (userId: number, categoryId: string, name?: string, icon?: string, color?: string) => {
+  const body: any = {};
+  // Если переданы name, icon, color - сохраняем их перед удалением
+  if (name && icon && color) {
+    body.name = name;
+    body.icon = icon;
+    body.color = color;
+  }
   const response = await fetch(`${API_URL}/custom-categories/${categoryId}`, {
     method: 'DELETE',
-    headers: { 'x-user-id': userId.toString() }
+    headers: { 'Content-Type': 'application/json', 'x-user-id': userId.toString() },
+    body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined
   });
   return await response.json();
 };

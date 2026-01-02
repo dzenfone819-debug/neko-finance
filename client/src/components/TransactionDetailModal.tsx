@@ -72,10 +72,13 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     // derive display values using overrides if present
     const override = (categoryOverrides && categoryOverrides[transaction.category]) || {};
     const std = ([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === transaction.category));
+    // Для истории используем все категории (включая удаленные)
     const custom = customCats.find(c => c.id === transaction.category);
-    const derivedName = override.name || (std ? std.name : (custom ? custom.name : transaction.category));
-    const derivedIcon = override.icon || (std ? std.icon : (custom ? custom.icon : categoryIcon));
-    const derivedColor = override.color || (std ? std.color : (custom ? custom.color : categoryColor));
+    // Для удаленных кастомных категорий используем только значения из базы (они уже актуальные)
+    const isDeletedCustom = custom && ('is_deleted' in custom) && (custom.is_deleted === 1 || custom.is_deleted === true);
+    const derivedName = isDeletedCustom ? (custom.name || transaction.category) : (override.name || (std ? std.name : (custom ? custom.name : transaction.category)));
+    const derivedIcon = isDeletedCustom ? (custom.icon || categoryIcon) : (override.icon || (std ? std.icon : (custom ? custom.icon : categoryIcon)));
+    const derivedColor = isDeletedCustom ? (custom.color || categoryColor) : (override.color || (std ? std.color : (custom ? custom.color : categoryColor)));
     setCurrentCategoryName(derivedName as string);
     setCurrentCategoryIcon(derivedIcon);
     setCurrentCategoryColor(derivedColor);
@@ -88,7 +91,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     const override = (categoryOverrides && categoryOverrides[id]) || {};
     const std = ([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.id === id));
     const custom = customCats.find(c => c.id === id);
-    const derivedName = override.name || (std ? std.name : (custom ? custom.name : id));
+    // Для удаленных кастомных категорий используем только значения из базы
+    const isDeletedCustom = custom && ('is_deleted' in custom) && (custom.is_deleted === 1 || custom.is_deleted === true);
+    const derivedName = isDeletedCustom ? (custom.name || id) : (override.name || (std ? std.name : (custom ? custom.name : id)));
     const derivedIcon = override.icon || (std ? std.icon : (custom ? custom.icon : categoryIcon));
     const derivedColor = override.color || (std ? std.color : (custom ? custom.color : categoryColor));
     setCurrentCategoryName(derivedName as string);
@@ -100,7 +105,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     const loadCustom = async () => {
       if (!userId) return;
       try {
-        const res = await api.fetchCustomCategories(userId);
+        // Загружаем все категории (включая удаленные) для истории транзакций
+        const res = await api.fetchCustomCategories(userId, true);
         setCustomCats(res || []);
       } catch (e) { console.error('Failed to load custom categories', e); }
     }
@@ -172,10 +178,12 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
     if (transaction.type === 'expense') {
       filteredStd = avail.length === 0 ? [] : stdList.filter(c => avail.includes(c.id));
-      filteredCustom = avail.length === 0 ? [] : customCats.filter(c => (c.type || 'expense') === 'expense' && avail.includes(c.id));
+      // Фильтруем удаленные категории из списка выбора
+      filteredCustom = avail.length === 0 ? [] : customCats.filter(c => (c.type || 'expense') === 'expense' && avail.includes(c.id) && (c.is_deleted === 0 || c.is_deleted === null || c.is_deleted === undefined));
     } else {
       filteredStd = stdList.filter(c => !(categoryOverrides && categoryOverrides[c.id] && categoryOverrides[c.id].hidden));
-      filteredCustom = customCats.filter(c => c.type === 'income');
+      // Фильтруем удаленные категории из списка выбора
+      filteredCustom = customCats.filter(c => c.type === 'income' && (c.is_deleted === 0 || c.is_deleted === null || c.is_deleted === undefined));
     }
 
     // merge and dedupe by id/name
