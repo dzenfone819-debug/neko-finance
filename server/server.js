@@ -83,30 +83,7 @@ db.serialize(() => {
   db.run("ALTER TABLE transactions ADD COLUMN note TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN tags TEXT", () => {})
   db.run("ALTER TABLE transactions ADD COLUMN photo_urls TEXT", () => {})
-  db.run("ALTER TABLE transactions ADD COLUMN target_type TEXT DEFAULT 'account'", () => {
-    // Migration: Attempt to backfill target_type for existing records that might be null (though we default to account)
-    // Actually, if we just added the column, it defaults to 'account', but let's be safe and try to detect goals.
-    // Logic: If account_id matches a goal ID but not an account ID, it's a goal.
-    // If matches both or neither, we default to account.
-    db.all("SELECT id, account_id, user_id FROM transactions WHERE target_type IS NULL OR target_type = 'account'", (err, rows) => {
-        if (err || !rows) return;
-        rows.forEach(tx => {
-            if (!tx.account_id) return;
-            // Check if it exists in accounts
-            db.get("SELECT id FROM accounts WHERE id = ? AND user_id = ?", [tx.account_id, tx.user_id], (errAcc, rowAcc) => {
-                if (!rowAcc) {
-                    // Not in accounts, maybe in goals?
-                    db.get("SELECT id FROM savings_goals WHERE id = ? AND user_id = ?", [tx.account_id, tx.user_id], (errGoal, rowGoal) => {
-                        if (rowGoal) {
-                            // It's a goal!
-                            db.run("UPDATE transactions SET target_type = 'goal' WHERE id = ?", [tx.id]);
-                        }
-                    });
-                }
-            });
-        });
-    });
-  })
+  db.run("ALTER TABLE transactions ADD COLUMN target_type TEXT DEFAULT 'account'", () => {})
 
   // ... (остальные таблицы без изменений) ...
   db.run(`
