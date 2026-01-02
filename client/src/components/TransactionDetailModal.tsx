@@ -161,13 +161,28 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     }
   }
 
-  // Build picker list limited to user's available categories (from parent + custom categories)
+  // Build picker list:
+  // - For expenses: keep previous behavior (only show standard expense categories that exist in budget via `availableCategoryIds` and matching custom expense categories).
+  // - For incomes: show standard income categories unless hidden by override, plus all custom income categories (to match BudgetView).
   const pickerCategories = (() => {
     const avail = availableCategoryIds || [];
     const stdList = (transaction.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES) as any[];
-    const filteredStd = avail.length === 0 ? [] : stdList.filter(c => avail.includes(c.id));
-    const filteredCustom = avail.length === 0 ? [] : customCats.filter(c => (c.type || 'expense') === transaction.type && avail.includes(c.id));
-    const merged = [...filteredStd, ...filteredCustom];
+    let filteredStd: any[] = [];
+    let filteredCustom: any[] = [];
+
+    if (transaction.type === 'expense') {
+      filteredStd = avail.length === 0 ? [] : stdList.filter(c => avail.includes(c.id));
+      filteredCustom = avail.length === 0 ? [] : customCats.filter(c => (c.type || 'expense') === 'expense' && avail.includes(c.id));
+    } else {
+      filteredStd = stdList.filter(c => !(categoryOverrides && categoryOverrides[c.id] && categoryOverrides[c.id].hidden));
+      filteredCustom = customCats.filter(c => c.type === 'income');
+    }
+
+    // merge and dedupe by id/name
+    const map: Record<string, any> = {};
+    [...filteredStd, ...filteredCustom].forEach(c => { const id = c.id || c.name; map[id] = c; });
+    const merged = Object.values(map) as any[];
+
     return merged.map(c => {
       const ov = (categoryOverrides && categoryOverrides[c.id]) || {};
       return { ...c, name: ov.name || c.name, icon: ov.icon || c.icon, color: ov.color || c.color };
