@@ -48,6 +48,7 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
   const [transferFrom, setTransferFrom] = useState<{ type: string; id: number } | null>(null);
   const [transferTo, setTransferTo] = useState<{ type: string; id: number } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
+  const [transferError, setTransferError] = useState('');
   
   // Replaced custom contextMenu with unified ActionDrawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -222,6 +223,15 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
 
   const handleTransfer = async () => {
     if (!userId || !transferFrom || !transferTo || !transferAmount) return;
+    
+    // Валидация суммы перевода
+    const amount = parseFloat(transferAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setTransferError('Введите корректную положительную сумму');
+      WebApp.HapticFeedback.notificationOccurred('error');
+      return;
+    }
+    
     try {
       await api.transfer(
         userId,
@@ -229,11 +239,12 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
         transferFrom.id,
         transferTo.type,
         transferTo.id,
-        parseFloat(transferAmount)
+        amount
       );
       WebApp.HapticFeedback.notificationOccurred('success');
       setShowTransfer(false);
       setTransferAmount('');
+      setTransferError('');
       setTransferFrom(null);
       setTransferTo(null);
       onRefresh();
@@ -544,13 +555,88 @@ export const AccountsView: React.FC<Props> = ({ userId, accounts, goals, onRefre
             </select>
           </div>
 
-          <input
-            type="number"
-            placeholder="Сумма перевода"
-            value={transferAmount}
-            onChange={(e) => setTransferAmount(e.target.value)}
-            className="modal-input"
-          />
+          <div style={{ width: '100%' }}>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="Сумма перевода"
+              value={transferAmount}
+              onChange={(e) => {
+                const value = e.target.value;
+                setTransferError(''); // Сбрасываем ошибку при изменении
+                
+                // Разрешаем пустое значение
+                if (value === '') {
+                  setTransferAmount(value);
+                  return;
+                }
+                
+                // Проверка на наличие минуса (отрицательное число)
+                if (value.includes('-')) {
+                  setTransferError('Сумма не может быть отрицательной');
+                  return;
+                }
+                
+                // Проверка на недопустимые символы (только цифры и точка разрешены)
+                const onlyDigitsAndDot = /^[0-9.]+$/;
+                if (!onlyDigitsAndDot.test(value)) {
+                  setTransferError('Введите корректное число');
+                  return;
+                }
+                
+                // Проверка на несколько точек
+                if ((value.match(/\./g) || []).length > 1) {
+                  setTransferError('Введите корректное число');
+                  return;
+                }
+                
+                // Проверка на количество знаков после запятой
+                const parts = value.split('.');
+                if (parts.length === 2 && parts[1].length > 2) {
+                  setTransferError('Максимум 2 знака после запятой');
+                  return;
+                }
+                
+                const num = parseFloat(value);
+                
+                // Проверка на NaN
+                if (isNaN(num)) {
+                  setTransferError('Введите корректное число');
+                  return;
+                }
+                
+                // Проверка на ноль
+                if (num === 0) {
+                  setTransferAmount(value);
+                  setTransferError('Сумма должна быть больше нуля');
+                  return;
+                }
+                
+                // Если все проверки пройдены
+                if (num > 0) {
+                  setTransferAmount(value);
+                }
+              }}
+              className="modal-input"
+              style={{
+                borderColor: transferError ? '#F87171' : undefined,
+                borderWidth: transferError ? '2px' : undefined
+              }}
+            />
+            {transferError && (
+              <div style={{
+                color: '#F87171',
+                fontSize: 12,
+                marginTop: 6,
+                paddingLeft: 4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}>
+                ⚠️ {transferError}
+              </div>
+            )}
+          </div>
 
           <motion.button
             whileTap={{ scale: 0.95 }}

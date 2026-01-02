@@ -35,6 +35,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const [localAmount, setLocalAmount] = useState<number>(transaction.amount || 0);
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [editAmount, setEditAmount] = useState<string>(transaction.amount ? transaction.amount.toString() : '');
+  const [amountError, setAmountError] = useState('');
   const amountInputRef = useRef<HTMLInputElement | null>(null);
   const [localDateObj, setLocalDateObj] = useState<Date>(new Date(transaction.date));
   const [isEditingDate, setIsEditingDate] = useState(false);
@@ -151,7 +152,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const saveAmountAndOrDate = async (amountStr?: string, dateObj?: Date) => {
     if (!userId) return;
     const amountVal = (typeof amountStr !== 'undefined') ? parseFloat(amountStr) : localAmount;
-    if (isNaN(amountVal) || amountVal <= 0) { WebApp.HapticFeedback.notificationOccurred('error'); return; }
+    if (isNaN(amountVal) || amountVal <= 0) { 
+      setAmountError('Введите корректную положительную сумму');
+      WebApp.HapticFeedback.notificationOccurred('error'); 
+      return; 
+    }
     const dateVal = dateObj ? dateObj : localDateObj;
     try {
       await api.updateTransaction(userId, transaction.id, amountVal, transaction.category, dateVal.toISOString(), transaction.type, noteInput, localTags, localPhotos);
@@ -161,6 +166,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       setLocalDateObj(dateVal);
       setIsEditingAmount(false);
       setIsEditingDate(false);
+      setAmountError('');
     } catch (err) {
       console.error(err);
       WebApp.HapticFeedback.notificationOccurred('error');
@@ -245,30 +251,117 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-                <input
-                  ref={amountInputRef}
-                  value={editAmount}
-                  onChange={e => setEditAmount(e.target.value)}
-                  className="extras-input"
-                  style={{ width: 140, textAlign: 'center' }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+                  <input
+                    ref={amountInputRef}
+                    type="text"
+                    inputMode="decimal"
+                    value={editAmount}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setAmountError('');
+                      
+                      // Пустое поле не разрешено
+                      if (value === '') {
+                        setEditAmount(value);
+                        setAmountError('Сумма не может быть пустой');
+                        return;
+                      }
+                      
+                      // Проверка на минус
+                      if (value.includes('-')) {
+                        setAmountError('Сумма не может быть отрицательной');
+                        return;
+                      }
+                      
+                      // Проверка на недопустимые символы
+                      const onlyDigitsAndDot = /^[0-9.]+$/;
+                      if (!onlyDigitsAndDot.test(value)) {
+                        setAmountError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на несколько точек
+                      if ((value.match(/\./g) || []).length > 1) {
+                        setAmountError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на количество знаков после запятой
+                      const parts = value.split('.');
+                      if (parts.length === 2 && parts[1].length > 2) {
+                        setAmountError('Максимум 2 знака после запятой');
+                        return;
+                      }
+                      
+                      const num = parseFloat(value);
+                      
+                      // Проверка на NaN
+                      if (isNaN(num)) {
+                        setAmountError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на ноль
+                      if (num === 0) {
+                        setEditAmount(value);
+                        setAmountError('Сумма должна быть больше нуля');
+                        return;
+                      }
+                      
+                      // Если все проверки пройдены
+                      if (num > 0) {
+                        setEditAmount(value);
+                      }
+                    }}
+                    className="extras-input"
+                    style={{ 
+                      width: 140, 
+                      textAlign: 'center',
+                      borderColor: amountError ? '#F87171' : undefined,
+                      borderWidth: amountError ? '2px' : undefined
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        if (!amountError && editAmount.trim() !== '') {
+                          saveAmountAndOrDate(editAmount, undefined);
+                        }
+                      } else if (e.key === 'Escape') {
+                        setIsEditingAmount(false);
+                        setEditAmount(localAmount.toString());
+                        setAmountError('');
+                      }
+                    }}
+                    onBlur={() => {
+                      // Если есть ошибка или пустое поле - отменяем редактирование
+                      if (editAmount.trim() === '' || amountError) {
+                        setIsEditingAmount(false);
+                        setEditAmount(localAmount.toString());
+                        setAmountError('');
+                        return;
+                      }
+                      if (editAmount === localAmount.toString()) {
+                        setIsEditingAmount(false);
+                        setEditAmount(localAmount.toString());
+                        setAmountError('');
+                        return;
+                      }
                       saveAmountAndOrDate(editAmount, undefined);
-                    } else if (e.key === 'Escape') {
-                      setIsEditingAmount(false);
-                      setEditAmount(localAmount.toString());
-                    }
-                  }}
-                  onBlur={() => {
-                    if (editAmount.trim() === '' || editAmount === localAmount.toString()) {
-                      setIsEditingAmount(false);
-                      setEditAmount(localAmount.toString());
-                      return;
-                    }
-                    saveAmountAndOrDate(editAmount, undefined);
-                  }}
-                />
+                    }}
+                  />
+                </div>
+                {amountError && (
+                  <div style={{
+                    color: '#F87171',
+                    fontSize: 11,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    ⚠️ {amountError}
+                  </div>
+                )}
               </div>
             )}
           </div>

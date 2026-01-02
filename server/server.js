@@ -380,7 +380,7 @@ fastify.get('/transactions', (request, reply) => {
     // Default limit 30 if not specified
     // If limit is '0', 'all', or '-1', then no limit
     let limitSql = '';
-    const params = [userId, ...filter.params];
+    const params = [userId, ...filter.params, userId, ...filter.params];
 
     if (limit === '0' || limit === 'all' || limit === '-1') {
        limitSql = '';
@@ -391,11 +391,22 @@ fastify.get('/transactions', (request, reply) => {
        params.push(lim, off);
     }
 
-    // Выбираем новые поля
+    // Объединяем транзакции и переводы в один список
     const sql = `
-      SELECT id, amount, category, date, type, account_id, note, tags, photo_urls
+      SELECT id, amount, category, date, type, account_id, note, tags, photo_urls, 
+             NULL as from_type, NULL as from_id, NULL as to_type, NULL as to_id, 
+             NULL as description, 'transaction' as record_type
       FROM transactions 
       WHERE user_id = ? ${filter.sql}
+      
+      UNION ALL
+      
+      SELECT id, amount, NULL as category, date, 'transfer' as type, NULL as account_id, 
+             NULL as note, NULL as tags, NULL as photo_urls,
+             from_type, from_id, to_type, to_id, description, 'transfer' as record_type
+      FROM transfers
+      WHERE user_id = ? ${filter.sql}
+      
       ORDER BY date DESC, id DESC 
       ${limitSql}
     `

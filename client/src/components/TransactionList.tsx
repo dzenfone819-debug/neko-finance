@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { StickyNote, Image as ImageIcon } from 'lucide-react';
+import { StickyNote, Image as ImageIcon, ArrowRight } from 'lucide-react';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getIconByName } from '../data/constants';
 
 interface TransactionListProps {
@@ -13,6 +13,7 @@ interface TransactionListProps {
   customCategories?: any[];
   categoryOverrides?: Record<string, any>;
   accounts?: any[];
+  goals?: any[];
   onLoadMore?: () => void;
   hasMore?: boolean;
 }
@@ -25,6 +26,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   customCategories = [],
   categoryOverrides = {},
   accounts = [],
+  goals = [],
   onLoadMore,
   hasMore
 }) => {
@@ -104,6 +106,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     return accounts.find(a => a.id === accountId);
   }
 
+  const getSourceInfo = (type: string, id: number) => {
+    if (type === 'account') {
+      return accounts.find(a => a.id === id);
+    } else if (type === 'goal') {
+      return goals.find(g => g.id === id);
+    }
+    return null;
+  }
+
   return (
     <div className="transaction-list">
       {onFilterClick && (
@@ -134,6 +145,144 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         <div key={date} className="date-group" style={{ marginBottom: 20 }}>
           <div className="date-header" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, paddingLeft: 4 }}>{date}</div>
           {dateTransactions.map((t: any) => {
+            // Проверка на тип записи - перевод или транзакция
+            if (t.type === 'transfer' || t.record_type === 'transfer') {
+              // Рендер карточки перевода
+              const fromInfo = getSourceInfo(t.from_type, t.from_id);
+              const toInfo = getSourceInfo(t.to_type, t.to_id);
+              
+              if (!fromInfo || !toInfo) return null;
+
+              return (
+                <motion.div 
+                  key={`transfer-${t.id}`} 
+                  className="transfer-item"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{ 
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: 'var(--bg-card)',
+                    padding: '12px 14px',
+                    borderRadius: 16,
+                    marginBottom: 8,
+                    boxShadow: '0 2px 4px var(--shadow-color)',
+                    border: '1px solid var(--border-color)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Индикатор перевода (вертикальная полоса) */}
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 3,
+                    opacity: 0.6
+                  }} />
+
+                  {/* Левая часть: Источник */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 1 auto', minWidth: 0, maxWidth: '35%' }}>
+                    <div 
+                      style={{ 
+                        backgroundColor: fromInfo.color || '#ccc', 
+                        color: '#fff',
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 18,
+                        flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      {fromInfo.icon ? (typeof fromInfo.icon === 'string' ? getIconByName(fromInfo.icon) : fromInfo.icon) : '💳'}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                      <span style={{ 
+                        fontSize: 12, 
+                        fontWeight: 600, 
+                        color: 'var(--text-main)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.2
+                      }}>
+                        {fromInfo.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Центр: Стрелка и сумма */}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                    justifyContent: 'center',
+                    flex: '0 0 auto'
+                  }}>
+                    <div style={{ 
+                      fontSize: 13, 
+                      fontWeight: 800, 
+                      color: 'var(--text-main)',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {t.amount.toLocaleString()} ₽
+                    </div>
+                    <ArrowRight 
+                      size={16} 
+                      style={{ 
+                        color: 'var(--primary)', 
+                        flexShrink: 0
+                      }} 
+                    />
+                  </div>
+
+                  {/* Правая часть: Назначение */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end', flex: '0 1 auto', minWidth: 0, maxWidth: '35%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0, overflow: 'hidden' }}>
+                      <span style={{ 
+                        fontSize: 12, 
+                        fontWeight: 600, 
+                        color: 'var(--text-main)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.2
+                      }}>
+                        {toInfo.name}
+                      </span>
+                    </div>
+                    <div 
+                      style={{ 
+                        backgroundColor: toInfo.color || '#ccc', 
+                        color: '#fff',
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 18,
+                        flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      {toInfo.icon ? (typeof toInfo.icon === 'string' ? getIconByName(toInfo.icon) : toInfo.icon) : '💳'}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            }
+
+            // Рендер обычной транзакции
             const catInfo = getCategoryInfo(t.category, t.type || 'expense');
             const accountInfo = t.account_id ? getAccountInfo(t.account_id) : null;
 

@@ -128,6 +128,7 @@ function App() {
   const [newCategoryIcon, setNewCategoryIcon] = useState('Package')
   const [newCategoryColor, setNewCategoryColor] = useState('#FF6B6B')
   const [newCategoryLimit, setNewCategoryLimit] = useState('')
+  const [categoryLimitError, setCategoryLimitError] = useState('')
   const [addCategoryType, setAddCategoryType] = useState<'expense' | 'income'>('expense')
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
 
@@ -935,7 +936,8 @@ function App() {
               hasActiveFilters={hasActiveFilters}
               customCategories={allCustomCategories}
               categoryOverrides={categoryOverrides}
-              accounts={[...accounts, ...goals.map(g => ({...g, type: 'goal'}))]}
+              accounts={accounts}
+              goals={goals}
               onLoadMore={loadMoreTransactions}
               hasMore={hasMoreTransactions}
             />
@@ -1036,7 +1038,88 @@ function App() {
               
               {/* Для расходов показываем поле лимита */}
               {addCategoryType === 'expense' && (
-                <input type="number" placeholder="Лимит (опционально)" value={newCategoryLimit} onChange={(e) => setNewCategoryLimit(e.target.value)} className="modal-input" />
+                <div style={{ width: '100%' }}>
+                  <input 
+                    type="text" 
+                    inputMode="decimal" 
+                    placeholder="Лимит (опционально)" 
+                    value={newCategoryLimit} 
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCategoryLimitError(''); // Сбрасываем ошибку
+                      
+                      // Разрешаем пустое значение (опционально)
+                      if (value === '') {
+                        setNewCategoryLimit(value);
+                        return;
+                      }
+                      
+                      // Проверка на минус
+                      if (value.includes('-')) {
+                        setCategoryLimitError('Лимит не может быть отрицательным');
+                        return;
+                      }
+                      
+                      // Проверка на недопустимые символы
+                      const onlyDigitsAndDot = /^[0-9.]+$/;
+                      if (!onlyDigitsAndDot.test(value)) {
+                        setCategoryLimitError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на несколько точек
+                      if ((value.match(/\./g) || []).length > 1) {
+                        setCategoryLimitError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на знаки после запятой
+                      const parts = value.split('.');
+                      if (parts.length === 2 && parts[1].length > 2) {
+                        setCategoryLimitError('Максимум 2 знака после запятой');
+                        return;
+                      }
+                      
+                      const num = parseFloat(value);
+                      
+                      // Проверка на NaN
+                      if (isNaN(num)) {
+                        setCategoryLimitError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на ноль
+                      if (num === 0) {
+                        setNewCategoryLimit(value);
+                        setCategoryLimitError('Лимит должен быть больше нуля');
+                        return;
+                      }
+                      
+                      // Если все проверки пройдены
+                      if (num > 0) {
+                        setNewCategoryLimit(value);
+                      }
+                    }} 
+                    className="modal-input"
+                    style={{
+                      borderColor: categoryLimitError ? '#F87171' : undefined,
+                      borderWidth: categoryLimitError ? '2px' : undefined
+                    }}
+                  />
+                  {categoryLimitError && (
+                    <div style={{
+                      color: '#F87171',
+                      fontSize: 12,
+                      marginTop: 6,
+                      paddingLeft: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      ⚠️ {categoryLimitError}
+                    </div>
+                  )}
+                </div>
               )}
               
               {/* Для доходов просто показываем информацию */}
@@ -1047,7 +1130,7 @@ function App() {
               )}
               
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreateCategory} className="modal-submit-button" style={{ marginBottom: 10 }}>
-                {addCategoryType === 'expense' ? 'Сохранить лимит' : 'Сохранить'}
+                {addCategoryType === 'expense' ? 'Сохранить лимит' : 'Отмена'}
               </motion.button>
             </>
           ) : (
@@ -1106,7 +1189,90 @@ function App() {
                 </>
               )}
               
-              {addCategoryType === 'expense' && (<input type="number" placeholder="Лимит (опционально)" value={newCategoryLimit} onChange={(e) => setNewCategoryLimit(e.target.value)} className="modal-input" />)}
+              {addCategoryType === 'expense' && (
+                <div style={{ width: '100%' }}>
+                  <input 
+                    type="text" 
+                    inputMode="decimal" 
+                    placeholder="Лимит (опционально)" 
+                    value={newCategoryLimit} 
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCategoryLimitError(''); // Сбрасываем ошибку
+                      
+                      // Разрешаем пустое значение (опционально)
+                      if (value === '') {
+                        setNewCategoryLimit(value);
+                        return;
+                      }
+                      
+                      // Проверка на минус
+                      if (value.includes('-')) {
+                        setCategoryLimitError('Лимит не может быть отрицательным');
+                        return;
+                      }
+                      
+                      // Проверка на недопустимые символы
+                      const onlyDigitsAndDot = /^[0-9.]+$/;
+                      if (!onlyDigitsAndDot.test(value)) {
+                        setCategoryLimitError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на несколько точек
+                      if ((value.match(/\./g) || []).length > 1) {
+                        setCategoryLimitError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на знаки после запятой
+                      const parts = value.split('.');
+                      if (parts.length === 2 && parts[1].length > 2) {
+                        setCategoryLimitError('Максимум 2 знака после запятой');
+                        return;
+                      }
+                      
+                      const num = parseFloat(value);
+                      
+                      // Проверка на NaN
+                      if (isNaN(num)) {
+                        setCategoryLimitError('Введите корректное число');
+                        return;
+                      }
+                      
+                      // Проверка на ноль
+                      if (num === 0) {
+                        setNewCategoryLimit(value);
+                        setCategoryLimitError('Лимит должен быть больше нуля');
+                        return;
+                      }
+                      
+                      // Если все проверки пройдены
+                      if (num > 0) {
+                        setNewCategoryLimit(value);
+                      }
+                    }} 
+                    className="modal-input"
+                    style={{
+                      borderColor: categoryLimitError ? '#F87171' : undefined,
+                      borderWidth: categoryLimitError ? '2px' : undefined
+                    }}
+                  />
+                  {categoryLimitError && (
+                    <div style={{
+                      color: '#F87171',
+                      fontSize: 12,
+                      marginTop: 6,
+                      paddingLeft: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      ⚠️ {categoryLimitError}
+                    </div>
+                  )}
+                </div>
+              )}
               
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreateCategory} className="modal-submit-button">
                 {addCategoryType === 'income' 
